@@ -13,11 +13,14 @@ Both meta and user language are mixed within ASB language source code files. Bas
 An ASB program consists of one or more source files, which have the file ending `.asb`. The expected encoding is 8-bit **ASCII**. The behavior of codepoints outside of ASCII (e.g. ISO 8859, UTF-8) is undefined.
 ## Whitespace
 Whitespace is meaningful in the following ways:
-- Statements end at the end of a line. A new line is marked by the Line Feed or Newline character (Codepoint `0xA`).
-- The Carriage Return (Codepoint `0xD`) and the Vertial Tab (Codepoint `0xB`) characters are always ignored.
-- Any continuous amount of Space (Codepoint `0x20`) and Horizontal Tab (Codepoint `0x9`) characters are interpreted as one separator between two atoms. Such a separator is optional in all cases where the atom separation can be determined by different means (e.g. a `%` atom followed by a name atom).
+- Statements end at the end of a line. A new line is marked by the Line Feed or Newline character (Codepoint `0x0A`).
+- The behavior for Carriage Return (Codepoint `0x0D`) and Vertical Tab (Codepoint `0x0B`) characters is undefined.
+- Any continuous amount of Space (Codepoint `0x20`) and Horizontal Tab (Codepoint `0x09`) characters are interpreted as one separator between two atoms. Such a separator is optional in all cases where the atom separation can be determined by different means (e.g. a `%` atom followed by a name atom).
 > [!NOTE]
 > It follows that any indentation (be it with Spaces or Tabs) has no meaning.
+
+>[!TODO]
+>Note that `;` has same effect as newline has
 
 ## Numbers
 Numbers, both in the meta language as well as the user language, can be given in decimal, hexadecimal, octal, or binary format. The decimal format also supports negative numbers.
@@ -29,12 +32,17 @@ In any of the formats additional `_` characters may be used to visually subdivid
   > [!NOTE]
   > Some places do not allow a negative number to be used, e.g. when giving a length or bit position.
   
-- **Hexadecimal** format: Any of the decimal digits and `a`- `f` (also uppercase); prefixed by `0x`.
-  Regex: `0x[_0-9A-Fa-f]+`
+- **Hexadecimal** format: Any of the decimal digits and `a`- `f` (also uppercase); prefixed by `0x` (or `0X`).
+  Regex: `0(x|X)_?[0-9A-Fa-f][_0-9A-Fa-f]*`
 - **Octal** format: Any of the decimal digits up to `7`, prefixed by `0`.
-  Regex: `0[_0-7]+`
-- **Binary** format: The binary digits `0` and `1`, prefixed by `0b`.
-  Regex: `0b[_01]+`
+  Regex: `0[_0-7]*`
+- **Binary** format: The binary digits `0` and `1`, prefixed by `0b` (or `0B`).
+  Regex: `0(b|B)_?[01][_01]*`
+
+## Common syntax elements
+>[!TODO]
+>Note things that apply to both meta and user language. E.g.: `\` escape char, freely available symbols, etc.
+
 # Meta language syntax
 - All meta language operations are done via **ASB directives** which start with a `.` followed by a keyword.
 - Some directives have **sub-directives**, which also start with a keyword prefixed with a `.`. These sub-directives can either be given on the same line as the directive they belong to, or the directive is extended to multiple lines by encasing all its sub-directives in in one pair of curly braces (`{}`).
@@ -47,7 +55,7 @@ In any of the formats additional `_` characters may be used to visually subdivid
 > [!NOTE]
 > It is not possible to access individual bits within the user language in this way - if such a mechanism is desired, it must be implemented with custom commands.
 
-- Line comments start with `//` (they end **right before** the next New Line).
+- Line comments start with `#` or `//` (they end **right before** the next New Line).
 - Multi-line comments start with `/*` and end with `*/`. If the start and end markers are not on the same line the comment is treated like a single New Line (so that different statements are separated as intended).
 
 # Types
@@ -117,6 +125,9 @@ Replace `<length>` with the amount of bits in the program counter.
 
 You do not need to specify the program counter size if no command is reading or setting its value directly. Especially if all jumping occurs via the use of labels, nothing further needs to be done.
 >[!TODO]
+>This may not be true - how would a jump command be implemented? Doesn't it always modify the pc somehow?
+
+>[!NOTE]
 >Note that implementing some sort of `RET` command to return to the calling location at the end of a function call does require accessing the program counter value.
 
 The size of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error.
