@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents one ASB Source Code file.
+ * Represents one ASB Source Code file.<br>
  * 
  * Contains the entire file contents for convenient use.
  *
@@ -33,13 +33,13 @@ public class SourceFile
     public SourceFile(String filePath) throws IOException
     {
         this.filePath = Paths.get(filePath).toAbsolutePath();
-        this.lines = Collections.unmodifiableList(Files.readAllLines(this.filePath));
+        this.lines    = Collections.unmodifiableList(Files.readAllLines(this.filePath));
     }
     
     
     /**
      * Return true if the given (1-based human-readable) position exists within
-     * this file.
+     * this file.<br>
      * 
      * Note: Last position on a line is the position of the end-of-line or
      * newline character, which always exists (even on the last line) and is

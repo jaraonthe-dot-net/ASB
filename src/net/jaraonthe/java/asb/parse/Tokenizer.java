@@ -7,7 +7,7 @@ import net.jaraonthe.java.asb.exception.LexicalError;
 
 /**
  * The Tokenizer aka Lexer aka Scanner. Tokenizes exactly one file as a service
- * to the Parser.
+ * to the Parser.<br>
  * 
  * Note that this operates in one of several modes, and it relies on the Parser
  * to set a proper mode. This is necessary because some language constructs
@@ -20,21 +20,34 @@ public class Tokenizer
 {
     public enum Mode
     {
+        /**
+         * The default mode for parsing command invocations.
+         */
         MAIN,
+        
+        /**
+         * Used for meta code, i.e. once a directive has been encountered.
+         */
         META,
+        
+        /**
+         * When parsing an expression as part of an invocation of a built-in
+         * function (i.e. this depends on the function being invoked).
+         */
         EXPRESSION,
     }
     
     
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_.]*");
+    private static final Pattern NAME_PATTERN        = Pattern.compile("^[A-Za-z_][A-Za-z0-9_.]*");
     private static final Pattern FULL_NUMBER_PATTERN = Pattern.compile(
         "^(-?[1-9][_0-9]*|0(x|X)_?[0-9A-Fa-f][_0-9A-Fa-f]*|0(b|B)_?[01][_01]*|0[_0-7]*)$"
     );
     private static final Pattern NEGATIVE_NUMBER_PATTERN = Pattern.compile("^-[1-9][_0-9]*");
-    private static final Pattern LABEL_PATTERN = Pattern.compile("^([A-Za-z0-9_.]+):");
-    private static final Pattern LABEL_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.]+");
+    private static final Pattern LABEL_PATTERN           = Pattern.compile("^([A-Za-z0-9_.]+):");
+    private static final Pattern LABEL_NAME_PATTERN      = Pattern.compile("^[A-Za-z0-9_.]+");
     
-    private static final String COMMAND_SYMBOLS = "!$%&()*+,/<=>?@[]^`{|}~"; 
+    private static final String COMMAND_SYMBOLS           = "!$%&()*+,/<=>?@[]^`{|}~";
+    private static final String META_MODE_COMMAND_SYMBOLS = "!$%&()*+,<=>?@[]^`|~";
     
     
     /**
@@ -64,6 +77,14 @@ public class Tokenizer
     private Tokenizer.Mode mode = Mode.MAIN;
     
     /**
+     * When {@link #peek()}ing, this contains the next Token (so that it doesn't
+     * have to be tokenized more than once).
+     */
+    private Token nextToken = null;
+    
+    
+    
+    /**
      * @param file The file that shall be tokenized
      */
     public Tokenizer(SourceFile file)
@@ -77,12 +98,65 @@ public class Tokenizer
     }
     
     /**
-     * Provides the next token.
+     * Provides the next token.<br>
+     * 
+     * This advances the internal position in the file, i.e. every invocation
+     * returns a different Token.
      * 
      * @return A Token, or null if reached end-of-file.
      * @throws LexicalError
      */
     public Token next() throws LexicalError
+    {
+        if (this.nextToken != null) {
+            Token t = this.nextToken;
+            this.nextToken = null;
+            
+            return t;
+        }
+        return this.consumeNext();
+    }
+    
+    /**
+     * Take a peek at the next Token.<br>
+     * 
+     * This returns the next Token like {@link #next()}, but the position in the
+     * file is not advanced, i.e. the same Token is returned over and over until
+     * position is advanced via {@link #next()}.
+     * 
+     * @return A Token, or null if reached end-of-file.
+     * @throws LexicalError
+     */
+    public Token peek() throws LexicalError
+    {
+        if (this.nextToken == null) {
+            this.nextToken = this.consumeNext();
+        }
+        return this.nextToken;
+    }
+    
+    /**
+     * Sets the Mode, which governs the Tokenizer's behavior.<br>
+     * 
+     * Note: Most Token types are provided regardless - the mode is only used
+     * in those cases where syntax is ambiguous without context.
+     * 
+     * @param mode
+     */
+    public void setMode(Tokenizer.Mode mode)
+    {
+        this.mode = mode;
+    }
+    
+    
+    
+    /**
+     * (Internally) Ascertains the next Token.
+     * 
+     * @return A Token, or null if reached end-of-life.
+     * @throws LexicalError
+     */
+    private Token consumeNext() throws LexicalError
     {
         fromTop: while (true) {
             if (this.isEof()) {
@@ -105,6 +179,7 @@ public class Tokenizer
                         }
                         continue fromTop;
                     }
+                    break;
             
                 // DIRECTIVE
                 case '.':
@@ -113,28 +188,28 @@ public class Tokenizer
                     if (token != null) {
                         return token;
                     }
-                    token = this.consumeNamedTentatively(Token.Type.DIRECTIVE);
+                    token = this.consumeNamed(Token.Type.DIRECTIVE);
                     if (token != null) {
                         return token;
                     }
-                    return this.consumeLabelName();
+                    return this.expectLabelName();
                 
                 // FUNCTION NAME
                 case '&':
-                    return this.consumeNamed(Token.Type.FUNCTION_NAME);
+                    return this.expectNamed(Token.Type.FUNCTION_NAME);
                 
                 // STRING
                 case '"':
-                    return this.consumeString();
+                    return this.expectString();
                 
                 case '\'':
                     if (this.safeCharAt(this.currentCol + 1) == '\'') {
                         
                         // BIT LENGTH
-                        return this.consumeSymbol(Token.Type.BIT_LENGTH, 2);
+                        return this.fromSymbol(Token.Type.BIT_LENGTH, 2);
                     }
                     // BIT POSITION
-                    return this.consumeSymbol(Token.Type.BIT_POSITION, 1);
+                    return this.fromSymbol(Token.Type.BIT_POSITION, 1);
                 
                 // STATEMENT SEPARATOR
                 case '\n':
@@ -142,19 +217,19 @@ public class Tokenizer
                     this.advanceLine();
                     return token;
                 case ';':
-                    return this.consumeSymbol(Token.Type.STATEMENT_SEPARATOR, 1);
+                    return this.fromSymbol(Token.Type.STATEMENT_SEPARATOR, 1);
             }
             
             if (this.mode == Tokenizer.Mode.META) {
                 switch (c) {
                     // DATATYPE
                     case '/':
-                        return this.consumeNamed(Token.Type.DATATYPE);
+                        return this.expectNamed(Token.Type.DATATYPE);
                         
                     case '}':
-                        return this.consumeSymbol(Token.Type.CLOSING_BRACES, 1);
+                        return this.fromSymbol(Token.Type.CLOSING_BRACES, 1);
                     case '{':
-                        return this.consumeSymbol(Token.Type.OPENING_BRACES, 1);
+                        return this.fromSymbol(Token.Type.OPENING_BRACES, 1);
                 }
             }
             
@@ -162,38 +237,38 @@ public class Tokenizer
             if (this.mode == Tokenizer.Mode.EXPRESSION) {
                 switch (c) {
                     case '+':
-                        return this.consumeSymbol(Token.Type.EXP_ADD, 1);
+                        return this.fromSymbol(Token.Type.EXP_ADD, 1);
                     case '=':
                         if (this.safeCharAt(this.currentCol + 1) != '=') {
                             // If this returns null, we have a bug in here
                             return this.consumeCommandSymbols();
                         }
                         // ==
-                        return this.consumeSymbol(Token.Type.EXP_EQUALS, 2);
+                        return this.fromSymbol(Token.Type.EXP_EQUALS, 2);
                     case '>':
                         if (this.safeCharAt(this.currentCol + 1) == '=') {
                             // >=
-                            return this.consumeSymbol(Token.Type.EXP_GREATER_THAN_OR_EQUALS, 2);
+                            return this.fromSymbol(Token.Type.EXP_GREATER_THAN_OR_EQUALS, 2);
                         }
                         // >
                         this.currentCol++;
-                        return this.consumeSymbol(Token.Type.EXP_GREATER_THAN, 1);
+                        return this.fromSymbol(Token.Type.EXP_GREATER_THAN, 1);
                     case '<':
                         if (this.safeCharAt(this.currentCol + 1) == '=') {
                             // <=
-                            return this.consumeSymbol(Token.Type.EXP_LESS_THAN_OR_EQUALS, 2);
+                            return this.fromSymbol(Token.Type.EXP_LESS_THAN_OR_EQUALS, 2);
                         }
                         // <
-                        return this.consumeSymbol(Token.Type.EXP_LESS_THAN, 1);
+                        return this.fromSymbol(Token.Type.EXP_LESS_THAN, 1);
                     case '!':
                         if (this.safeCharAt(this.currentCol + 1) != '=') {
                             // If this returns null, we have a bug in here
                             return this.consumeCommandSymbols();
                         }
                         // !=
-                        return this.consumeSymbol(Token.Type.EXP_NOT_EQUALS, 2);
+                        return this.fromSymbol(Token.Type.EXP_NOT_EQUALS, 2);
                     case ':':
-                        return this.consumeSymbol(Token.Type.EXP_RANGE, 1);
+                        return this.fromSymbol(Token.Type.EXP_RANGE, 1);
                     case '-':
                         return this.consumeNegativeNumberOrSubtract();
                 }
@@ -227,22 +302,9 @@ public class Tokenizer
         }
     }
     
-    /**
-     * Sets the Mode, which governs the Tokenizer's behavior.
-     * 
-     * Note: Most Token types are provided regardless - the mode is only used
-     * in those cases where syntax is ambiguous without context.
-     * 
-     * @param mode
-     */
-    public void setMode(Tokenizer.Mode mode)
-    {
-        this.mode = mode;
-    }
-    
     
     /**
-     * Consumes a symbol of given length, creating a Token without content.
+     * Creates a Token without content, and consumes a given amount of chars.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -251,7 +313,7 @@ public class Tokenizer
      * 
      * @return
      */
-    private Token consumeSymbol(Token.Type type, int length)
+    private Token fromSymbol(Token.Type type, int length)
     {
         int[] startPos = this.getCurrentPos();
         this.currentCol += length;
@@ -260,11 +322,12 @@ public class Tokenizer
     }
     
     /**
-     * Consumes the given content and creates a Token for it.
+     * Creates a Token with content, and consumes a corresponding amount of
+     * chars.<br>
      * 
      * This can be used when the Token contains the entire given content, and
      * this.currentCol is still pointing to the beginning of content (e.g. after
-     * a regex match).
+     * a regex match).<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -273,7 +336,7 @@ public class Tokenizer
      * 
      * @return
      */
-    private Token consumeContent(Token.Type type, String content)
+    private Token fromContent(Token.Type type, String content)
     {
         int[] startPos = this.getCurrentPos();
         this.currentCol += content.length();
@@ -281,10 +344,11 @@ public class Tokenizer
         return new Token(type, content, this.getOrigin(startPos));
     }
     
+    
     /**
      * Consumes a section of command Symbols.
      * 
-     * Does a tentative parse.
+     * Does a tentative parse.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -323,14 +387,19 @@ public class Tokenizer
      */
     private boolean isCommandSymbol(char c)
     {
+        if (this.mode == Tokenizer.Mode.META) {
+            // These symbols do not need to be escaped in the head of a command
+            // definition
+            return Tokenizer.META_MODE_COMMAND_SYMBOLS.indexOf(c) != -1;
+        }
         return Tokenizer.COMMAND_SYMBOLS.indexOf(c) != -1;
     }
     
     /**
-     * Handles the \ escape char, which marks one char as a command symbol.
+     * Handles the \ escape char, which marks one char as a command symbol.<br>
      * 
      * Should only be used by {@link #consumeCommandSymbols()}. Is called when
-     * the escape char has been detected.
+     * the escape char has been detected.<br>
      * 
      * Before: Current position is ON the \ escape char. After: Position is ON
      * the next char.
@@ -345,19 +414,20 @@ public class Tokenizer
         this.currentCol++;
         char c = this.safeCharAt();
         
-        if (!this.isCommandSymbol(c)) {
+        if (Tokenizer.COMMAND_SYMBOLS.indexOf(c) == -1) {
             throw new LexicalError("Expected escaped command symbol at " + this.getOrigin());
         }
         return c;
     }
     
+    
     /**
      * Consumes a label. I.e. a label name directly followed by ':'.
      * 
      * Thus, the syntax is not ambiguous in this case, as the ':' char cannot be
-     * used anywhere else.
+     * used anywhere else.<br>
      * 
-     * Does a tentative parse.
+     * Does a tentative parse.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -377,33 +447,33 @@ public class Tokenizer
     }
     
     /**
-     * Consumes a label name.
+     * Consumes a label name.<br>
      * 
      * This should only be used when a label name is expected (i.e. all other
-     * options have been exhausted at this point).
+     * options have been exhausted at this point).<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
      * @return
      * @throws LexicalError If no valid label name found.
      */
-    private Token consumeLabelName() throws LexicalError
+    private Token expectLabelName() throws LexicalError
     {
         Matcher m = Tokenizer.LABEL_NAME_PATTERN.matcher(this.restOfLine());
         if (!m.find()) {
             throw new LexicalError("Expected label name at " + this.getOrigin());
         }
         
-        return this.consumeContent(Token.Type.LABEL, m.group());
+        return this.fromContent(Token.Type.LABEL, m.group());
     }
     
     /**
      * Consumes a label name or a number, whatever fits better.
      * 
      * Preferable returns a Number Token (which is syntactically a subset of a
-     * label name).
+     * label name).<br>
      * 
-     * Does a tentative parse.
+     * Does a tentative parse.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -419,7 +489,7 @@ public class Tokenizer
             if (!m.find()) {
                 throw new LexicalError("Expected number at " + this.getOrigin());
             }
-            return this.consumeContent(Token.Type.NUMBER, m.group());
+            return this.fromContent(Token.Type.NUMBER, m.group());
         }
         
         // LABEL NAME or NUMBER
@@ -432,19 +502,19 @@ public class Tokenizer
         // This works because every valid number (except negative) is also a valid label name
         m = Tokenizer.FULL_NUMBER_PATTERN.matcher(matched);
         if (!m.matches()) {
-            return this.consumeContent(Token.Type.LABEL, matched);
+            return this.fromContent(Token.Type.LABEL, matched);
         }
-        return this.consumeContent(Token.Type.NUMBER, matched);
+        return this.fromContent(Token.Type.NUMBER, matched);
     }
     
     /**
-     * Consumes a negative number or a subtract operator.
+     * Consumes a negative number or a subtract operator.<br>
      * 
      * Should only be used when Tokenizer is in EXPRESSION mode.
      * 
-     * Current position MUST point to the leading '-' char.
+     * Current position MUST point to the leading '-' char.<br>
      * 
-     * Preferable returns a negative Number Token.
+     * Preferable returns a negative Number Token.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -454,29 +524,29 @@ public class Tokenizer
     {
         Matcher m = Tokenizer.NEGATIVE_NUMBER_PATTERN.matcher(this.restOfLine());
         if (!m.find()) {
-            return this.consumeSymbol(Token.Type.EXP_SUBTRACT, 1);
+            return this.fromSymbol(Token.Type.EXP_SUBTRACT, 1);
         }
         
-        return this.consumeContent(Token.Type.NUMBER, m.group());
+        return this.fromContent(Token.Type.NUMBER, m.group());
     }
     
     /**
      * Consumes a named entity, i.e. an entity that has a name which makes up
-     * the content of the resulting Token.
+     * the content of the resulting Token.<br>
      * 
      * Starts ON the symbol that starts the entity; the name is expected to
-     * start on the next char.
+     * start on the next char.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
-     * @see #consumeNamedTentatively()
+     * @see #consumeNamed()
      * @param type of the new Token
      * @return
      * @throws LexicalError If no name found
      */
-    private Token consumeNamed(Token.Type type) throws LexicalError
+    private Token expectNamed(Token.Type type) throws LexicalError
     {
-        Token token = this.consumeNamedTentatively(type);
+        Token token = this.consumeNamed(type);
         if (token == null) {
             throw new LexicalError("Expected name at " + this.getOrigin());
         }
@@ -484,21 +554,21 @@ public class Tokenizer
     }
     
     /**
-     * Consumes a named entity, i.e. an entity that has a name which makes up
-     * the content of the resulting Token.
+     * Tentatively consumes a named entity, i.e. an entity that has a name which
+     * makes up the content of the resulting Token.<br>
      * 
      * Starts ON the symbol that starts the entity; the name is expected to
-     * start on the next char.
+     * start on the next char.<br>
      * 
-     * Opposed to {@link #consumeNamed()}, this does a tentative parse, and
-     * throws no Exception.
+     * Opposed to {@link #expectNamed()}, this does a tentative parse, and
+     * throws no Exception.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
      * @param type
      * @return Token if successfully consumed label, null otherwise
      */
-    private Token consumeNamedTentatively(Token.Type type)
+    private Token consumeNamed(Token.Type type)
     {
         int[] startPos = this.getCurrentPos();
         this.currentCol++;
@@ -514,7 +584,7 @@ public class Tokenizer
     /**
      * Consumes a name, which may be used as part of a Token.
      * 
-     * Does a tentative parse.
+     * Does a tentative parse.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -534,20 +604,20 @@ public class Tokenizer
     }
     
     /**
-     * Consumes a string entity.
+     * Consumes a string entity.<br>
      * 
      * Processes the string so that it's actual content is used as the Token
      * content (i.e. encodings like "\n" are replaced by the actual chars they
-     * are supposed to represent).
+     * are supposed to represent).<br>
      * 
-     * Current position MUST point to opening ".
+     * Current position MUST point to opening ".<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
      * @return
      * @throws LexicalError If file ends before String is closed.
      */
-    private Token consumeString() throws LexicalError
+    private Token expectString() throws LexicalError
     {
         int[] startPos = this.getCurrentPos();
         this.currentCol++;
@@ -594,9 +664,9 @@ public class Tokenizer
     
     
     /**
-     * Stops ON next non-whitespace and non-comment char.
+     * Stops ON next non-whitespace and non-comment char.<br>
      * 
-     * Does not handle multi-line comments.
+     * Does not handle multi-line comments.<br>
      * 
      * DO NOT invoke if at end-of-file.
      */
@@ -683,8 +753,8 @@ public class Tokenizer
     }
     
     /**
-     * Returns the char at the given position in this.lineContent. Differently
-     * than {@link String#charAt()}, this does not throw an exception.
+     * Returns the char at the given position in this.lineContent. Different
+     * to {@link String#charAt()}, this does not throw an exception.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -701,7 +771,7 @@ public class Tokenizer
     }
     
     /**
-     * Shorthand for {@code this.lineContent.safeCharAt(this.currentCol)}.
+     * Shorthand for {@code this.lineContent.safeCharAt(this.currentCol)}.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -714,20 +784,7 @@ public class Tokenizer
     }
     
     /**
-     * Shorthand for {@code this.lineContent.charAt(col)}.
-     * 
-     * DO NOT invoke if at end-of-file.
-     * 
-     * @param col
-     * @return
-     */
-    private char charAt(int col)
-    {
-        return this.lineContent.charAt(col);
-    }
-    
-    /**
-     * Shorthand for {@code this.lineContent.charAt(this.currentCol)}.
+     * Shorthand for {@code this.lineContent.charAt(this.currentCol)}.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -740,7 +797,7 @@ public class Tokenizer
     
     /**
      * Returns the rest of the current line, i.e. from the current position
-     * (inclusive) until end-of-line (exclusive).
+     * (inclusive) until end-of-line (exclusive).<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -764,7 +821,7 @@ public class Tokenizer
     }
     
     /**
-     * Returns the current line and col position.
+     * Returns the current line and col position.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -779,7 +836,7 @@ public class Tokenizer
     }
     
     /**
-     * Returns the current line and col position.
+     * Returns the current line and col position.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 
@@ -792,9 +849,9 @@ public class Tokenizer
     /**
      * Creates a new Origin pointing to an area.
      * 
-     * The area starts at startPos and ends at the current position.
+     * The area starts at startPos and ends at the current position.<br>
      * 
-     * DO NOT invoke if at end-of-file.
+     * DO NOT invoke if at end-of-file.<br>
      * 
      * This always uses minus1 for the end position (see
      * {@link #getCurrentPos(boolean) getCurrentPos()}).
@@ -810,24 +867,7 @@ public class Tokenizer
     /**
      * Creates a new Origin pointing to a position.
      * 
-     * Uses the current position.
-     * 
-     * DO NOT invoke if at end-of-file.
-     * 
-     * @param minus1 True: subtracts 1 from col, i.e. gets the position for
-     *               previous char. DO NOT use true directly after
-     *               {@link #advanceLine()}.
-     * @return
-     */
-    private Origin getOrigin(boolean minus1)
-    {
-        return new Origin(this.file, this.getCurrentPos(minus1));
-    }
-    
-    /**
-     * Creates a new Origin pointing to a position.
-     * 
-     * Uses the current position.
+     * Uses the current position.<br>
      * 
      * DO NOT invoke if at end-of-file.
      * 

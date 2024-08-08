@@ -1,0 +1,33 @@
+// TODO experimental file for development; it will be removed/revamped at some point
+.memory /* hello there */ .word ''5_9 .address ''32
+
+.register a ''32
+.register_alias b, a {.group cpy}
+
+    .define &shiftWide  {
+
+/*    "}
+  \"\n  
+    "}*/
+    }
+
+.define lw /register rd ''32, /immediate imm12 ''12 (/register rs1 ''32) {
+    .var extended ''32
+    &sign_extend extended, imm12
+    
+    .var address ''32
+    &add address, rs1, extended
+    
+    //&mov rd'7:0, @address
+    &add address, address, 1
+    
+    //&mov rd'15:8, @address
+    &add address, address, 1
+    
+    //&mov rd'23:16, @address
+    &add address, address, 1
+    
+    //&mov rd'32:24, @address
+}
+
+lw a, 0(b)

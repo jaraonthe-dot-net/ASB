@@ -1,8 +1,7 @@
 package net.jaraonthe.java.asb;
 
+import net.jaraonthe.java.asb.parse.Parser;
 import net.jaraonthe.java.asb.parse.SourceFile;
-import net.jaraonthe.java.asb.parse.Token;
-import net.jaraonthe.java.asb.parse.Tokenizer;
 
 /**
  * The main ASB program. Parses and executes a given ASB program.
@@ -20,18 +19,15 @@ public class ASB
 	{
 	    // TODO Experimental
 	    
+	    Parser parser = new Parser();
 	    try {
-	        
     	    SourceFile file = new SourceFile(args[0]);
-    	    Tokenizer tokenizer = new Tokenizer(file);
     	    
-    	    Token next;
-    	    while ((next = tokenizer.next()) != null) {
-    	        System.out.print(next);
-    	        System.out.print("\t|  ");
-    	        System.out.println(next.origin.getContent());
-    	    }
+    	    parser.parseFile(file);
+    	    // TODO enable once built-in functions are implemented
+    	    //parser.resolveImplementationInvocations();
 	    
+    	    System.out.println("Successfully parsed.");
 	    } catch (Exception e) {
 	        //System.out.println(e);
             e.printStackTrace();

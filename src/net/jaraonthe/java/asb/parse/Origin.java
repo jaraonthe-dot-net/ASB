@@ -1,7 +1,7 @@
 package net.jaraonthe.java.asb.parse;
 
 /**
- * An entity's (e.g. Token, AST entity) location within an ASB Source code file.
+ * An entity's (e.g. Token, AST entity) location within an ASB Source code file.<br>
  * 
  * Positions are given in human-readable format, i.e. starting at 1 (for both
  * line and col data).
@@ -35,7 +35,7 @@ public class Origin
 
 	/**
 	 * The position in the end line where the entity ends. Beginning of a
-	 * line is position 1.
+	 * line is position 1.<br>
 	 * 
 	 * This points to the position ON WHICH the last character of the token
 	 * resides. We assume that tokens do not have a length of 0.
@@ -44,9 +44,9 @@ public class Origin
 
 	/**
 	 * Constructs a new Origin pointing to an area in the given file, defined
-	 * with start and end positions.
+	 * with start and end positions.<br>
 	 * 
-	 * Positions are 1-based, i.e. both lines and cols start at 1.
+	 * Positions are 1-based, i.e. both lines and cols start at 1.<br>
 	 * 
 	 * Arguments must point to valid positions within file (see
 	 * {@link SourceFile#isValidPosition(int, int)}).
@@ -73,10 +73,10 @@ public class Origin
             throw new IllegalArgumentException("endCol cannot be smaller than startCol (on single-line entity)");
         }
         if (!file.isValidPosition(startLine, startCol)) {
-            throw new IllegalArgumentException("invalid start position");
+            throw new IllegalArgumentException("Invalid start position");
         }
         if (!file.isValidPosition(endLine, endCol)) {
-            throw new IllegalArgumentException("invalid end position");
+            throw new IllegalArgumentException("Invalid end position");
         }
 	    
 		this.file      = file;
@@ -88,9 +88,9 @@ public class Origin
 	
 	/**
 	 * Constructs a new Origin pointing to an area in the given file, defined
-     * with start and end positions.
+     * with start and end positions.<br>
      * 
-     * Positions are 1-based, i.e. both lines and cols start at 1.
+     * Positions are 1-based, i.e. both lines and cols start at 1.<br>
      * 
      * Arguments must point to valid positions within file (see
      * {@link SourceFile#isValidPosition(int, int)}).
@@ -106,11 +106,11 @@ public class Origin
 	}
 
 	/**
-	 * Constructs a new Origin pointing to a position in the given file.
+	 * Constructs a new Origin pointing to a position in the given file.<br>
 	 * 
-	 * This is equivalent to pointing to an area that is exactly one char long.
+	 * This is equivalent to pointing to an area that is exactly one char long.<br>
      * 
-     * Position is 1-based, i.e. both line and col start at 1.
+     * Position is 1-based, i.e. both line and col start at 1.<br>
      * 
      * Arguments must point to a valid position within file (see
      * {@link SourceFile#isValidPosition(int, int)}).
@@ -125,11 +125,11 @@ public class Origin
 	}
     
     /**
-     * Constructs a new Origin pointing to a position in the given file.
+     * Constructs a new Origin pointing to a position in the given file.<br>
      * 
-     * This is equivalent to pointing to an area that is exactly one char long.
+     * This is equivalent to pointing to an area that is exactly one char long.<br>
      * 
-     * Position is 1-based, i.e. both line and col start at 1.
+     * Position is 1-based, i.e. both line and col start at 1.<br>
      * 
      * Argument must point to a valid position within file (see
      * {@link SourceFile#isValidPosition(int, int)}).
@@ -153,7 +153,7 @@ public class Origin
 	}
 	
 	/**
-	 * @return The file content this entity points to. If a multiLine entity
+	 * @return The file content this entity points to. If a multiLine entity,
 	 *         lines are separated with \n.
 	 */
 	public String getContent()
@@ -189,11 +189,11 @@ public class Origin
 	}
     
     /**
-     * TODO
-     * 
-     * @return
+     * @return The file content of the lines that this entity points to
+     *         (returning entire lines as opposed to {@link #getContent()}). If
+     *         a multiLine entity, lines are separated with \n.
      */
-	// TODO REMOVE ?
+	// TODO Remove if not used anywhere
     public String getLineContent()
     {
         StringBuilder text = new StringBuilder(this.file.lines.get(this.startLine - 1));

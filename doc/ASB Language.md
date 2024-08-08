@@ -59,12 +59,12 @@ In any of the formats additional `_` characters may be used to visually subdivid
 - Multi-line comments start with `/*` and end with `*/`. If the start and end markers are not on the same line the comment is treated like a single New Line (so that different statements are separated as intended).
 
 # Types
-Command and function parameters have a type. They are prefixed with a `/`.
+Command and function parameters have a type. They are prefixed with a `/` (in the command or function definition).
 The following types exist:
 - `/register` or `/reg`: Points to a machine register
 - `/variable` or `/var`: Points to a local variable used within a commands or functions implementation
 - `/immediate` or `/imm`: An immediate, i.e. constant, numeric value given directly in the invocation.
-- `/label` a label that points to a specific location in the user language program. This is a constant name given directly in the invocation.
+- `/label`: a label that points to a specific location in the user language program. This is a constant name given directly in the invocation.
 
 Technically, `/register` and `/variable` types are treated the same; they can be used interchangeably.
 
@@ -73,6 +73,7 @@ Every type except `/label` is followed by a length definition, which is `''` fol
 > [!TODO]
 > - Describe max-length (`''<`). Is there also a min-length?
 > - Describe register groups here?
+> - Should /string be a type? Or is this a special parameter type only usable with specific built-in functions, i.e. in userland you cannot use this type?
 
 # Defining system properties
 The architecture emulated by ASB comprises the following:
@@ -84,24 +85,26 @@ The architecture emulated by ASB comprises the following:
 ## Defining memory
 Memory size must be defined if any command is used that accesses the data memory. Otherwise this definition is optional.
 
-Memory size is defined by giving the length of memory addresses, and the size of each memory word, each in bits. A memory address then points to a single memory word. The full size of addressable and usable memory is thus $2^{addressBits} * wordSize$ bits.
+Memory size is defined by giving the length of memory addresses, and the length of memory words, both in bits. A memory address then points to a single memory word. The full size of addressable and usable memory is thus $2^{addressBits} * wordLength$ bits.
 > [!NOTE]
 > Your machine must be able to handle the amount of memory required for the user program that you run. ASB does not blindly allocate the full memory size defined here though, only chunks of it as required. So, you can define the memory as big as you like, as long as the user program doesn't use the entire address space.
 
 Use the `.memory` directive with the two sub-directives `.word` and `.address`:
+
 ```
-.memory .word ''<wordSize> .address ''<addressLength>
+.memory .word ''<wordLength> .address ''<addressLength>
 ```
 
 Instead of `.address` the alternative keyword `.addr` can be used. The sub-directives can be given in either order. Additionally, the entire directive can be given on multiple lines like so:
+
 ```
 .memory {
-    .word ''<wordSize>
+    .word ''<wordLength>
     .address ''<addressLength>
 }
 ```
 
-Replace `<wordSize>` with the amount of bits in each memory word, and `<addressLength>` with the amount of bits in a memory address.
+Replace `<wordLength>` with the amount of bits in each memory word, and `<addressLength>` with the amount of bits in a memory address.
 
 Memory size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first command that accesses data memory** is executed, memory MUST NOT be reconfigured any more; otherwise an error occurs.
 
@@ -115,9 +118,10 @@ The program counter points to the next to execute, or currently executed, comman
 
 It starts at `0`, which points to the first command. Every executed command is worth exactly one step of the program counter, i.e. the program counter is incremented by `1` after every executed command. Jump functions modify the program counter accordingly.
 
-The bit length of the program counter may be configured, but that is optional. If not defined, the program counter size is set to `64` bit.
+The bit length of the program counter may be configured, but that is optional. If not defined, the program counter length is set to `64` bit.
 
 To define program counter size use the `.program_counter` or the alternative `.pc` directive:
+
 ```
 .program_counter ''<length>
 ```
@@ -130,7 +134,7 @@ You do not need to specify the program counter size if no command is reading or 
 >[!NOTE]
 >Note that implementing some sort of `RET` command to return to the calling location at the end of a function call does require accessing the program counter value.
 
-The size of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error.
+The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error.
 
 Program counter size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first user program command** is executed the program counter size MUST NOT be reconfigured any more; otherwise an error occurs.
 
