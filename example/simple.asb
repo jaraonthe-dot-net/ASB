@@ -1,5 +1,6 @@
 // TODO experimental file for development; it will be removed/revamped at some point
 .memory /* hello there */ .word ''5_9 .address ''32
+//.pc ''1
 
 .register a ''32
 .register_alias b, a {.group cpy}
@@ -31,3 +32,5 @@
 }
 
 lw a, 0(b)
+lw b, 2(a)
+lw a, -13(a)

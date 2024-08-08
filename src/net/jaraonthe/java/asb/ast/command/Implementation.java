@@ -8,6 +8,7 @@ import java.util.Map;
 
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 
 /**
  * This is the implementation of a command or function. It contains the program
@@ -80,9 +81,16 @@ public class Implementation implements Iterable<Invocation>
      * 
      * @param item
      * @return Fluent interface
+     * @throws ConstraintException if adding this invocation would exceed
+     *                             maximum allowed program size
      */
-    public Implementation add(Invocation item)
+    public Implementation add(Invocation item) throws ConstraintException
     {
+        if (this.program.size() >= Integer.MAX_VALUE) {
+            throw new ConstraintException(
+                "Cannot have more than " + Integer.MAX_VALUE + " machine commands"
+            );
+        }
         this.program.add(item);
         return this;
     }

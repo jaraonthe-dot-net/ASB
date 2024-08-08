@@ -12,6 +12,7 @@ import java.util.Set;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -31,6 +32,11 @@ public class AST
     private int memoryWordLength    = -1;
     private int memoryAddressLength = -1;
     private int pcLength            = AST.DEFAULT_PC_LENGTH;
+    
+    /**
+     * Calculated from pcLength. States how many items program can have at most.
+     */
+    private int maxProgramSize;
     
     /**
      * All (globally available) registers, accessed via their name.
@@ -56,8 +62,14 @@ public class AST
      */
     // TODO as this uses ints for the index, the size of a program is effectively
     //      limited regardless of pc length - note in the docs accordingly.
+    //      (size limited to 2^32 - 1 == Integer.MAX_VALUE)
     private List<Invocation> program = new ArrayList<>(50);
     
+    
+    public AST()
+    {
+        this.calculateMaxProgramSize();
+    }
     
     /**
      * Sets memory configuration.
@@ -121,8 +133,20 @@ public class AST
         }
         
         this.pcLength = length;
+        this.calculateMaxProgramSize();
         
         return this;
+    }
+    
+    /**
+     * (Re-)Calculates maxProgramSize after pcLength has been changed.
+     */
+    private void calculateMaxProgramSize()
+    {
+        if (this.pcLength >= 31) {
+            this.maxProgramSize = Integer.MAX_VALUE;
+        }
+        this.maxProgramSize = (int)Math.pow(2, this.pcLength);
     }
     
     /**
@@ -239,10 +263,18 @@ public class AST
      * 
      * @param item
      * @return Fluent interface
+     * @throws ConstraintException if adding this invocation would exceed
+     *                             maximum allowed program size
+     * 
      */
-    public AST addToProgram(Invocation item)
+    public AST addToProgram(Invocation item) throws ConstraintException
     {
-        // TODO verify that, after this, program size doesn't exceed what pc length supports
+        if (this.program.size() >= this.maxProgramSize) {
+            throw new ConstraintException(
+                "Cannot have more than " + this.maxProgramSize
+                + " machine commands due to program counter size being " + this.pcLength + " bits"
+            );
+        }
         this.program.add(item);
         return this;
     }

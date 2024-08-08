@@ -13,6 +13,7 @@ import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.LexicalError;
 import net.jaraonthe.java.asb.exception.ParseError;
 
@@ -77,7 +78,19 @@ public class Parser
                     break;
                 case NAME:
                 case FUNCTION_NAME:
-                    this.ast.addToProgram(this.parseInvocation(t.content).resolve(this.ast, null));
+                    Invocation invocation = this.parseInvocation(t.content);
+                    try {
+                        invocation.resolve(this.ast, null);
+                    } catch (ConstraintException e) {
+                        throw new ParseError(e.getMessage() + " at " + t.origin);
+                    }
+                    try {
+                        this.ast.addToProgram(invocation);
+                    } catch (ConstraintException e) {
+                        throw new ParseError(
+                            "Maximum program size exceeded at " + t.origin + ". " + e.getMessage()
+                        );
+                    }
                     break;
                 case LABEL:
                     // TODO
@@ -424,7 +437,14 @@ public class Parser
                     
                 case NAME:
                 case FUNCTION_NAME:
-                    implementation.add(this.parseInvocation(t.content));
+                    try {
+                        implementation.add(this.parseInvocation(t.content));
+                    } catch (ConstraintException e) {
+                        throw new ParseError(
+                            "Maximum program size exceeded in implementation at " + t.origin
+                            + ". " + e.getMessage()
+                        );
+                    }
                     break;
                     
                 // TODO labels
@@ -702,7 +722,12 @@ public class Parser
         for (Command command : this.ast.getCommands()) {
             Implementation implementation = command.getImplementation();
             for (Invocation invocation : implementation) {
-                invocation.resolve(this.ast, implementation);
+                try {
+                    invocation.resolve(this.ast, implementation);
+                } catch (ConstraintException e) {
+                    // TODO include origin (somehow?)
+                    throw new ParseError(e.getMessage());
+                }
             }
         }
     }

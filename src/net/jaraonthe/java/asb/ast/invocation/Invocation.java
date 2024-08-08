@@ -11,8 +11,7 @@ import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.Variable.Type;
-import net.jaraonthe.java.asb.exception.ParseError;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.parse.Token;
 
 /**
@@ -113,9 +112,10 @@ public class Invocation extends CommandLike
      *                       
      * @return Fluent interface
      * 
-     * @throws ParseError if no fitting command can be found
+     * @throws ConstraintException if no fitting command can be found, or a
+     *                             function is invoked from userland.
      */
-    public Invocation resolve(AST ast, Implementation implementation) throws ParseError
+    public Invocation resolve(AST ast, Implementation implementation) throws ConstraintException
     {
         if (this.invokedCommand != null) {
             throw new IllegalStateException(
@@ -125,8 +125,8 @@ public class Invocation extends CommandLike
         
         Set<Command> commandClass = ast.getCommandClass(this.getResolvingClass());
         if (commandClass == null || commandClass.isEmpty()) {
-            // TODO include: some sort of readable invocation signature, origin
-            throw new ParseError("No command found for Invocation " + this.name);
+            // TODO include: some sort of readable invocation signature
+            throw new ConstraintException("No command found for Invocation " + this.name);
         }
         
         // viable commands (all these fit the invocation signature & arguments)
@@ -137,8 +137,12 @@ public class Invocation extends CommandLike
             }
         }
         if (viableCommands.isEmpty()) {
-            // TODO include: some sort of readable invocation signature, origin
-            throw new ParseError("No command found for Invocation " + this.name);
+            // TODO include: some sort of readable invocation signature
+            // TODO this error could be due to using registers/vars that don't
+            //      exist - can that be detected somehow, and a more appropriate
+            //      error message be given in that case? Or at least point out
+            //      this potential root cause in the existing message.
+            throw new ConstraintException("No command found for Invocation " + this.name);
         }
         
         if (viableCommands.size() > 1) {
@@ -156,8 +160,8 @@ public class Invocation extends CommandLike
         this.createActualArgs(ast, implementation);
         
         if (implementation == null && !this.invokedCommand.isUserlandInvokable()) {
-            throw new ParseError(
-                // TODO include: readable invocation signature, origin
+            throw new ConstraintException(
+                // TODO include: readable invocation signature
                 "Attempting to invoke Function " + this.name
                 + " which can only be called from within a command implementation"
             );
