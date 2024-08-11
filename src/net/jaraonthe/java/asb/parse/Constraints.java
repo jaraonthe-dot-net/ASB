@@ -69,7 +69,22 @@ abstract public class Constraints
             return;
         }
         
-        throw new ParseError(
+        throw Constraints.lengthError(String.valueOf(length), elementName, origin);
+    }
+    
+    /**
+     * Creates a ParseError signaling that a length value is invalid.
+     * 
+     * @param length      as a String, thus numbers that are too big for int can
+     *                    be provided as well.
+     * @param elementName May be null
+     * @param origin      May be null
+     * 
+     * @return
+     */
+    public static ParseError lengthError(String length, String elementName, Origin origin)
+    {
+        return new ParseError(
             (elementName != null ? elementName + " length" : "Length") 
             + " must be in [1, " + Constraints.MAX_LENGTH + "], is " + length
             + (origin != null ? " at " + origin : "")

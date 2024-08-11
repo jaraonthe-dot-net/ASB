@@ -313,7 +313,7 @@ public class Invocation extends CommandLike
                     
                 case NUMBER:
                 // immediate
-                    this.arguments.add(new ImmediateArgument(argument.content));
+                    this.arguments.add(new ImmediateArgument(Token.number2BigInteger(argument)));
                     break;
                     
                 case STRING:

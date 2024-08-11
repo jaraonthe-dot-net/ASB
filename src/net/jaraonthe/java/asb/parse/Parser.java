@@ -679,7 +679,12 @@ public class Parser
      */
     private int number2LengthInt(Token token, String elementName) throws ParseError
     {
-        int length = Token.number2Int(token);
+        int length;
+        try {
+            length = Token.number2Int(token);
+        } catch (ConstraintException e) {
+            throw Constraints.lengthError(token.content, elementName, Token.getOrigin(token));
+        }
         Constraints.checkLength(length, elementName, Token.getOrigin(token));
         
         return length;

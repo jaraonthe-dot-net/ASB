@@ -1,5 +1,7 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
+import java.math.BigInteger;
+
 /**
  * An invocation argument that contains an immediate value.
  *
@@ -10,13 +12,12 @@ public class ImmediateArgument extends Argument
     /**
      * The immediate value this contains
      */
-    // TODO use something more appropriate than String (some sort of BigInteger)
-    public final String immediate;
+    public final BigInteger immediate;
 
     /**
      * @param immediate The numeric immediate value this contains
      */
-    public ImmediateArgument(String immediate)
+    public ImmediateArgument(BigInteger immediate)
     {
         this.immediate = immediate;
     }

@@ -1,7 +1,10 @@
 package net.jaraonthe.java.asb.parse;
 
+import java.math.BigInteger;
 import java.util.Locale;
 import java.util.regex.Pattern;
+
+import net.jaraonthe.java.asb.exception.ConstraintException;
 
 /**
  * Represents one Token as produced by the Tokenizer.
@@ -192,9 +195,59 @@ public class Token
      * but this is not necessarily true for any other numeric value.
      * 
      * @param token a NUMBER token
+     * @throws ConstraintException if provided number is too big for int
+     */
+    public static int number2Int(Token token) throws ConstraintException
+    {
+        if (!Token.getType(token).equals(Token.Type.NUMBER)) {
+            throw new IllegalArgumentException("Not a NUMBER token");
+        }
+        
+        // Strip _ chars
+        String content = Token.UNDERSCORE_PATTERN.matcher(token.content).replaceAll("");
+        
+        char c0 = content.charAt(0);
+        try {
+            if (c0 == '0') {
+                if (content.length() < 2) {
+                    return 0;
+                }
+                switch (content.charAt(1)) {
+                    case 'x':
+                        // hexadecimal (0x...)
+                        return Integer.parseInt(content.substring(2), 16);
+                    case 'b':
+                        // binary (0b...)
+                        return Integer.parseInt(content.substring(2), 2);
+                    default:
+                        // octal (0...)
+                        return Integer.parseInt(content, 8);
+                }
+            }
+            
+            // Decimal
+            return Integer.parseInt(content);
+        } catch (NumberFormatException e) {
+            // Assuming this is thrown because number is too big for int
+            throw new ConstraintException("NUMBER " + token.content + " is too big for int type");
+        }
+    }
+    
+
+    
+    /**
+     * Transforms a NUMBER token's content to a BigInteger value.<br>
+     * 
+     * This should be used for all immediate values.
+     * 
+     * @param token a NUMBER token
      * @return
      */
-    public static int number2Int(Token token)
+    // TODO What about negative numbers? We either need to know the var length
+    //      to extend leading 1s accordingly, or use a negative BigInteger
+    //      (which may require special handling in several places)
+    //      - currently, a negative BigInteger is created
+    public static BigInteger number2BigInteger(Token token)
     {
         if (!Token.getType(token).equals(Token.Type.NUMBER)) {
             throw new IllegalArgumentException("Not a NUMBER token");
@@ -206,22 +259,22 @@ public class Token
         char c0 = content.charAt(0);
         if (c0 == '0') {
             if (content.length() < 2) {
-                return 0;
+                return BigInteger.ZERO;
             }
             switch (content.charAt(1)) {
                 case 'x':
                     // hexadecimal (0x...)
-                    return Integer.parseInt(content.substring(2), 16);
+                    return new BigInteger(content.substring(2), 16);
                 case 'b':
                     // binary (0b...)
-                    return Integer.parseInt(content.substring(2), 2);
+                    return new BigInteger(content.substring(2), 2);
                 default:
                     // octal (0...)
-                    return Integer.parseInt(content, 8);
+                    return new BigInteger(content, 8);
             }
         }
         
         // Decimal
-        return Integer.parseInt(content);
+        return new BigInteger(content);
     }
 }
