@@ -53,4 +53,21 @@ public class Register extends VariableLike
     {
         return this.groups.contains(group);
     }
+    
+    @Override
+    public String toString()
+    {
+        String groupsString = "";
+        if (!this.groups.isEmpty()) {
+            for (String group : this.groups) {
+                if (!groupsString.isEmpty()) {
+                    groupsString += ", ";
+                }
+                groupsString += group;
+            }
+            groupsString = "(" + groupsString + ")";
+        }
+        
+        return super.toString() + groupsString;
+    }
 }

@@ -19,4 +19,10 @@ public class StringArgument extends Argument
     {
         this.string = string;
     }
+    
+    @Override
+    public String toString()
+    {
+        return "\"" + this.string + "\"";
+    }
 }

@@ -25,4 +25,10 @@ public class RegisterArgument extends Argument
     {
         this.register = register;
     }
+    
+    @Override
+    public String toString()
+    {
+        return this.register.name;
+    }
 }

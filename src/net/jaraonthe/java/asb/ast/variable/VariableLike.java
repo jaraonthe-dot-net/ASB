@@ -25,4 +25,10 @@ abstract public class VariableLike
         this.name   = name;
         this.length = length;
     }
+    
+    @Override
+    public String toString()
+    {
+        return this.name + (this.length != -1 ? "''" + this.length : "");
+    }
 }

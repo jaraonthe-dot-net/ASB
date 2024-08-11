@@ -29,6 +29,12 @@ public class Invocation extends CommandLike
     private List<Token> rawArguments = new ArrayList<>(3);
     
     /**
+     * This human-readable signature is only used when this Invocation is not
+     * yet resolved.
+     */
+    private String readableSignature = "";
+    
+    /**
      * Once the referenced command has been resolved ({@link #resolve()}), this
      * points to the command that's being invoked. Otherwise this is null.
      */
@@ -47,6 +53,16 @@ public class Invocation extends CommandLike
     public Invocation(String name)
     {
         super(name);
+    }
+    
+    
+    /**
+     * @return True if this invocation has already been resolved, i.e. the
+     *         command that's being invoked is known.
+     */
+    public boolean isResolved()
+    {
+        return this.invokedCommand != null;
     }
     
     /**
@@ -69,6 +85,7 @@ public class Invocation extends CommandLike
      */
     public void addCommandSymbols(String symbols)
     {
+        this.readableSignature += symbols;
         this.addCommandSymbolsToResolvingSignature(symbols);
     }
     
@@ -82,24 +99,37 @@ public class Invocation extends CommandLike
      */
     public void addArgument(Token argumentToken)
     {
+        if (
+            !this.readableSignature.isEmpty()
+            && this.readableSignature.charAt(this.readableSignature.length() - 1) != ' '
+        ) {
+            this.readableSignature += " ";
+        }
+        
         Variable.Type type;
         switch (argumentToken.type) {
             case NAME:
             case LABEL_NAME:
                 type = Variable.Type.REGISTER;
+                this.readableSignature += argumentToken.content;
                 break;
             case NUMBER:
                 type = Variable.Type.IMMEDIATE;
+                this.readableSignature += argumentToken.content;
                 break;
             case STRING:
                 type = Variable.Type.STRING;
+                this.readableSignature += "\"" + argumentToken.content + "\"";
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected Token Type " + argumentToken.type);
         }
+        this.readableSignature += " ";
+        
         this.addParameterToResolvingSignature(type);
         this.rawArguments.add(argumentToken);
     }
+    
     
     /**
      * Resolves this invocation. I.e. figures out which command is being invoked
@@ -125,8 +155,7 @@ public class Invocation extends CommandLike
         
         Set<Command> commandClass = ast.getCommandClass(this.getResolvingClass());
         if (commandClass == null || commandClass.isEmpty()) {
-            // TODO include: some sort of readable invocation signature
-            throw new ConstraintException("No command found for Invocation " + this.name);
+            throw new ConstraintException("No command found for Invocation " + this);
         }
         
         // viable commands (all these fit the invocation signature & arguments)
@@ -137,12 +166,11 @@ public class Invocation extends CommandLike
             }
         }
         if (viableCommands.isEmpty()) {
-            // TODO include: some sort of readable invocation signature
             // TODO this error could be due to using registers/vars that don't
             //      exist - can that be detected somehow, and a more appropriate
             //      error message be given in that case? Or at least point out
             //      this potential root cause in the existing message.
-            throw new ConstraintException("No command found for Invocation " + this.name);
+            throw new ConstraintException("No command found for Invocation " + this);
         }
         
         if (viableCommands.size() > 1) {
@@ -161,8 +189,7 @@ public class Invocation extends CommandLike
         
         if (implementation == null && !this.invokedCommand.isUserlandInvokable()) {
             throw new ConstraintException(
-                // TODO include: readable invocation signature
-                "Attempting to invoke Function " + this.name
+                "Attempting to invoke Function " + this.invokedCommand
                 + " which can only be called from within a command implementation"
             );
         }
@@ -322,5 +349,14 @@ public class Invocation extends CommandLike
                     break;
             }
         }
+    }
+    
+    @Override
+    public String toString()
+    {
+        if (this.isResolved()) {
+            return this.invokedCommand + this.arguments.toString();
+        }
+        return this.name + " " + this.readableSignature;
     }
 }

@@ -30,4 +30,10 @@ public class RegisterAlias extends Register
         
         this.aliasedRegister = aliasedRegister;
     }
+    
+    @Override
+    public String toString()
+    {
+        return super.toString() + " aliases " + this.aliasedRegister.name;
+    }
 }

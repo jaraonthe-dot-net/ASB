@@ -171,6 +171,12 @@ public class Command extends CommandLike
         return this.name + " " + this.readableSignature;
     }
     
+    @Override
+    public String toString()
+    {
+        return this.getReadableIdentity();
+    }
+    
     /**
      * @return True if this command or function can be invoked within the user
      *         language (in userland). False: Can only be invoked within an

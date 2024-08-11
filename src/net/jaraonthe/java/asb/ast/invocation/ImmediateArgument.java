@@ -21,4 +21,10 @@ public class ImmediateArgument extends Argument
     {
         this.immediate = immediate;
     }
+    
+    @Override
+    public String toString()
+    {
+        return this.immediate.toString();
+    }
 }

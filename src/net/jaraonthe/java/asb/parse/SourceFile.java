@@ -62,4 +62,10 @@ public class SourceFile
         // in the internal representation
         return (this.lines.get(line - 1).length() + 1) >= col;
     }
+    
+    @Override
+    public String toString()
+    {
+        return "SourceFile " + this.filePath;
+    }
 }

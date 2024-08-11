@@ -51,7 +51,7 @@ public class Variable extends VariableLike
          * This cannot be used as a Parameter in a command signature, as that
          * wouldn't make sense.
          */
-        LOCAL_VARIABLE('\u0011', null, true, false);
+        LOCAL_VARIABLE('\u0011', ".var", true, false);
         
         
         /**
@@ -198,5 +198,12 @@ public class Variable extends VariableLike
     public String getGroup()
     {
         return this.group;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return this.type.readableSignaturePlaceholder + " " + super.toString()
+            + (this.hasGroup() ? "(" + this.group + ")" : "");
     }
 }

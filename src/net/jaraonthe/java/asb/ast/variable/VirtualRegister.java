@@ -65,4 +65,10 @@ public class VirtualRegister extends Register
     {
         return this.storeLength;
     }
+    
+    @Override
+    public String toString()
+    {
+        return super.toString() + " (virtual)";
+    }
 }
