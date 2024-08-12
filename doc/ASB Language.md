@@ -81,6 +81,7 @@ The architecture emulated by ASB comprises the following:
 - Data memory of arbitrary (but defined) size.
 - Individually defined registers, each with individually defined bit length.
 - A Program counter pointing to the current command in the user program.
+- Program size is limited: Amount of commands cannot be higher than the maximum unsigned value the program counter length supports or $2^31 - 1$, whichever is smaller.
 
 ## Defining memory
 Memory size must be defined if any command is used that accesses the data memory. Otherwise this definition is optional.
@@ -134,7 +135,8 @@ You do not need to specify the program counter size if no command is reading or 
 >[!NOTE]
 >Note that implementing some sort of `RET` command to return to the calling location at the end of a function call does require accessing the program counter value.
 
-The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error.
+The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error. Furthermore, for technical reasons, even if the program counter would allow more, the amount of commands cannot exceed $2^31 - 1$.
+
 
 Program counter size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first user program command** is executed the program counter size MUST NOT be reconfigured any more; otherwise an error occurs.
 

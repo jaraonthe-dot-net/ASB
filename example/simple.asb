@@ -4,6 +4,9 @@
 
 .register a ''32
 .register_alias b, a {.group cpy}
+.register_virt a16r''16 .get {&MOV out, a; } .set {
+    doSomething {0\}
+} .store ''5
 
     .define &shiftWide  {
 

@@ -108,4 +108,15 @@ public class Implementation implements Iterable<Invocation>
     {
         return this.program.iterator();
     }
+    
+    @Override
+    public String toString()
+    {
+        String text = "";
+        for (Invocation i : this.program) {
+            text += i + "\n";
+        }
+        
+        return this.variables + "\n" + text;
+    }
 }

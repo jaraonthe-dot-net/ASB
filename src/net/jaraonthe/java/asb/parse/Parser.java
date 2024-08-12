@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.parse;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -153,7 +154,8 @@ public class Parser
                 this.ast.setMemory(wordLength, addressLength);
                 
                 this.expectClosingBracesIfMultiLine(isMultiLine);
-                // TODO add do docs: After closing braces, either newline or ; must follow for separation
+                // TODO add do docs: After closing braces (of a multi-line
+                //      directive), either newline or ; must follow for separation
                 this.expectStatementSeparator();
                 break;
 
@@ -265,24 +267,81 @@ public class Parser
 
         if (type != Parser.RegisterType.VIRTUAL) {
             this.parseGroups(register, isMultiLine);
-        } else {
-            // .register_virtual (...) ...sub-directives
-            this.parseGroups(register, isMultiLine);
             
-            Token t = this.tokenizer.peek();
-            if (Token.getType(t) == Token.Type.DIRECTIVE && t.content.equals(".store")) {
-                this.tokenizer.next();
-                VirtualRegister vr = (VirtualRegister)register;
-                vr.setStore(this.expectLength("register " + name + " store"));
-                
+            this.expectClosingBracesIfMultiLine(isMultiLine);
+            this.expectStatementSeparator();
+        } else {
+            
+            // .register_virtual (...) ...sub-directives
+            VirtualRegister vr = (VirtualRegister)register;
+            Token t;
+            ArrayList<Variable> parameters;
+            while(Token.getType(t = this.tokenizer.peek()) == Token.Type.DIRECTIVE) {
+                switch (t.content) {
+                    case ".group":
+                        this.parseGroups(register, isMultiLine);
+                        break;
+                    case ".store":
+                        if (vr.hasStore()) {
+                            throw new ParseError(
+                                "Cannot define store for virtual register "
+                                + vr.name + " more than once at " + t.origin
+                            );
+                        }
+                        this.tokenizer.next();
+                        vr.setStore(this.expectLength("register " + name + " store"));
+                        break;
+                        
+                    case ".get":
+                        if (vr.getGetterImplementation() != null) {
+                            throw new ParseError(
+                                "Cannot define getter for virtual register "
+                                + vr.name + " more than once at " + t.origin
+                            );
+                        }
+                        this.tokenizer.next();
+                        this.expect(Token.Type.OPENING_BRACES);
+                        parameters = new ArrayList<>(1);
+                        parameters.add(new Variable(Variable.Type.REGISTER, "out", register.length));
+                        vr.setGetterImplementation(this.parseImplementation(parameters));
+                        break;
+                    case ".set":
+                        if (vr.getSetterImplementation() != null) {
+                            throw new ParseError(
+                                "Cannot define setter for virtual register "
+                                + vr.name + " more than once at " + t.origin
+                            );
+                        }
+                        this.tokenizer.next();
+                        this.expect(Token.Type.OPENING_BRACES);
+                        parameters = new ArrayList<>(1);
+                        parameters.add(new Variable(Variable.Type.REGISTER, "in", register.length));
+                        vr.setSetterImplementation(this.parseImplementation(parameters));
+                        break;
+                        
+                    default:
+                        throw new ParseError(
+                            "Unexpected " + t.content + " directive in virtual register definition at " + t.origin
+                        );
+                }
                 this.skipIfMultiLine(isMultiLine);
-                this.parseGroups(register, isMultiLine);
             }
-            // TODO .get and .set
+            this.expectClosingBracesIfMultiLine(isMultiLine);
+            this.expectStatementSeparator();
+            
+            if (vr.getGetterImplementation() == null) {
+                throw new ParseError(
+                    "A getter must be defined for virtual register "
+                    + vr.name + " at " + directiveOrigin
+                );
+            }
+            if (vr.getSetterImplementation() == null) {
+                throw new ParseError(
+                    "A setter must be defined for virtual register "
+                    + vr.name + " at " + directiveOrigin
+                );
+            }
         }
-        
-        this.expectClosingBracesIfMultiLine(isMultiLine);
-        this.expectStatementSeparator();
         
         this.ast.addRegister(register);
     }
@@ -393,13 +452,16 @@ public class Parser
         }
         
         command.setImplementation(this.parseImplementation(command.getParameters()));
+        
+        this.expectStatementSeparator();
         this.ast.addCommand(command);
     }
     
     /**
      * Parses a command or function implementation.
      * 
-     * Starts AFTER the implementation block's OPENING_BRACES.
+     * Starts AFTER the implementation block's OPENING_BRACES. Stops directly
+     * after consuming CLOSING_BRACES.
      * 
      * @param parameters The command parameters. May be null
      * 
@@ -438,7 +500,9 @@ public class Parser
                 case NAME:
                 case FUNCTION_NAME:
                     try {
+                        this.tokenizer.setMode(Tokenizer.Mode.MAIN);
                         implementation.add(this.parseInvocation(t.content));
+                        this.tokenizer.setMode(Tokenizer.Mode.META);
                     } catch (ConstraintException e) {
                         throw new ParseError(
                             "Maximum program size exceeded in implementation at " + t.origin
@@ -465,7 +529,6 @@ public class Parser
             this.skipStatementSeparators();
         }
         
-        this.expectStatementSeparator();    
         return implementation;
     }
     
@@ -725,14 +788,32 @@ public class Parser
     public void resolveImplementationInvocations() throws ParseError
     {
         for (Command command : this.ast.getCommands()) {
-            Implementation implementation = command.getImplementation();
-            for (Invocation invocation : implementation) {
-                try {
-                    invocation.resolve(this.ast, implementation);
-                } catch (ConstraintException e) {
-                    // TODO include origin (somehow?)
-                    throw new ParseError(e.getMessage());
-                }
+            this.resolveWithinImplementation(command.getImplementation());
+        }
+        
+        for (Register register : this.ast.getRegisters()) {
+            if (register instanceof VirtualRegister) {
+                VirtualRegister vr = (VirtualRegister)register;
+                this.resolveWithinImplementation(vr.getGetterImplementation());
+                this.resolveWithinImplementation(vr.getSetterImplementation());
+            }
+        }
+    }
+    
+    /**
+     * Used by {@link #resolveImplementationInvocations()}.
+     * 
+     * @param implementation
+     * @throws ParseError
+     */
+    private void resolveWithinImplementation(Implementation implementation) throws ParseError
+    {
+        for (Invocation invocation : implementation) {
+            try {
+                invocation.resolve(this.ast, implementation);
+            } catch (ConstraintException e) {
+                // TODO include origin (somehow?)
+                throw new ParseError(e.getMessage());
             }
         }
     }

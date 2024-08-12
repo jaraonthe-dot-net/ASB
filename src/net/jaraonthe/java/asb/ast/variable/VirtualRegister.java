@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.ast.variable;
 
+import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -12,14 +13,15 @@ import net.jaraonthe.java.asb.parse.Constraints;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-// TODO incomplete class (see below)
 public class VirtualRegister extends Register
 {
     /**
      * If storage is configured, this is its length. -1 otherwise.
      */
     private int storeLength = -1;
-    // TODO further data (.get, .set)
+    
+    private Implementation getterImplementation = null;
+    private Implementation setterImplementation = null;
     
     
     /**
@@ -65,6 +67,54 @@ public class VirtualRegister extends Register
     {
         return this.storeLength;
     }
+    
+    
+    /**
+     * Use this once to set this register's getter's implementation.
+     * 
+     * @param implementation
+     * @return Fluent interface
+     */
+    public VirtualRegister setGetterImplementation(Implementation implementation)
+    {
+        if (this.getterImplementation != null) {
+            throw new IllegalStateException("Cannot set getter implementation more than once");
+        }
+        this.getterImplementation = implementation;
+        return this;
+    }
+    
+    /**
+     * @return This register's getter's implementation, or null if not set yet.
+     */
+    public Implementation getGetterImplementation()
+    {
+        return this.getterImplementation;
+    }
+    
+    /**
+     * Use this once to set this register's setter's implementation.
+     * 
+     * @param implementation
+     * @return Fluent interface
+     */
+    public VirtualRegister setSetterImplementation(Implementation implementation)
+    {
+        if (this.setterImplementation != null) {
+            throw new IllegalStateException("Cannot set setter implementation more than once");
+        }
+        this.setterImplementation = implementation;
+        return this;
+    }
+    
+    /**
+     * @return This register's setter's implementation, or null if not set yet.
+     */
+    public Implementation getSetterImplementation()
+    {
+        return this.setterImplementation;
+    }
+    
     
     @Override
     public String toString()

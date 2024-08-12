@@ -60,9 +60,6 @@ public class AST
     /**
      * The actual userland program.
      */
-    // TODO as this uses ints for the index, the size of a program is effectively
-    //      limited regardless of pc length - note in the docs accordingly.
-    //      (size limited to 2^32 - 1 == Integer.MAX_VALUE)
     private List<Invocation> program = new ArrayList<>(50);
     
     
@@ -186,6 +183,15 @@ public class AST
     public Register getRegister(String registerName)
     {
         return this.registers.get(registerName);
+    }
+    
+    /**
+     * @return Readonly list of registers. This can be used to modify individual
+     *         registers, but not the list of registers itself.
+     */
+    public Collection<Register> getRegisters()
+    {
+        return Collections.unmodifiableCollection(this.registers.values());
     }
     
     
