@@ -29,8 +29,8 @@ In any of the formats additional `_` characters may be used to visually subdivid
 
 - **Decimal** format: Any of the decimal digits, but the first digit must not be `0`. May be prefixed with `-`, which makes it a negative number in Two's complement encoding.
   Regex: `-?[1-9][_0-9]*`
-  > [!NOTE]
-  > Some places do not allow a negative number to be used, e.g. when giving a length or bit position.
+> [!NOTE]
+> Some places do not allow a negative number to be used, e.g. when giving a length or bit position.
   
 - **Hexadecimal** format: Any of the decimal digits and `a`- `f` (also uppercase); prefixed by `0x` (or `0X`).
   Regex: `0(x|X)_?[0-9A-Fa-f][_0-9A-Fa-f]*`
@@ -81,7 +81,7 @@ The architecture emulated by ASB comprises the following:
 - Data memory of arbitrary (but defined) size.
 - Individually defined registers, each with individually defined bit length.
 - A Program counter pointing to the current command in the user program.
-- Program size is limited: Amount of commands cannot be higher than the maximum unsigned value the program counter length supports or $2^31 - 1$, whichever is smaller.
+- Program size is limited: Amount of commands cannot be higher than the maximum unsigned value the program counter length supports or $2^{31} - 1$, whichever is smaller.
 
 ## Defining memory
 Memory size must be defined if any command is used that accesses the data memory. Otherwise this definition is optional.
@@ -135,7 +135,7 @@ You do not need to specify the program counter size if no command is reading or 
 >[!NOTE]
 >Note that implementing some sort of `RET` command to return to the calling location at the end of a function call does require accessing the program counter value.
 
-The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error. Furthermore, for technical reasons, even if the program counter would allow more, the amount of commands cannot exceed $2^31 - 1$.
+The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error. Furthermore, for technical reasons, even if the program counter would allow more, the amount of commands cannot exceed $2^{31} - 1$.
 
 
 Program counter size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first user program command** is executed the program counter size MUST NOT be reconfigured any more; otherwise an error occurs.
