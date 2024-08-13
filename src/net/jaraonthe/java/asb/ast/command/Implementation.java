@@ -9,16 +9,18 @@ import java.util.Map;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
+import net.jaraonthe.java.asb.interpret.Interpretable;
 
 /**
- * This is the implementation of a command or function. It contains the program
- * that is executed when the command is invoked.<br>
+ * This is the implementation of a command or function, which is made up of
+ * Invocations as defined in ASB source code. It contains the program that is
+ * executed when the command is invoked.<br>
  * 
  * Iterating this iterates over the Invocations that make up the program.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class Implementation implements Iterable<Invocation>
+public class Implementation implements Interpretable, Iterable<Invocation>
 {
     /**
      * Local variables and command parameters, accessed via their name.

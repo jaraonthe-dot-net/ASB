@@ -207,6 +207,7 @@ public class Invocation extends CommandLike
      * @return True if command is viable for this invocation, i.e. it fits all
      *         invocation arguments.
      */
+    @SuppressWarnings("incomplete-switch")
     private boolean isCommandViable(Command command, AST ast, Implementation implementation)
     {
         Iterator<Variable> iter = command.getParameters().iterator();
@@ -306,6 +307,7 @@ public class Invocation extends CommandLike
      * @param implementation The implementation containing this invocation. Null
      *                       if within userland code.
      */
+    @SuppressWarnings("incomplete-switch")
     private void createActualArgs(AST ast, Implementation implementation)
     {
         Iterator<Variable> iter = this.invokedCommand.getParameters().iterator();
@@ -320,7 +322,6 @@ public class Invocation extends CommandLike
                         case REGISTER:
                         case STRING:
                         // CMD: register/var/string
-                            int length;
                             if (implementation != null && implementation.variableExists(argument.content)) {
                                 // INV: local variable/param
                                 this.arguments.add(new RegisterArgument(

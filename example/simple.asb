@@ -5,7 +5,7 @@
 .register a ''32
 .register_alias b, a {.group cpy}
 .register_virt a16r''16 .get {&MOV out, a; } .set {
-    doSomething {0\}
+    //doSomething {0\}
 } .store ''5
 
     .define &shiftWide  {
@@ -20,16 +20,16 @@
     &sign_extend extended, imm12
     
     .var address ''32
-    &add address, rs1, extended
+    //&add address, rs1, extended
     
     //&mov rd'7:0, @address
-    &add address, address, 1
+    //&add address, address, 1
     
     //&mov rd'15:8, @address
-    &add address, address, 1
+    //&add address, address, 1
     
     //&mov rd'23:16, @address
-    &add address, address, 1
+    //&add address, address, 1
     
     //&mov rd'32:24, @address
 }

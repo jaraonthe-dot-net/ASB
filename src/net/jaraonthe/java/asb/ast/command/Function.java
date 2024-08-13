@@ -1,12 +1,15 @@
 package net.jaraonthe.java.asb.ast.command;
 
 /**
- * A (built-in) function.
+ * A function, which is effectively pretty much the same as a Command.
+ * However, semantically they are considered something else, and so this
+ * subclass exists as an easy means to distinguish them.<br>
+ * 
+ * Use {@link Command#fromName()} as an easy means to create a Command or
+ * Function as applicable.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-// TODO Consider using a dedicated class for built-in functions (which handles
-//      implementation differently).
 public class Function extends Command
 {
     /**

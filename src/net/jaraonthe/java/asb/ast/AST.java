@@ -53,9 +53,6 @@ public class AST
      * All commands and (built-in) functions, grouped by resolving class.
      */
     private Map<String, Set<Command>> commandsResolvingMap = HashMap.newHashMap(16);
-    // TODO what about built-in functions? Load them into the commands register
-    //      at start-up, or have some sort of lazy-load layer (maybe for the
-    //      implementations)?
     
     /**
      * The actual userland program.

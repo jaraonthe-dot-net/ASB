@@ -7,7 +7,6 @@ import java.util.Set;
 
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Command;
-import net.jaraonthe.java.asb.ast.command.Function;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
@@ -451,7 +450,7 @@ public class Parser
             );
         }
         
-        command.setImplementation(this.parseImplementation(command.getParameters()));
+        command.setInterpretable(this.parseImplementation(command.getParameters()));
         
         this.expectStatementSeparator();
         this.ast.addCommand(command);
@@ -788,7 +787,8 @@ public class Parser
     public void resolveImplementationInvocations() throws ParseError
     {
         for (Command command : this.ast.getCommands()) {
-            this.resolveWithinImplementation(command.getImplementation());
+            if (command.getInterpretable() instanceof Implementation)
+            this.resolveWithinImplementation((Implementation)command.getInterpretable());
         }
         
         for (Register register : this.ast.getRegisters()) {

@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb;
 
+import net.jaraonthe.java.asb.built_in.BuiltInFunction;
 import net.jaraonthe.java.asb.parse.Parser;
 import net.jaraonthe.java.asb.parse.SourceFile;
 
@@ -21,11 +22,11 @@ public class ASB
 	    
 	    Parser parser = new Parser();
 	    try {
+	        BuiltInFunction.initBuiltInFunctions(parser.ast);
     	    SourceFile file = new SourceFile(args[0]);
     	    
     	    parser.parseFile(file);
-    	    // TODO enable once built-in functions are implemented
-    	    //parser.resolveImplementationInvocations();
+    	    parser.resolveImplementationInvocations();
 	    
     	    System.out.println("Successfully parsed.");
 	    } catch (Exception e) {

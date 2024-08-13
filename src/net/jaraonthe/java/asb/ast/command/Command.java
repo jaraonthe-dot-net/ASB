@@ -6,6 +6,7 @@ import java.util.List;
 
 import net.jaraonthe.java.asb.ast.CommandLike;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.interpret.Interpretable;
 
 /**
  * A command, as declared using the ".define" directive.
@@ -31,7 +32,7 @@ public class Command extends CommandLike
      */
     private List<Variable> parameters = new ArrayList<>(3);
     
-    private Implementation implementation = null;
+    private Interpretable interpretable = null;
     
     
     /**
@@ -126,26 +127,26 @@ public class Command extends CommandLike
     }
     
     /**
-     * Use this once to set this command's implementation.
+     * Use this once to set this command's interpretable.
      * 
-     * @param implementation
+     * @param interpretable
      * @return Fluent interface
      */
-    public Command setImplementation(Implementation implementation)
+    public Command setInterpretable(Interpretable interpretable)
     {
-        if (this.implementation != null) {
-            throw new IllegalStateException("Cannot set implementation more than once");
+        if (this.interpretable != null) {
+            throw new IllegalStateException("Cannot set interpretable more than once");
         }
-        this.implementation = implementation;
+        this.interpretable = interpretable;
         return this;
     }
     
     /**
-     * @return This command's implementation, or null if not set yet.
+     * @return This command's interpretable, or null if not set yet.
      */
-    public Implementation getImplementation()
+    public Interpretable getInterpretable()
     {
-        return this.implementation;
+        return this.interpretable;
     }
     
     
