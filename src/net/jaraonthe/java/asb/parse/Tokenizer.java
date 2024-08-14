@@ -34,7 +34,13 @@ public class Tokenizer
          * When parsing an expression as part of an invocation of a built-in
          * function (i.e. this depends on the function being invoked).
          */
+        // TODO Remove this mode?
         EXPRESSION,
+        
+        /**
+         * When parsing a length setting (within META code).
+         */
+        LENGTH,
     }
     
     
@@ -136,6 +142,14 @@ public class Tokenizer
     }
     
     /**
+     * @return the current Tokenizer mode.
+     */
+    public Tokenizer.Mode getMode()
+    {
+        return this.mode;
+    }
+    
+    /**
      * Sets the Mode, which governs the Tokenizer's behavior.<br>
      * 
      * Note: Most Token types are provided regardless - the mode is only used
@@ -188,10 +202,20 @@ public class Tokenizer
                     if (token != null) {
                         return token;
                     }
+                    
                     token = this.consumeNamed(Token.Type.DIRECTIVE);
                     if (token != null) {
                         return token;
                     }
+                    
+                    // ..
+                    if (
+                        this.mode == Tokenizer.Mode.LENGTH
+                        && this.safeCharAt(this.currentCol + 1) == '.'
+                    ) {
+                        return this.fromSymbol(Token.Type.EXP_LENGTH_RANGE, 2);
+                    }
+                    
                     return this.expectLabelName();
                 
                 // FUNCTION NAME
@@ -220,7 +244,7 @@ public class Tokenizer
                     return this.fromSymbol(Token.Type.STATEMENT_SEPARATOR, 1);
             }
             
-            if (this.mode == Tokenizer.Mode.META) {
+            if (this.mode == Tokenizer.Mode.META || this.mode == Tokenizer.Mode.LENGTH) {
                 switch (c) {
                     // DATATYPE
                     case '/':
@@ -234,10 +258,12 @@ public class Tokenizer
             }
             
             // EXPRESSION types
-            if (this.mode == Tokenizer.Mode.EXPRESSION) {
+            if (this.mode == Tokenizer.Mode.EXPRESSION || this.mode == Tokenizer.Mode.LENGTH) {
                 switch (c) {
                     case '+':
                         return this.fromSymbol(Token.Type.EXP_ADD, 1);
+                    case ':':
+                        return this.fromSymbol(Token.Type.EXP_BIT_RANGE, 1);
                     case '=':
                         if (this.safeCharAt(this.currentCol + 1) != '=') {
                             // If this returns null, we have a bug in here
@@ -251,7 +277,6 @@ public class Tokenizer
                             return this.fromSymbol(Token.Type.EXP_GREATER_THAN_OR_EQUALS, 2);
                         }
                         // >
-                        this.currentCol++;
                         return this.fromSymbol(Token.Type.EXP_GREATER_THAN, 1);
                     case '<':
                         if (this.safeCharAt(this.currentCol + 1) == '=') {
@@ -267,11 +292,22 @@ public class Tokenizer
                         }
                         // !=
                         return this.fromSymbol(Token.Type.EXP_NOT_EQUALS, 2);
-                    case ':':
-                        return this.fromSymbol(Token.Type.EXP_RANGE, 1);
                     case '-':
                         return this.consumeNegativeNumberOrSubtract();
                 }
+            }
+            
+            if (
+                this.mode == Tokenizer.Mode.LENGTH
+                // max / maxu
+                && c == 'm'
+                && this.safeCharAt(this.currentCol + 1) == 'a'
+                && this.safeCharAt(this.currentCol + 2) == 'x'
+            ) {
+                if (this.safeCharAt(this.currentCol + 3) == 'u') {
+                    return this.fromSymbol(Token.Type.EXP_MAXU, 4);
+                }
+                return this.fromSymbol(Token.Type.EXP_MAX, 3);
             }
             
             token = this.consumeCommandSymbols();
@@ -387,7 +423,7 @@ public class Tokenizer
      */
     private boolean isCommandSymbol(char c)
     {
-        if (this.mode == Tokenizer.Mode.META) {
+        if (this.mode != Tokenizer.Mode.MAIN) {
             // These symbols do not need to be escaped in the head of a command
             // definition
             return Tokenizer.META_MODE_COMMAND_SYMBOLS.indexOf(c) != -1;

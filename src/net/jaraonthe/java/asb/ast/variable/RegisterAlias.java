@@ -22,7 +22,7 @@ public class RegisterAlias extends Register
      */
     public RegisterAlias(String name, Register aliasedRegister)
     {
-        super(name, aliasedRegister.length);
+        super(name, aliasedRegister.getLength());
         while (aliasedRegister instanceof RegisterAlias) {
             // Prevent chain of aliases pointing to aliases
             aliasedRegister = ((RegisterAlias)aliasedRegister).aliasedRegister;

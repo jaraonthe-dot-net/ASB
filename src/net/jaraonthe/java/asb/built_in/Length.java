@@ -5,27 +5,27 @@ import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
- * The {@code &sign_extend} built-in function.<br>
+ * The {@code &length} built-in function.<br>
  * 
- * {@code &sign_extend dstRegister, srcRegister}
+ * {@code &length dstLength, srcRegister}
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class SignExtend implements Interpretable
+public class Length implements Interpretable
 {
     // TODO interpret() once designed
     
     
     /**
-     * Creates a {@code &sign_extend} built-in function.
+     * Creates a {@code &length} built-in function.
      * 
      * @return
      */
     public static BuiltInFunction create()
     {
-        BuiltInFunction function = new BuiltInFunction("&sign_extend", false);
+        BuiltInFunction function = new BuiltInFunction("&length", false);
         
-        // &sign_extend dstRegister, srcRegister
+        // &length dstLength, srcRegister
         function.addParameter(new Variable(
             Variable.Type.REGISTER,
             "dst",
@@ -40,7 +40,7 @@ public class SignExtend implements Interpretable
             Constraints.MAX_LENGTH
         ));
         
-        function.setInterpretable(new SignExtend());
+        function.setInterpretable(new Length());
         return function;
     }
 }

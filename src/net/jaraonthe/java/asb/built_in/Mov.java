@@ -2,9 +2,17 @@ package net.jaraonthe.java.asb.built_in;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
- * The {@code &mov} built-in function.
+ * The {@code &mov} built-in function.<br>
+ * 
+ * {@code &mov @dstAddress, imm}<br>
+ * {@code &mov @dstAddress, @srcAddress}<br>
+ * {@code &mov @dstAddress, srcRegister}<br>
+ * {@code &mov dstRegister, imm}<br>
+ * {@code &mov dstRegister, @srcAddress}<br>
+ * {@code &mov dstRegister, srcRegister}
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -44,51 +52,108 @@ public class Mov implements Interpretable
     {
         BuiltInFunction function = new BuiltInFunction("&mov", false);
         
-        // TODO need more advanced length matchers to properly define the parameters
         switch (variant) {
             case MEM_IMM:
                 // &mov @dstAddress, imm
                 function.addCommandSymbols("@");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstAddress", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstAddress",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",");
-                function.addParameter(new Variable(Variable.Type.IMMEDIATE, "imm", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.IMMEDIATE,
+                    "imm",
+                    Constraints.MAX_LENGTH
+                ));
                 break;
                 
             case MEM_MEM:
                 // &mov @dstAddress, @srcAddress
                 function.addCommandSymbols("@");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstAddress", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstAddress",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",@");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "srcAddress", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "srcAddress",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 break;
                 
             case MEM_REG:
                 // &mov @dstAddress, srcRegister
                 function.addCommandSymbols("@");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstAddress", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstAddress",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "srcRegister", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "srcRegister",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 break;
                 
             case REG_IMM:
                 // &mov dstRegister, imm
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstRegister", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstRegister",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",");
-                function.addParameter(new Variable(Variable.Type.IMMEDIATE, "imm", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.IMMEDIATE,
+                    "imm",
+                    Constraints.MAX_LENGTH
+                ));
                 break;
                 
             case REG_MEM:
                 // &mov dstRegister, @srcAddress
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstRegister", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstRegister",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",@");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "srcAddress", 64));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "srcAddress",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 break;
                 
             case REG_REG:
                 // &mov dstRegister, srcRegister
-                function.addParameter(new Variable(Variable.Type.REGISTER, "dstRegister", 16));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "dstRegister",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 function.addCommandSymbols(",");
-                function.addParameter(new Variable(Variable.Type.REGISTER, "srcRegister", 32));
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "srcRegister",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
                 break;
         }
         

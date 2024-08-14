@@ -51,6 +51,26 @@ public class BuiltInFunction extends Function
     {
         // TODO Add more
         
+        // &add
+        ast.addCommand(Add.create(Add.Variant.REG_REG_IMM, false));
+        ast.addCommand(Add.create(Add.Variant.REG_REG_REG, false));
+        
+        // &addc
+        ast.addCommand(Add.create(Add.Variant.REG_REG_IMM, true));
+        ast.addCommand(Add.create(Add.Variant.REG_REG_REG, true));
+        
+        // &assert
+        for (Assert.Operator operator : Assert.Operator.values()) {
+            for (boolean hasMessage : new boolean[]{false, true}) {
+                ast.addCommand(Assert.create(operator, Assert.OperandType.IMM, Assert.OperandType.REG, hasMessage));
+                ast.addCommand(Assert.create(operator, Assert.OperandType.REG, Assert.OperandType.IMM, hasMessage));
+                ast.addCommand(Assert.create(operator, Assert.OperandType.REG, Assert.OperandType.REG, hasMessage));
+            }
+        }
+        
+        // &length
+        ast.addCommand(Length.create());
+        
         // &mov
         ast.addCommand(Mov.create(Mov.Variant.MEM_IMM));
         ast.addCommand(Mov.create(Mov.Variant.MEM_MEM));
@@ -59,7 +79,7 @@ public class BuiltInFunction extends Function
         ast.addCommand(Mov.create(Mov.Variant.REG_MEM));
         ast.addCommand(Mov.create(Mov.Variant.REG_REG));
         
-        //&sign_extend
+        // &sign_extend
         ast.addCommand(SignExtend.create());
     }
 }

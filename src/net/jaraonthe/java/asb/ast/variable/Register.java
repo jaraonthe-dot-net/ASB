@@ -23,13 +23,21 @@ public class Register extends VariableLike
      */
     public Register(String name, int length)
     {
-        super(name, length);
+        super(name, length, length);
         
         if (!Constraints.isValidLength(length)) {
             throw new IllegalArgumentException(
                 "Invalid register " + name + " length. Given value is: " + length
             );
         }
+    }
+    
+    /**
+     * @return The length of this register in bits.
+     */
+    public int getLength()
+    {
+        return this.minLength;
     }
     
     /**

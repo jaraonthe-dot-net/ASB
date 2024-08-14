@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.parse;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.LexicalError;
@@ -301,7 +303,7 @@ public class Parser
                         this.tokenizer.next();
                         this.expect(Token.Type.OPENING_BRACES);
                         parameters = new ArrayList<>(1);
-                        parameters.add(new Variable(Variable.Type.REGISTER, "out", register.length));
+                        parameters.add(new Variable(Variable.Type.REGISTER, "out", register.getLength()));
                         vr.setGetterImplementation(this.parseImplementation(parameters));
                         break;
                     case ".set":
@@ -314,7 +316,7 @@ public class Parser
                         this.tokenizer.next();
                         this.expect(Token.Type.OPENING_BRACES);
                         parameters = new ArrayList<>(1);
-                        parameters.add(new Variable(Variable.Type.REGISTER, "in", register.length));
+                        parameters.add(new Variable(Variable.Type.REGISTER, "in", register.getLength()));
                         vr.setSetterImplementation(this.parseImplementation(parameters));
                         break;
                         
@@ -411,8 +413,22 @@ public class Parser
                     }
                     String name = this.expectName();
                     Variable parameter;
-                    if (type.hasLength) {
-                        parameter = new Variable(type, name, this.expectLength("Parameter " + t.content));
+                    if (type.hasLength()) {
+                        int[] length = this.expectLengthRange("Parameter " + t.content);
+                        if (type.length != Variable.Type.Length.RANGE && length[0] != length[1]) {
+                            throw new ParseError(
+                                "Cannot use length range for " + type
+                                + " type parameter " + name + " at " + t.origin
+                            );
+                        }
+                        if (length[0] > length[1]) {
+                            throw new ParseError(
+                                "Minimum length (" + length[0] + ") must not be greater than maximum length ("
+                                + length[1] + ") at " + t.origin
+                            );
+                        }
+                        
+                        parameter = new Variable(type, name, length[0], length[1]);
                     } else {
                         parameter = new Variable(type, name);
                     }
@@ -472,6 +488,7 @@ public class Parser
     private Implementation parseImplementation(List<Variable> parameters) throws LexicalError, ParseError
     {
         Implementation implementation = new Implementation(parameters);
+        Tokenizer.Mode surroundingMode = this.tokenizer.getMode();
         
         this.skipStatementSeparators();
         
@@ -482,11 +499,45 @@ public class Parser
                     switch (t.content) {
                         case ".variable":
                         case ".var":
-                            implementation.addVariable(new Variable(
-                                Variable.Type.LOCAL_VARIABLE,
-                                this.expectName(),
-                                this.expectLength("Variable")
-                            ));
+                            String name = this.expectName();
+                            
+                            // Custom length parsing (to support length register)
+                            this.expect(Token.Type.BIT_LENGTH);
+                            this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
+                            
+                            if (Token.getType(this.tokenizer.peek()) == Token.Type.NAME) {
+                                // '' varName
+                                Token tl = this.tokenizer.next();
+                                if (!implementation.variableExists(tl.content)) {
+                                    throw new ParseError(
+                                        "Unknown register or variable " + tl.content
+                                        + " at " + tl.origin
+                                    );
+                                }
+                                VariableLike lengthRegister = implementation.getVariable(tl.content);
+                                if (!lengthRegister.isNumeric()) {
+                                    throw new ParseError(
+                                        "Parameter " + tl.content
+                                        + " cannot be used as length (it doesn't contain a numeric value) at "
+                                        + tl.origin
+                                    );
+                                }
+                                
+                                implementation.addVariable(new Variable(
+                                    Variable.Type.LOCAL_VARIABLE,
+                                    name,
+                                    lengthRegister
+                                ));
+                                
+                            } else {
+                                implementation.addVariable(new Variable(
+                                    Variable.Type.LOCAL_VARIABLE,
+                                    name,
+                                    this.parseAdvancedLengthFormat("Local variable")
+                                ));
+                            }
+                            
+                            this.tokenizer.setMode(surroundingMode);
                             this.expectStatementSeparator();
                             break;
                         default:
@@ -501,7 +552,7 @@ public class Parser
                     try {
                         this.tokenizer.setMode(Tokenizer.Mode.MAIN);
                         implementation.add(this.parseInvocation(t.content));
-                        this.tokenizer.setMode(Tokenizer.Mode.META);
+                        this.tokenizer.setMode(surroundingMode);
                     } catch (ConstraintException e) {
                         throw new ParseError(
                             "Maximum program size exceeded in implementation at " + t.origin
@@ -708,8 +759,8 @@ public class Parser
     }
     
     /**
-     * Expects a length definition. I.e. a BIT_LENGTH Token followed by a NUMBER
-     * Token.
+     * Expects an exact length definition. I.e. a BIT_LENGTH Token followed by a
+     * NUMBER Token.
      * 
      * @param elementName Used in the error message. May be null.
      * 
@@ -723,10 +774,128 @@ public class Parser
     {
         this.expect(Token.Type.BIT_LENGTH);
         
-        return this.number2LengthInt(
-            this.expect(Token.Type.NUMBER),
-            elementName
-        );
+        Tokenizer.Mode oldMode = this.tokenizer.getMode();
+        this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
+        
+        int result = this.parseAdvancedLengthFormat(elementName);
+        
+        this.tokenizer.setMode(oldMode);
+        return result;
+    }
+    
+    /**
+     * Expects an exact or range length definition. I.e. a BIT_LENGTH token
+     * followed by a valid combination of NUMBER and some EXP_* Tokens.
+     * 
+     * @param elementName Used in the error message. May be null.
+     * 
+     * @return [minLength, maxLength]
+     * 
+     * @throws LexicalError
+     * @throws ParseError   if something unexpected is encountered (incl. a
+     *                      number that is not a valid length)
+     */
+    private int[] expectLengthRange(String elementName) throws LexicalError, ParseError
+    {
+        this.expect(Token.Type.BIT_LENGTH);
+        
+        Tokenizer.Mode oldMode = this.tokenizer.getMode();
+        this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
+        
+        int[] result = {-1, -1};
+        
+        switch (Token.getType(this.tokenizer.peek())) {
+            case EXP_GREATER_THAN_OR_EQUALS:
+                // '' >= number
+                this.tokenizer.next();
+                result[0] = this.parseAdvancedLengthFormat(elementName);
+                result[1] = Constraints.MAX_LENGTH;
+                break;
+                
+            case EXP_LESS_THAN_OR_EQUALS:
+                // '' <= number
+                this.tokenizer.next();
+                result[0] = Constraints.MIN_LENGTH;
+                result[1] = this.parseAdvancedLengthFormat(elementName);
+                break;
+                
+            case NUMBER:
+                // '' number
+                result[0] = result[1] = this.parseAdvancedLengthFormat(elementName);
+                if (Token.getType(this.tokenizer.peek()) == Token.Type.EXP_LENGTH_RANGE) {
+                    // '' number .. number
+                    this.tokenizer.next();
+                    result[1] = this.parseAdvancedLengthFormat(elementName);
+                }
+                // Note: The Token constructed by peek() above may not be
+                //       consumed via next() before we reach the end of this
+                //       method where the Tokenizer mode is changed - upon the
+                //       next peek() or next() after the mode change still the
+                //       same Token is provided; theoretically the different
+                //       modes could lead to different Token types, thus the
+                //       wrong type being provided in such a case.
+                //       However, as long as the following conditions hold true,
+                //       everything is working fine:
+                //       - This method is only used for parameters in .define
+                //         directives,
+                //       - where LABELS or LABEL_NAMES cannot occur,
+                //       - and ".." are not valid COMMAND_SYMBOLS.
+                
+                break;
+            
+            case EOF:
+                // TODO include origin somehow (so we know which file it is
+                //      - check other end-of-file errors as well
+                throw new ParseError("Unexpected end of file, expected " + Token.Type.NUMBER);
+            
+            default:
+                throw new ParseError("Unexpected " + this.tokenizer.peek().toStringWithOrigin());
+        }
+        
+        this.tokenizer.setMode(oldMode);
+        return result;
+    }
+    
+    /**
+     * Parses a single length value, which may be a NUMBER or a "max" or "maxu"
+     * entity.<br>
+     * 
+     * Tokenizer mode must be LENGTH.
+     * 
+     * @param elementName Used in the error message. May be null.
+     * 
+     * @return length in bits
+     * 
+     * @throws LexicalError
+     * @throws ParseError
+     */
+    private int parseAdvancedLengthFormat(String elementName) throws LexicalError, ParseError
+    {
+        switch (Token.getType(this.tokenizer.peek())) {
+            case EXP_MAX:
+                // max<number>
+                this.tokenizer.next();
+                return this.number2fittingLengthInt(
+                    this.expect(Token.Type.NUMBER),
+                    false,
+                    elementName
+                );
+            case EXP_MAXU:
+                // maxu<number> (unsigned)
+                this.tokenizer.next();
+                return this.number2fittingLengthInt(
+                    this.expect(Token.Type.NUMBER),
+                    true,
+                    elementName
+                );
+                    
+            default:
+                // <number>
+                return this.number2LengthInt(
+                    this.expect(Token.Type.NUMBER),
+                    elementName
+                );
+        }
     }
     
     /**
@@ -747,6 +916,42 @@ public class Parser
         } catch (ConstraintException e) {
             throw Constraints.lengthError(token.content, elementName, Token.getOrigin(token));
         }
+        Constraints.checkLength(length, elementName, Token.getOrigin(token));
+        
+        return length;
+    }
+    
+    /**
+     * Transforms a NUMBER Token to a fitting length integer.
+     * 
+     * I.e. this figures how many length a variable (or register) would need to
+     * have to accomodate the given number.
+     * 
+     * @param token       A NUMBER Token with a positive number
+     * @param unsigned    False: Length is chosen to accomodate negative numbers
+     *                    as well (Twos Complement) ("max" behavior). (True:
+     *                    "maxu" behavior)
+     * @param elementName Used in a length error message. May be null
+     * 
+     * @return Smallest length big enough to fit the given number as a value.
+     * 
+     * @throws ParseError If a negative number is given, or resulting length is
+     *                    too big
+     */
+    private int number2fittingLengthInt(Token token, boolean unsigned, String elementName) throws ParseError
+    {
+        BigInteger number = Token.number2BigInteger(token);
+        if (number.signum() <= 0) {
+            throw new ParseError(
+                "Only positive numbers supported, given " + number + " at " + Token.getOrigin(token)
+            );
+        }
+        int length = number.bitLength();
+        if (!unsigned) {
+            // sign bit
+            length++;
+        }
+
         Constraints.checkLength(length, elementName, Token.getOrigin(token));
         
         return length;

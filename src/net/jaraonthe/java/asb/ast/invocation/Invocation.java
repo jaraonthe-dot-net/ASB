@@ -11,6 +11,7 @@ import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.parse.Token;
 
@@ -221,19 +222,19 @@ public class Invocation extends CommandLike
                     switch (parameter.type) {
                         case REGISTER:
                         // CMD: register/var
-                            int length;
+                            VariableLike referenced;
                             if (implementation != null && implementation.variableExists(argument.content)) {
                                 
                                 // INV: local variable/param
-                                Variable referenced = implementation.getVariable(argument.content);
-                                if (!referenced.type.hasLength) {
+                                Variable variable = implementation.getVariable(argument.content);
+                                referenced = variable;
+                                if (!variable.type.hasLength()) {
                                     // i.e. this is a label or string parameter
                                     return false;
                                 }
-                                length = referenced.length;
                                 if (
                                     parameter.hasGroup()
-                                    && !parameter.getGroup().equals(referenced.getGroup())
+                                    && !parameter.getGroup().equals(variable.getGroup())
                                 ) {
                                     // group doesn't fit
                                     return false;
@@ -241,11 +242,11 @@ public class Invocation extends CommandLike
                             } else if (ast.registerExists(argument.content)) {
                                 
                                 // INV: global register 
-                                Register referenced = ast.getRegister(argument.content);
-                                length = referenced.length;
+                                Register register = ast.getRegister(argument.content);
+                                referenced = register;
                                 if (
                                     parameter.hasGroup()
-                                    && !referenced.hasGroup(parameter.getGroup())
+                                    && !register.hasGroup(parameter.getGroup())
                                 ) {
                                     // group doesn't fit any of register
                                     return false;
@@ -254,8 +255,14 @@ public class Invocation extends CommandLike
                                 // no var found for argument name
                                 return false;
                             }
-                            if (length != parameter.length) {
-                                // TODO support more advanced length matchers
+                            if (
+                                referenced.minLength > 0 // don't check dynamic length (length == 0)
+                                && (
+                                    // range has to fit in its entirety
+                                    referenced.minLength < parameter.minLength
+                                    || referenced.maxLength > parameter.maxLength
+                                )
+                            ) {
                                 return false;
                             }
                             break;

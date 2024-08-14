@@ -16,8 +16,14 @@ import net.jaraonthe.java.asb.exception.ParseError;
 abstract public class Constraints
 {
     /**
-     * Maximum size of length values. Any length value must be a least 1 and
-     * at maximum the value configured here.
+     * Minimum size of length values. Any length value must be at least this
+     * and no greater than {@link #MAX_LENGTH}.
+     */
+    public static final int MIN_LENGTH = 1;
+    
+    /**
+     * Maximum size of length values. Any length value must be a least
+     * {@link #MIN_LENGTH} and no greater than this.
      */
     public static final int MAX_LENGTH = 8192; // i.e. 1kiB
 
@@ -27,7 +33,7 @@ abstract public class Constraints
      */
     public static boolean isValidLength(int length)
     {
-        return length > 0 && length <= Constraints.MAX_LENGTH;
+        return length >= Constraints.MIN_LENGTH && length <= Constraints.MAX_LENGTH;
     }
     
     /**
@@ -86,8 +92,8 @@ abstract public class Constraints
     {
         return new ParseError(
             (elementName != null ? elementName + " length" : "Length") 
-            + " must be in [1, " + Constraints.MAX_LENGTH + "], is " + length
-            + (origin != null ? " at " + origin : "")
+            + " must be in [" + Constraints.MIN_LENGTH + ", " + Constraints.MAX_LENGTH + "], is "
+            + length + (origin != null ? " at " + origin : "")
         );
     }
 }

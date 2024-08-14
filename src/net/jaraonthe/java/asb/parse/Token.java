@@ -41,14 +41,19 @@ public class Token
         STATEMENT_SEPARATOR, // ; or \n
         
         // only in expression mode:
+        // TODO I'm considering simplifying what expressions can do - some
+        //      Tokens may be removed
         EXP_ADD,                    // +
+        EXP_BIT_RANGE,              // :
         EXP_EQUALS,                 // ==
         EXP_GREATER_THAN,           // >
         EXP_GREATER_THAN_OR_EQUALS, // >=
+        EXP_LENGTH_RANGE,           // ..
         EXP_LESS_THAN,              // <
         EXP_LESS_THAN_OR_EQUALS,    // <=
+        EXP_MAX,                    // max
+        EXP_MAXU,                   // maxu
         EXP_NOT_EQUALS,             // !=
-        EXP_RANGE,                  // :
         EXP_SUBTRACT,               // -
         
         EOF,

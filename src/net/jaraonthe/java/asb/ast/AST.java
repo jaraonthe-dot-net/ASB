@@ -75,7 +75,7 @@ public class AST
      */
     public AST setMemory(int wordLength, int addressLength)
     {
-        if (!Constraints.isValidLength(wordLength) || ! Constraints.isValidLength(addressLength)) {
+        if (!Constraints.isValidLength(wordLength) || !Constraints.isValidLength(addressLength)) {
             throw new IllegalArgumentException(
                 "Invalid lengths for memory configuration. Given values are: wordLength: "
                 + wordLength + ", addressLength: " + addressLength
@@ -200,6 +200,12 @@ public class AST
      */
     public AST addCommand(Command command)
     {
+        if (this.commands.containsKey(command.getIdentity())) {
+            throw new IllegalArgumentException(
+                "Cannot add same command " + command.getReadableIdentity() + " more than once"
+            );
+        }
+        
         this.commands.put(command.getIdentity(), command);
         
         String resolvingClass = command.getResolvingClass();
