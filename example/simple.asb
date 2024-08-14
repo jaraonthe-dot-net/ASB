@@ -61,7 +61,7 @@ lw a, -13(a)
     &assert ss <= sd, "Cannot add bigger source to smaller source_dest"
     
     .var sd1  ''max65; &add sd1,  sd,  1
-    .var sd_1 ''max65; &add sd_1, sd, -1
+    .var sd_1 ''MAX65; &add sd_1, sd, -1
     
    .var source_ext ''sd
     &sign_extend source_ext, source

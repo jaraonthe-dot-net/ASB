@@ -44,7 +44,6 @@ public class Parser
     //      - NAME            => label name
     //      - NUMBER          => label name
     //      - DIRECTIVE       => label name
-    //      - negative NUMBER => subtract positive number (in expression)
     
     // TODO Consider re-arranging so that one Parser instance takes care of
     //      exactly one SourceFile (makes coupling to tokenizer easier).
@@ -785,7 +784,7 @@ public class Parser
     
     /**
      * Expects an exact or range length definition. I.e. a BIT_LENGTH token
-     * followed by a valid combination of NUMBER and some EXP_* Tokens.
+     * followed by a valid combination of NUMBER and some LENGTH_* Tokens.
      * 
      * @param elementName Used in the error message. May be null.
      * 
@@ -805,14 +804,14 @@ public class Parser
         int[] result = {-1, -1};
         
         switch (Token.getType(this.tokenizer.peek())) {
-            case EXP_GREATER_THAN_OR_EQUALS:
+            case LENGTH_GREATER_THAN_OR_EQUALS:
                 // '' >= number
                 this.tokenizer.next();
                 result[0] = this.parseAdvancedLengthFormat(elementName);
                 result[1] = Constraints.MAX_LENGTH;
                 break;
                 
-            case EXP_LESS_THAN_OR_EQUALS:
+            case LENGTH_LESS_THAN_OR_EQUALS:
                 // '' <= number
                 this.tokenizer.next();
                 result[0] = Constraints.MIN_LENGTH;
@@ -822,7 +821,7 @@ public class Parser
             case NUMBER:
                 // '' number
                 result[0] = result[1] = this.parseAdvancedLengthFormat(elementName);
-                if (Token.getType(this.tokenizer.peek()) == Token.Type.EXP_LENGTH_RANGE) {
+                if (Token.getType(this.tokenizer.peek()) == Token.Type.LENGTH_RANGE) {
                     // '' number .. number
                     this.tokenizer.next();
                     result[1] = this.parseAdvancedLengthFormat(elementName);
@@ -872,7 +871,7 @@ public class Parser
     private int parseAdvancedLengthFormat(String elementName) throws LexicalError, ParseError
     {
         switch (Token.getType(this.tokenizer.peek())) {
-            case EXP_MAX:
+            case LENGTH_MAX:
                 // max<number>
                 this.tokenizer.next();
                 return this.number2fittingLengthInt(
@@ -880,7 +879,7 @@ public class Parser
                     false,
                     elementName
                 );
-            case EXP_MAXU:
+            case LENGTH_MAXU:
                 // maxu<number> (unsigned)
                 this.tokenizer.next();
                 return this.number2fittingLengthInt(

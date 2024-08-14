@@ -31,13 +31,6 @@ public class Tokenizer
         META,
         
         /**
-         * When parsing an expression as part of an invocation of a built-in
-         * function (i.e. this depends on the function being invoked).
-         */
-        // TODO Remove this mode?
-        EXPRESSION,
-        
-        /**
          * When parsing a length setting (within META code).
          */
         LENGTH,
@@ -213,7 +206,7 @@ public class Tokenizer
                         this.mode == Tokenizer.Mode.LENGTH
                         && this.safeCharAt(this.currentCol + 1) == '.'
                     ) {
-                        return this.fromSymbol(Token.Type.EXP_LENGTH_RANGE, 2);
+                        return this.fromSymbol(Token.Type.LENGTH_RANGE, 2);
                     }
                     
                     return this.expectLabelName();
@@ -234,6 +227,9 @@ public class Tokenizer
                     }
                     // BIT POSITION
                     return this.fromSymbol(Token.Type.BIT_POSITION, 1);
+                    
+                case ':':
+                    return this.fromSymbol(Token.Type.POSITION_RANGE, 1);
                 
                 // STATEMENT SEPARATOR
                 case '\n':
@@ -258,56 +254,29 @@ public class Tokenizer
             }
             
             // EXPRESSION types
-            if (this.mode == Tokenizer.Mode.EXPRESSION || this.mode == Tokenizer.Mode.LENGTH) {
+            if (this.mode == Tokenizer.Mode.LENGTH) {
                 switch (c) {
-                    case '+':
-                        return this.fromSymbol(Token.Type.EXP_ADD, 1);
-                    case ':':
-                        return this.fromSymbol(Token.Type.EXP_BIT_RANGE, 1);
-                    case '=':
-                        if (this.safeCharAt(this.currentCol + 1) != '=') {
-                            // If this returns null, we have a bug in here
-                            return this.consumeCommandSymbols();
-                        }
-                        // ==
-                        return this.fromSymbol(Token.Type.EXP_EQUALS, 2);
                     case '>':
                         if (this.safeCharAt(this.currentCol + 1) == '=') {
                             // >=
-                            return this.fromSymbol(Token.Type.EXP_GREATER_THAN_OR_EQUALS, 2);
+                            return this.fromSymbol(Token.Type.LENGTH_GREATER_THAN_OR_EQUALS, 2);
                         }
-                        // >
-                        return this.fromSymbol(Token.Type.EXP_GREATER_THAN, 1);
                     case '<':
                         if (this.safeCharAt(this.currentCol + 1) == '=') {
                             // <=
-                            return this.fromSymbol(Token.Type.EXP_LESS_THAN_OR_EQUALS, 2);
+                            return this.fromSymbol(Token.Type.LENGTH_LESS_THAN_OR_EQUALS, 2);
                         }
-                        // <
-                        return this.fromSymbol(Token.Type.EXP_LESS_THAN, 1);
-                    case '!':
-                        if (this.safeCharAt(this.currentCol + 1) != '=') {
-                            // If this returns null, we have a bug in here
-                            return this.consumeCommandSymbols();
+                    
+                     // max / maxu
+                    case 'm':
+                    case 'M':
+                        String word = this.restOfLine().substring(0, 4).toLowerCase();
+                        if (word.equals("maxu")) {
+                            return this.fromSymbol(Token.Type.LENGTH_MAXU, 4);
+                        } else if (word.substring(0, 3).equals("max")) {
+                            return this.fromSymbol(Token.Type.LENGTH_MAX, 3);
                         }
-                        // !=
-                        return this.fromSymbol(Token.Type.EXP_NOT_EQUALS, 2);
-                    case '-':
-                        return this.consumeNegativeNumberOrSubtract();
                 }
-            }
-            
-            if (
-                this.mode == Tokenizer.Mode.LENGTH
-                // max / maxu
-                && c == 'm'
-                && this.safeCharAt(this.currentCol + 1) == 'a'
-                && this.safeCharAt(this.currentCol + 2) == 'x'
-            ) {
-                if (this.safeCharAt(this.currentCol + 3) == 'u') {
-                    return this.fromSymbol(Token.Type.EXP_MAXU, 4);
-                }
-                return this.fromSymbol(Token.Type.EXP_MAX, 3);
             }
             
             token = this.consumeCommandSymbols();
@@ -541,29 +510,6 @@ public class Tokenizer
             return this.fromContent(Token.Type.LABEL, matched);
         }
         return this.fromContent(Token.Type.NUMBER, matched);
-    }
-    
-    /**
-     * Consumes a negative number or a subtract operator.<br>
-     * 
-     * Should only be used when Tokenizer is in EXPRESSION mode.
-     * 
-     * Current position MUST point to the leading '-' char.<br>
-     * 
-     * Preferable returns a negative Number Token.<br>
-     * 
-     * DO NOT invoke if at end-of-file.
-     * 
-     * @return
-     */
-    private Token consumeNegativeNumberOrSubtract()
-    {
-        Matcher m = Tokenizer.NEGATIVE_NUMBER_PATTERN.matcher(this.restOfLine());
-        if (!m.find()) {
-            return this.fromSymbol(Token.Type.EXP_SUBTRACT, 1);
-        }
-        
-        return this.fromContent(Token.Type.NUMBER, m.group());
     }
     
     /**

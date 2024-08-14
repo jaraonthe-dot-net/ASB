@@ -20,7 +20,7 @@ public class Token
      */
     public enum Type
     {
-        // * - only in meta mode
+        // * - only in META mode
         
         // with content:
         COMMAND_SYMBOLS,
@@ -38,23 +38,15 @@ public class Token
         BIT_POSITION,        // '
         CLOSING_BRACES,      // } *
         OPENING_BRACES,      // { *
+        POSITION_RANGE,      // :
         STATEMENT_SEPARATOR, // ; or \n
         
-        // only in expression mode:
-        // TODO I'm considering simplifying what expressions can do - some
-        //      Tokens may be removed
-        EXP_ADD,                    // +
-        EXP_BIT_RANGE,              // :
-        EXP_EQUALS,                 // ==
-        EXP_GREATER_THAN,           // >
-        EXP_GREATER_THAN_OR_EQUALS, // >=
-        EXP_LENGTH_RANGE,           // ..
-        EXP_LESS_THAN,              // <
-        EXP_LESS_THAN_OR_EQUALS,    // <=
-        EXP_MAX,                    // max
-        EXP_MAXU,                   // maxu
-        EXP_NOT_EQUALS,             // !=
-        EXP_SUBTRACT,               // -
+        // only in LENGTH mode:
+        LENGTH_GREATER_THAN_OR_EQUALS, // >=
+        LENGTH_LESS_THAN_OR_EQUALS,    // <=
+        LENGTH_MAX,                    // max
+        LENGTH_MAXU,                   // maxu
+        LENGTH_RANGE,                  // ..
         
         EOF,
     }
