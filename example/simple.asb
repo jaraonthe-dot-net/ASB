@@ -20,18 +20,18 @@
     &sign_extend extended, imm12
     
     .var address ''32
-    //&add address, rs1, extended
+    &add address, rs1, extended
     
-    //&mov rd'7:0, @address
-    //&add address, address, 1
+    &mov rd'7:0, @address
+    &add address, address, 1
     
-    //&mov rd'15:8, @address
-    //&add address, address, 1
+    &mov rd'15:8, @address
+    &add address, address, 1
     
-    //&mov rd'23:16, @address
-    //&add address, address, 1
+    &mov rd'23:16, @address
+    &add address, address, 1
     
-    //&mov rd'32:24, @address
+    &mov rd'31:24, @address
 }
 
 lw a, 0(b)
@@ -45,11 +45,11 @@ lw a, -13(a)
     .group flags
     .store ''32
     .get {
-        //&mov out'31:0, store
-        //&mov out'63:32, 0
+        &mov out'31:0, store
+        &mov out'63:32, 0
     }
     .set {
-        //&mov store, in'31:0
+        &mov store, in'31:0
         // ignore upper 32 bits
     }
 }
@@ -67,15 +67,15 @@ lw a, -13(a)
     &sign_extend source_ext, source
     .var result ''sd1
     &addc result, source_ext, source_dest
-    //&mov source_dest, result'sd_1:0
+    &mov source_dest, result'sd_1:0
     
     // set flags
     .var rflags_new''64; &mov rflags_new, rflags
-    //&mov rflags_new'0, result'sd // carry
+    &mov rflags_new'0, result'sd // carry
     
-    //&mov rflags_new'6, 0 // zero
+    &mov rflags_new'6, 0 // zero
     //&setif result == 0, rflags_new'6
     
-    //&mov rflags_new'7, result'sd_1 // sign
+    &mov rflags_new'7, result'sd_1 // sign
     &mov rflags, rflags_new
 }

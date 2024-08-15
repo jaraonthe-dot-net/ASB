@@ -55,6 +55,12 @@ abstract public class VariableLike
         return this.minLength != -1;
     }
     
+    /**
+     * @param group
+     * @return True if this Variable has the given group assigned.
+     */
+    abstract public boolean hasGroup(String group);
+    
     @Override
     public String toString()
     {

@@ -1,5 +1,7 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
+import net.jaraonthe.java.asb.ast.variable.Variable;
+
 /**
  * An invocation argument that contains a literal string value.
  *
@@ -18,6 +20,12 @@ public class StringArgument extends Argument
     public StringArgument(String string)
     {
         this.string = string;
+    }
+
+    @Override
+    public Variable.Type getVariableType()
+    {
+        return Variable.Type.STRING;
     }
     
     @Override

@@ -53,10 +53,7 @@ public class Register extends VariableLike
         return this;
     }
     
-    /**
-     * @param group
-     * @return True if this register has the given group assigned.
-     */
+    @Override
     public boolean hasGroup(String group)
     {
         return this.groups.contains(group);

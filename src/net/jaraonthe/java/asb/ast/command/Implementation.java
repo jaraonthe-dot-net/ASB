@@ -45,15 +45,17 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     /**
      * Adds a local variable.<br>
      * 
-     * If this implementation already has a variable with the same name it will
-     * be overwritten - this may not be desired, use {@link #variableExists()}
-     * to prevent this.
-     * 
      * @param variable
      * @return Fluent interface
      */
     public Implementation addVariable(Variable variable)
     {
+        if (this.variables.containsKey(variable.name)) {
+            throw new IllegalArgumentException(
+                "Cannot add same variable " + variable.name + " more than once"
+            );
+        }
+        
         this.variables.put(variable.name, variable);
         return this;
     }

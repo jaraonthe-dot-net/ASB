@@ -314,6 +314,12 @@ public class Variable extends VariableLike
         return this.group != null;
     }
     
+    @Override
+    public boolean hasGroup(String group)
+    {
+        return group.equals(this.group);
+    }
+    
     /**
      * @return The name of the configured group. Null if no group configured.
      */

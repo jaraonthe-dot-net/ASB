@@ -23,13 +23,6 @@ import net.jaraonthe.java.asb.parse.Token;
 public class Invocation extends CommandLike
 {
     /**
-     * Raw argument data, which is used to resolve invokedCommand and
-     * generate actual arguments.
-     */
-    // TODO arg may be a var reference + bit pos (within an implementation) - how to model that?
-    private List<Token> rawArguments = new ArrayList<>(3);
-    
-    /**
      * This human-readable signature is only used when this Invocation is not
      * yet resolved.
      */
@@ -43,7 +36,9 @@ public class Invocation extends CommandLike
     
     /**
      * Once the referenced command has been resolved ({@link #resolve()}), this
-     * contains the actual arguments (which will be used by the interpreter).
+     * contains the actual arguments (which will be used by the interpreter).<br>
+     * Before that, this contains preliminary arguments, which may include
+     * {@link RawArgument}s which are used for and processed when resolving.
      */
     private List<Argument> arguments = new ArrayList<>(3);
     
@@ -91,14 +86,14 @@ public class Invocation extends CommandLike
     }
     
     /**
-     * Adds an argument token to this invocation.<br>
+     * Adds an argument to this invocation.<br>
      * 
      * Together with {@link #addCommandSymbols()}, this must be invoked in the
-     * order in which these Tokens appear in the ASB source code.
+     * order in which they appear in the ASB source code.
      * 
-     * @param argumentToken The Token representing a raw argument.
+     * @param argument May be a RawArgument as well.
      */
-    public void addArgument(Token argumentToken)
+    public void addArgument(Argument argument)
     {
         if (
             !this.readableSignature.isEmpty()
@@ -106,35 +101,17 @@ public class Invocation extends CommandLike
         ) {
             this.readableSignature += " ";
         }
-        
-        Variable.Type type;
-        switch (argumentToken.type) {
-            case NAME:
-            case LABEL_NAME:
-                type = Variable.Type.REGISTER;
-                this.readableSignature += argumentToken.content;
-                break;
-            case NUMBER:
-                type = Variable.Type.IMMEDIATE;
-                this.readableSignature += argumentToken.content;
-                break;
-            case STRING:
-                type = Variable.Type.STRING;
-                this.readableSignature += "\"" + argumentToken.content + "\"";
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected Token Type " + argumentToken.type);
-        }
+        this.readableSignature += argument;
         this.readableSignature += " ";
         
-        this.addParameterToResolvingSignature(type);
-        this.rawArguments.add(argumentToken);
+        this.addParameterToResolvingSignature(argument.getVariableType());
+        this.arguments.add(argument);
     }
     
     
     /**
      * Resolves this invocation. I.e. figures out which command is being invoked
-     * and what the actual arguments are.
+     * and conforms the arguments.
      * 
      * @param ast
      * @param implementation The implementation which this Invocation is a part
@@ -186,7 +163,7 @@ public class Invocation extends CommandLike
         //      defined before this invocation are used as arguments
         
         this.invokedCommand = viableCommands.getFirst();
-        this.createActualArgs(ast, implementation);
+        this.conformArgs(ast, implementation);
         
         if (implementation == null && !this.invokedCommand.isUserlandInvokable()) {
             throw new ConstraintException(
@@ -208,98 +185,116 @@ public class Invocation extends CommandLike
      * @return True if command is viable for this invocation, i.e. it fits all
      *         invocation arguments.
      */
-    @SuppressWarnings("incomplete-switch")
     private boolean isCommandViable(Command command, AST ast, Implementation implementation)
     {
         Iterator<Variable> iter = command.getParameters().iterator();
-        for (Token argument : this.rawArguments) {
+        for (Argument argument : this.arguments) {
             Variable parameter = iter.next();
             
-            switch (argument.type) {
-                case NAME:
-                case LABEL_NAME:
-                // INV: register/var/label
-                    switch (parameter.type) {
-                        case REGISTER:
-                        // CMD: register/var
-                            VariableLike referenced;
-                            if (implementation != null && implementation.variableExists(argument.content)) {
-                                
-                                // INV: local variable/param
-                                Variable variable = implementation.getVariable(argument.content);
-                                referenced = variable;
-                                if (!variable.type.hasLength()) {
-                                    // i.e. this is a label or string parameter
-                                    return false;
-                                }
-                                if (
-                                    parameter.hasGroup()
-                                    && !parameter.getGroup().equals(variable.getGroup())
-                                ) {
-                                    // group doesn't fit
-                                    return false;
-                                }
-                            } else if (ast.registerExists(argument.content)) {
-                                
-                                // INV: global register 
-                                Register register = ast.getRegister(argument.content);
-                                referenced = register;
-                                if (
-                                    parameter.hasGroup()
-                                    && !register.hasGroup(parameter.getGroup())
-                                ) {
-                                    // group doesn't fit any of register
-                                    return false;
-                                }
-                            } else {
-                                // no var found for argument name
-                                return false;
-                            }
-                            if (
-                                referenced.minLength > 0 // don't check dynamic length (length == 0)
-                                && (
-                                    // range has to fit in its entirety
-                                    referenced.minLength < parameter.minLength
-                                    || referenced.maxLength > parameter.maxLength
-                                )
-                            ) {
-                                return false;
-                            }
-                            break;
-
-                        // TODO support label
-                        
-                        case STRING:
-                        // CMD: string
-                            if (
-                                implementation == null
-                                || !implementation.variableExists(argument.content)
-                                || implementation.getVariable(argument.content).type != Variable.Type.STRING
-                            ) {
-                                // no local var found or incorrect type
-                                return false;
-                            }
-                            break;
+            if (argument instanceof RawArgument) {
+            // INV: register/var/label
+                RawArgument ra = (RawArgument) argument;
+                switch (parameter.type) {
+                    case REGISTER:
+                    // CMD: register/var
+                        VariableLike referenced;
+                        if (implementation != null && implementation.variableExists(ra.name)) {
                             
-                        default:
+                            // INV: local variable/param
+                            referenced = implementation.getVariable(ra.name);
+                            if (!referenced.isNumeric()) {
+                                // i.e. this is a label or string parameter
+                                return false;
+                            }
+                        } else if (ast.registerExists(ra.name)) {
+                            
+                            // INV: global register 
+                            referenced = ast.getRegister(ra.name);
+                        } else {
+                            // no var found for argument name
                             return false;
-                    }
-                    break;
+                        }
+                        
+                        if (
+                            parameter.hasGroup()
+                            && !referenced.hasGroup(parameter.getGroup())
+                        ) {
+                            // group doesn't fit
+                            return false;
+                        }
+                        if (
+                            referenced.minLength > 0 // don't check dynamic length (length == 0)
+                            && (
+                                // at least one possible length has to fit
+                                // (rest is checked dynamically at runtime)
+                                referenced.maxLength < parameter.minLength
+                                || referenced.minLength > parameter.maxLength
+                            )
+                        ) {
+                            return false;
+                        }
+                        break;
+
+                    // TODO support label
                     
-                case NUMBER:
-                // INV: immediate
-                    if (parameter.type != Variable.Type.IMMEDIATE) {
+                    case STRING:
+                    // CMD: string
+                        if (
+                            implementation == null
+                            || !implementation.variableExists(ra.name)
+                            || implementation.getVariable(ra.name).type != Variable.Type.STRING
+                        ) {
+                            // no local var found or incorrect type
+                            return false;
+                        }
+                        break;
+                        
+                    default:
                         return false;
-                    }
-                    // TODO check length
-                    break;
-                    
-                case STRING:
-                // INV: string
-                    if (parameter.type != Variable.Type.STRING) {
-                        return false;
-                    }
-                    break;
+                }
+                
+            } else if (argument instanceof RegisterArgument) {
+            // INV: register/var '...
+                if (parameter.type != Variable.Type.REGISTER) {
+                    return false;
+                }
+                // CMD: register/var
+                
+                RegisterArgument ra = (RegisterArgument) argument;
+                // referenced variable is already known
+                // - and we assume it is a numeric variable (otherwise this
+                //   would be a RawArgument)
+                if (
+                    parameter.hasGroup()
+                    && !ra.register.hasGroup(parameter.getGroup())
+                ) {
+                    // group doesn't fit
+                    return false;
+                }
+                if (
+                    // at least one possible length has to fit
+                    // (rest is checked dynamically at runtime)
+                    ra.getMaxLength() < parameter.minLength
+                    || ra.getMinLength() > parameter.maxLength
+                ) {
+                    return false;
+                }
+                
+            } else if (argument instanceof ImmediateArgument) {
+            // INV: immediate
+                if (parameter.type != Variable.Type.IMMEDIATE) {
+                    return false;
+                }
+                ImmediateArgument ia = (ImmediateArgument) argument;
+                if (ia.getMinLength() > parameter.maxLength) {
+                    return false;
+                }
+            
+            } else if (argument instanceof StringArgument) {
+            // INV: string
+                if (parameter.type != Variable.Type.STRING) {
+                    return false;
+                }
             }
         }
         
@@ -307,54 +302,50 @@ public class Invocation extends CommandLike
     }
     
     /**
-     * Creates actual arguments from rawArguments. Must be called after
-     * invokedCommand has been determined.
+     * Conforms the invocation arguments to the invoked command. Must be called
+     * after invokedCommand has been determined.
      * 
      * @param ast
      * @param implementation The implementation containing this invocation. Null
      *                       if within userland code.
      */
     @SuppressWarnings("incomplete-switch")
-    private void createActualArgs(AST ast, Implementation implementation)
+    private void conformArgs(AST ast, Implementation implementation)
     {
         Iterator<Variable> iter = this.invokedCommand.getParameters().iterator();
-        for (Token argument : this.rawArguments) {
+        for (Argument argument : this.arguments) {
             Variable parameter = iter.next();
             
-            switch (argument.type) {
-                case NAME:
-                case LABEL_NAME:
-                // INV: register/var/label
-                    switch (parameter.type) {
-                        case REGISTER:
-                        case STRING:
-                        // CMD: register/var/string
-                            if (implementation != null && implementation.variableExists(argument.content)) {
-                                // INV: local variable/param
-                                this.arguments.add(new RegisterArgument(
-                                    implementation.getVariable(argument.content)
-                                ));
-                            } else {
-                                // INV: global register
-                                this.arguments.add(new RegisterArgument(
-                                    ast.getRegister(argument.content)
-                                ));
-                            }
-                            break;
+            if (argument instanceof RawArgument) {
+            // INV: register/var/label
+                RawArgument ra = (RawArgument) argument;
+                int index = this.arguments.indexOf(ra);
+                switch (parameter.type) {
+                    case REGISTER:
+                    case STRING:
+                    // CMD: register/var/string
+                        if (implementation != null && implementation.variableExists(ra.name)) {
+                            // INV: local variable/param
+                            this.arguments.set(
+                                index,
+                                new RegisterArgument(implementation.getVariable(ra.name))
+                            );
+                        } else {
+                            // INV: global register
+                            this.arguments.set(
+                                index,
+                                new RegisterArgument(ast.getRegister(ra.name))
+                            );
+                        }
+                        break;
 
-                        // TODO support label
-                    }
-                    break;
-                    
-                case NUMBER:
-                // immediate
-                    this.arguments.add(new ImmediateArgument(Token.number2BigInteger(argument)));
-                    break;
-                    
-                case STRING:
-                // string
-                    this.arguments.add(new StringArgument(argument.content));
-                    break;
+                    // TODO support label
+                    //      - don't forget that the label name may have to
+                    //        be resolved later (because the label may be
+                    //        defined later in source code), but here we can
+                    //        already create some LabelArgument if no
+                    //        Variable with the used name exists.
+                }
             }
         }
     }

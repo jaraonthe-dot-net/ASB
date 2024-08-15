@@ -34,6 +34,11 @@ public class Tokenizer
          * When parsing a length setting (within META code).
          */
         LENGTH,
+        
+        /**
+         * When parsing a bit position
+         */
+        POSITION,
     }
     
     
@@ -285,9 +290,11 @@ public class Tokenizer
             }
             
             // LABEL
-            token = this.consumeLabel();
-            if (token != null) {
-                return token;
+            if (this.mode != Tokenizer.Mode.POSITION) {
+                token = this.consumeLabel();
+                if (token != null) {
+                    return token;
+                }
             }
             
             // NAME
