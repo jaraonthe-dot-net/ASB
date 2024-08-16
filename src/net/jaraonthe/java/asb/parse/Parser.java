@@ -10,8 +10,11 @@ import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.invocation.Argument;
+import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
+import net.jaraonthe.java.asb.ast.invocation.RawArgument;
 import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
+import net.jaraonthe.java.asb.ast.invocation.StringArgument;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.Variable;
@@ -521,7 +524,6 @@ public class Parser
                             
                             if (this.peekedIsType(Token.Type.NAME)) {
                                 // '' varName
-                                Origin origin = Token.getOrigin(this.tokenizer.peek());
                                 VariableLike lengthRegister = this.expectNumericalVariableLike(
                                     implementation,
                                     "length"
@@ -622,7 +624,12 @@ public class Parser
                             );
                         }
                         
-                        VariableLike register = this.resolveVariableLike(t.content, implementation, t.origin);
+                        VariableLike register = this.resolveVariableLike(
+                            t.content,
+                            implementation,
+                            t.origin,
+                            true
+                        );
                         if (!register.isNumeric()) {
                             throw new ParseError(
                                 "Parameter " + register.name
@@ -691,11 +698,30 @@ public class Parser
                         break;
                     }
                     
-                    // Fall-through
+                    VariableLike potentialRegister = this.resolveVariableLike(
+                        t.content,
+                        implementation,
+                        t.origin,
+                        false
+                    );
+                    if (potentialRegister != null) {
+                        // May be a variable or label (depending on effective command)
+                        invocation.addArgument(new RawArgument(t.content, potentialRegister));
+                        break;
+                    }
+                    
+                    // Fall-through (it can only be a label)
                 case LABEL_NAME:
+                 // TODO support label
+                    throw new RuntimeException("labels not yet implemented");
+                    //break;
                 case NUMBER:
+                 // immediate
+                    invocation.addArgument(new ImmediateArgument(Token.number2BigInteger(t)));
+                    break;
                 case STRING:
-                    invocation.addArgument(Argument.fromToken(t));
+                 // string
+                    invocation.addArgument(new StringArgument(t.content));
                     break;
                     
                 case STATEMENT_SEPARATOR:
@@ -918,7 +944,7 @@ public class Parser
         Origin origin = Token.getOrigin(this.tokenizer.peek());
         String name = this.expectName();
         
-        return this.resolveVariableLike(name, implementation, origin);
+        return this.resolveVariableLike(name, implementation, origin, true);
     }
     
     /**
@@ -931,25 +957,29 @@ public class Parser
      * @param implementation The implementation we're currently within. Null if
      *                       within userland code.
      * @param origin         Used for error message
+     * @param throwError     True: Throw error if no Variable or Register with
+     *                       given name exists. False: Return null instead.
      * 
-     * @return
+     * @return May return null, depending on throwError.
      * 
-     * @throws ParseError if no Variable or Register with given name exists.
+     * @throws ParseError see throwError
      */
     private VariableLike resolveVariableLike(
         String name,
         Implementation implementation,
-        Origin origin
+        Origin origin,
+        boolean throwError
     ) throws ParseError {
         if (implementation != null && implementation.variableExists(name)) {
             return implementation.getVariable(name);
         } else if (this.ast.registerExists(name)) {
             return this.ast.getRegister(name);
-        } else {
+        } else if (throwError) {
             throw new ParseError(
                 "Unknown register or variable " + name + " at " + origin
             );
         }
+        return null;
     }
     
     

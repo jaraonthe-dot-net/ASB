@@ -9,11 +9,9 @@ import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.CommandLike;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
-import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
-import net.jaraonthe.java.asb.parse.Token;
 
 /**
  * An Invocation of a command. This is what makes up the userland program.
@@ -159,9 +157,6 @@ public class Invocation extends CommandLike
             );
         }
         
-        // TODO somehow(?) ensure that only those local variables that have been
-        //      defined before this invocation are used as arguments
-        
         this.invokedCommand = viableCommands.getFirst();
         this.conformArgs(ast, implementation);
         
@@ -197,52 +192,39 @@ public class Invocation extends CommandLike
                 switch (parameter.type) {
                     case REGISTER:
                     // CMD: register/var
-                        VariableLike referenced;
-                        if (implementation != null && implementation.variableExists(ra.name)) {
-                            
-                            // INV: local variable/param
-                            referenced = implementation.getVariable(ra.name);
-                            if (!referenced.isNumeric()) {
-                                // i.e. this is a label or string parameter
-                                return false;
-                            }
-                        } else if (ast.registerExists(ra.name)) {
-                            
-                            // INV: global register 
-                            referenced = ast.getRegister(ra.name);
-                        } else {
-                            // no var found for argument name
+                        if (!ra.potentialRegister.isNumeric()) {
+                            // i.e. this is a label or string parameter
                             return false;
                         }
                         
                         if (
                             parameter.hasGroup()
-                            && !referenced.hasGroup(parameter.getGroup())
+                            && !ra.potentialRegister.hasGroup(parameter.getGroup())
                         ) {
                             // group doesn't fit
                             return false;
                         }
                         if (
-                            referenced.minLength > 0 // don't check dynamic length (length == 0)
+                            ra.potentialRegister.minLength > 0 // don't check dynamic length (length == 0)
                             && (
                                 // at least one possible length has to fit
                                 // (rest is checked dynamically at runtime)
-                                referenced.maxLength < parameter.minLength
-                                || referenced.minLength > parameter.maxLength
+                                ra.potentialRegister.maxLength < parameter.minLength
+                                || ra.potentialRegister.minLength > parameter.maxLength
                             )
                         ) {
                             return false;
                         }
                         break;
 
-                    // TODO support label
+                    // TODO support label (i.e. either a Label Parameter, or
+                    //      a label literal)
                     
                     case STRING:
                     // CMD: string
                         if (
-                            implementation == null
-                            || !implementation.variableExists(ra.name)
-                            || implementation.getVariable(ra.name).type != Variable.Type.STRING
+                            !(ra.potentialRegister instanceof Variable)
+                            || ((Variable)ra.potentialRegister).type != Variable.Type.STRING
                         ) {
                             // no local var found or incorrect type
                             return false;
@@ -324,19 +306,10 @@ public class Invocation extends CommandLike
                     case REGISTER:
                     case STRING:
                     // CMD: register/var/string
-                        if (implementation != null && implementation.variableExists(ra.name)) {
-                            // INV: local variable/param
-                            this.arguments.set(
-                                index,
-                                new RegisterArgument(implementation.getVariable(ra.name))
-                            );
-                        } else {
-                            // INV: global register
-                            this.arguments.set(
-                                index,
-                                new RegisterArgument(ast.getRegister(ra.name))
-                            );
-                        }
+                        this.arguments.set(
+                            index,
+                            new RegisterArgument(ra.potentialRegister)
+                        );
                         break;
 
                     // TODO support label
