@@ -1,0 +1,85 @@
+/**
+ * RISC-V registers
+ */
+.register_virtual x0 ''32 { // Constant value 0
+    .get { &mov out, 0;}
+    .set {}
+}
+.register_alias zero, x0
+
+.register x1 ''32 // Return address
+.register_alias ra, x1
+
+.register x2 ''32 // Stack pointer
+.register_alias sp, x2
+
+.register x3 ''32 // Global pointer
+.register_alias gp, x3
+
+.register x4 ''32 // Thread pointer
+.register_alias tp, x4
+
+// Temporary registers
+.register x5 ''32
+.register_alias t0, x5
+.register x6 ''32
+.register_alias t1, x6
+.register x7 ''32
+.register_alias t2, x7
+
+// Saved registers
+.register x8 ''32 // Frame pointer
+.register_alias s0, x8
+.register_alias fp, x8
+.register x9 ''32
+.register_alias s1, x9
+
+// Function arguments
+.register x10 ''32 // Return value
+.register_alias a0, x10
+.register x11 ''32 // Return value
+.register_alias a1, x11
+.register x12 ''32
+.register_alias a2, x12
+.register x13 ''32
+.register_alias a3, x13
+.register x14 ''32
+.register_alias a4, x14
+.register x15 ''32
+.register_alias a5, x15
+.register x16 ''32
+.register_alias a6, x16
+.register x17 ''32
+.register_alias a7, x17
+
+//Saved registers
+.register x18 ''32
+.register_alias s2, x18
+.register x19 ''32
+.register_alias s3, x19
+.register x20 ''32
+.register_alias s4, x20
+.register x21 ''32
+.register_alias s5, x21
+.register x22 ''32
+.register_alias s6, x22
+.register x23 ''32
+.register_alias s7, x23
+.register x24 ''32
+.register_alias s8, x24
+.register x25 ''32
+.register_alias s9, x25
+.register x26 ''32
+.register_alias s10, x26
+.register x27 ''32
+.register_alias s11, x27
+
+// Temporary registers
+.register x28 ''32
+.register_alias t3, x28
+.register x29 ''32
+.register_alias t4, x29
+.register x30 ''32
+.register_alias t5, x30
+.register x31 ''32
+.register_alias t6, x31

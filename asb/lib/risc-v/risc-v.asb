@@ -1,0 +1,12 @@
+/**
+ * A simple 32bit RISC-V implementation.
+ *
+ * Based on TODO list sources
+ *
+ * @author Jakob Rathbauer <jakob@jaraonthe.net>
+ */
+.memory .word ''8 .address ''32
+.pc ''32
+
+.include "registers.asb"
+.include "commands.asb"

@@ -104,7 +104,7 @@ public class Token
             // This is where the language becomes case-insensitive
             this.content = content.toLowerCase(Locale.ROOT);
         } else {
-            this.content = null;
+            this.content = content;
         }
         this.origin  = origin;
     }

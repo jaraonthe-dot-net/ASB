@@ -51,13 +51,12 @@ public class BuiltInFunction extends Function
     {
         // TODO Add more
         
-        // &add
-        ast.addCommand(Add.create(Add.Variant.REG_REG_IMM, false));
-        ast.addCommand(Add.create(Add.Variant.REG_REG_REG, false));
-        
-        // &addc
-        ast.addCommand(Add.create(Add.Variant.REG_REG_IMM, true));
-        ast.addCommand(Add.create(Add.Variant.REG_REG_REG, true));
+        // &add, &addc, &sub, &subc
+        for (Add.Type type : Add.Type.values()) {
+            for (Add.Operands operands : Add.Operands.values()) {
+                ast.addCommand(Add.create(type, operands));
+            }
+        }
         
         // &assert
         for (Assert.Operator operator : Assert.Operator.values()) {

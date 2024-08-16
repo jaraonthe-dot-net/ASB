@@ -1,6 +1,8 @@
 package net.jaraonthe.java.asb.parse;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +11,6 @@ import java.util.Set;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
-import net.jaraonthe.java.asb.ast.invocation.Argument;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.invocation.RawArgument;
@@ -20,6 +21,7 @@ import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
+import net.jaraonthe.java.asb.built_in.BuiltInFunction;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.LexicalError;
 import net.jaraonthe.java.asb.exception.ParseError;
@@ -28,7 +30,10 @@ import net.jaraonthe.java.asb.exception.ParseError;
  * Parses ASB source code into AST.<br>
  * 
  * Takes care of all semantic rules and constraints. Applies all necessary
- * transformations. The resulting AST can be executed directly.
+ * transformations. The resulting AST can be executed directly.<br>
+ * 
+ * Each Parser instance parses exactly one source file. Use {@link #parse()}
+ * to run the parsing procedure in its entirety.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -37,12 +42,12 @@ public class Parser
     /**
      * The AST that will be filled by this Parser.
      */
-    public final AST ast = new AST();
+    private final AST ast;
     
     /**
-     * The currently used Tokenizer (which is coupled to exactly one SourceFile).
+     * This Parser's Tokenizer (through which both are coupled to one Sourcefile).
      */
-    private Tokenizer tokenizer;
+    private final Tokenizer tokenizer;
     
     // TODO Be aware & handle potential "Fluke" Tokens:
     //        Token           => may be this:
@@ -50,32 +55,63 @@ public class Parser
     //      - NUMBER          => label name
     //      - DIRECTIVE       => label name
     
-    // TODO Consider re-arranging so that one Parser instance takes care of
-    //      exactly one SourceFile (makes coupling to tokenizer easier).
-    //      This means:
-    //      - ast is set from the outside
-    //      - SourceFile is set in constructor.
-    //      - when .include (or whatever it is called) directive is encountered,
-    //        another Parser instance is created to handle the included file
-    //        before continuing the current parse (this is the main reason to
-    //        have one Parser per file).
-    //      - There should be another class taking care of the overall parsing
-    //        process (parsing all input files, doing constraints & transforms
-    //        after all file Parsers are done). What to call this class?
-    
     
     /**
-     * Parses the given file.
+     * Executes the entire parsing procedure.
      * 
-     * @param file
+     * This includes parsing all files, resolving all variables and invocations
+     * and other possible post-parsing checks.
+     * 
+     * @param filePaths The files represented by these paths are parsed in the
+     *                  given order.
+     * 
+     * @return A complete and correct AST, which is ready to be interpreted.
      * 
      * @throws LexicalError
      * @throws ParseError
      */
-    public void parseFile(SourceFile file) throws LexicalError, ParseError
+    public static AST parse(List<String> filePaths) throws LexicalError, ParseError
+    {
+        AST ast = new AST();
+        BuiltInFunction.initBuiltInFunctions(ast);
+        
+        for (String filePath : filePaths) {
+            SourceFile file;
+            try {
+                file = new SourceFile(filePath);
+            } catch (IOException e) {
+                throw new ParseError(
+                    "Cannot open file " + filePath + " for parsing"
+                );
+            }
+            Parser parser = new Parser(file, ast);
+            parser.run();
+        }
+        
+        Parser.resolveImplementationInvocations(ast);
+        
+        return ast;
+    }
+    
+    
+    /**
+     * @param file The file that this Parser instance works on
+     * @param ast
+     */
+    protected Parser(SourceFile file, AST ast)
     {
         this.tokenizer = new Tokenizer(file);
-        
+        this.ast = ast;
+    }
+    
+    /**
+     * Runs this Parser, i.e. parses the configured file.
+     * 
+     * @throws LexicalError
+     * @throws ParseError
+     */
+    private void run() throws LexicalError, ParseError
+    {
         Token t;
         while ((t = this.tokenizer.next()) != null) {
             switch (t.type) {
@@ -127,6 +163,24 @@ public class Parser
         
         Token t;
         switch (directive.content) {
+            case ".include":
+                t = this.expect(Token.Type.STRING);
+                this.expectStatementSeparator();
+                
+                // Resolve given path relatively against directory of current file
+                Path filePath = this.tokenizer.file.filePath.getParent().resolve(t.content);
+                SourceFile file;
+                try {
+                    file = new SourceFile(filePath);
+                } catch (IOException e) {
+                    throw new ParseError(
+                        "Cannot open file " + filePath + " for parsing, included at " + directive.origin
+                    );
+                }
+                
+                new Parser(file, this.ast).run();
+                
+                break;
             case ".memory":
                 // TODO check if first invocation of a command using memory was
                 //      already parsed -> configuring memory no longer allowed
@@ -833,7 +887,7 @@ public class Parser
     }
     
     /**
-     * Shorthand for this.expect(Token.Type.STATEMENT_SEPARATOR);
+     * Shorthand for {@code this.expect(Token.Type.STATEMENT_SEPARATOR)};
      * 
      * @throws LexicalError
      * @throws ParseError
@@ -1233,22 +1287,24 @@ public class Parser
      * implementations (whereas invocations within userland program are
      * resolved immediately).<br>
      * 
-     * Call this once after all parsing is done.
+     * This is called once after all parsing is done.
      * 
+     * @param ast
      * @throws ParseError
      */
-    public void resolveImplementationInvocations() throws ParseError
+    private static void resolveImplementationInvocations(AST ast) throws ParseError
     {
-        for (Command command : this.ast.getCommands()) {
-            if (command.getInterpretable() instanceof Implementation)
-            this.resolveWithinImplementation((Implementation)command.getInterpretable());
+        for (Command command : ast.getCommands()) {
+            if (command.getInterpretable() instanceof Implementation) {
+                Parser.resolveWithinImplementation((Implementation)command.getInterpretable(), ast);
+            }
         }
         
-        for (Register register : this.ast.getRegisters()) {
+        for (Register register : ast.getRegisters()) {
             if (register instanceof VirtualRegister) {
                 VirtualRegister vr = (VirtualRegister)register;
-                this.resolveWithinImplementation(vr.getGetterImplementation());
-                this.resolveWithinImplementation(vr.getSetterImplementation());
+                Parser.resolveWithinImplementation(vr.getGetterImplementation(), ast);
+                Parser.resolveWithinImplementation(vr.getSetterImplementation(), ast);
             }
         }
     }
@@ -1257,13 +1313,15 @@ public class Parser
      * Used by {@link #resolveImplementationInvocations()}.
      * 
      * @param implementation
+     * @param ast
+     * 
      * @throws ParseError
      */
-    private void resolveWithinImplementation(Implementation implementation) throws ParseError
+    private static void resolveWithinImplementation(Implementation implementation, AST ast) throws ParseError
     {
         for (Invocation invocation : implementation) {
             try {
-                invocation.resolve(this.ast, implementation);
+                invocation.resolve(ast, implementation);
             } catch (ConstraintException e) {
                 // TODO include origin (somehow?)
                 throw new ParseError(e.getMessage());

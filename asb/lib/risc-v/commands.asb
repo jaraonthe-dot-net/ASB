@@ -1,0 +1,111 @@
+/**
+ * RISC-V commands
+ */
+
+/* Helper functions */
+.define &calculate_address /register result''32, /variable imm''12(/register rs1''32) {
+    &sign_extend result, imm
+    &add result, result, rs1
+}
+
+
+/* LOAD/STORE */
+
+// load byte
+.define lb /register rd''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    .variable byte ''8
+    &mov byte, @address
+    &sign_extend rd, byte
+}
+// Load half
+.define lh /register rd''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov rd'7:0, @address
+    &add address, address, 1
+    .variable byte ''8
+    &mov byte, @address
+    &sign_extend rd'31:8, byte
+}
+// Load word
+.define lw /register rd''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov rd'7:0, @address
+    &add address, address, 1
+    &mov rd'15:8, @address
+    &add address, address, 1
+    &mov rd'23:16, @address
+    &add address, address, 1
+    &mov rd'31:24, @address
+}
+// Load byte unsigned
+.define lbu /register rd''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov rd, 0
+    &mov rd'7:0, @address
+}
+// Load half unsigned
+.define lhu /register rd''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov rd, 0
+    &mov rd'7:0, @address
+    &add address, address, 1
+    &mov rd'15:8, @address
+}
+// Load upper immediate
+.define lui /register rd''32, /immediate upimm''20 {
+    &mov rd, 0
+    &mov rd'31:12, upimm
+}
+
+// Store byte
+.define sb /register rs2''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov @address, rs2'7:0
+}
+// Store half
+.define sh /register rs2''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov @address, rs2'7:0
+    &add address, address, 1
+    &mov @address, rs2'15:8
+}
+// Store word
+.define sw /register rs2''32, /immediate imm''12(/register rs1''32) {
+    .variable address ''32; &calculate_address address, imm(rs1)
+    
+    &mov @address, rs2'7:0
+    &add address, address, 1
+    &mov @address, rs2'15:8
+    &add address, address, 1
+    &mov @address, rs2'23:16
+    &add address, address, 1
+    &mov @address, rs2'31:24
+}
+
+
+/* ARITHMETICAL */
+
+// Add
+.define add /register rd''32, /register rs1''32, /register rs2''32 {
+    &add rd, rs1, rs2
+}
+// Add immediate
+.define addi /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    &add rd, rs1, extended
+}
+// Sub
+.define sub /register rd''32, /register rs1''32, /register rs2''32 {
+    &sub rd, rs1, rs2
+}
+
+// TODO: slli, slti, sltiu, xori, srli, srai, ori, andi, auipc, sll, slt, sltu,
+//       xor, srl, sra, or, and, beq, bne, blt, bge, bltu, bgeu, jalr, jal

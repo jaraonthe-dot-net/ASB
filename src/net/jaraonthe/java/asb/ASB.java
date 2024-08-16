@@ -1,8 +1,10 @@
 package net.jaraonthe.java.asb;
 
-import net.jaraonthe.java.asb.built_in.BuiltInFunction;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.parse.Parser;
-import net.jaraonthe.java.asb.parse.SourceFile;
 
 /**
  * The main ASB program. Parses and executes a given ASB program.
@@ -20,14 +22,11 @@ public class ASB
 	{
 	    // TODO Experimental
 	    
-	    Parser parser = new Parser();
+	    List<String> filePaths = new ArrayList<>();
 	    try {
-	        BuiltInFunction.initBuiltInFunctions(parser.ast);
-    	    SourceFile file = new SourceFile(args[0]);
-    	    
-    	    parser.parseFile(file);
-    	    parser.resolveImplementationInvocations();
-	    
+	        filePaths.add(args[0]);
+	        
+	        AST ast = Parser.parse(filePaths);
     	    System.out.println("Successfully parsed.");
 	    } catch (Exception e) {
 	        //System.out.println(e);

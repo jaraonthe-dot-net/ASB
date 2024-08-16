@@ -32,7 +32,16 @@ public class SourceFile
      */
     public SourceFile(String filePath) throws IOException
     {
-        this.filePath = Paths.get(filePath).toAbsolutePath();
+        this(Paths.get(filePath));
+    }
+    
+    /**
+     * @param filePath
+     * @throws IOException
+     */
+    public SourceFile(Path filePath) throws IOException
+    {
+        this.filePath = filePath.toAbsolutePath();
         this.lines    = Collections.unmodifiableList(Files.readAllLines(this.filePath));
     }
     

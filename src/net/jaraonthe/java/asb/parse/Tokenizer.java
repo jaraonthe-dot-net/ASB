@@ -57,7 +57,7 @@ public class Tokenizer
     /**
      * The file that's being tokenized.
      */
-    private final SourceFile file;
+    public final SourceFile file;
     
     /**
      * The current line in the file (0-based).

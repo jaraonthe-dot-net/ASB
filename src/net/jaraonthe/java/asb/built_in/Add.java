@@ -5,52 +5,71 @@ import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
- * The {@code &add} and {@code &addc} built-in functions.<br>
+ * The {@code &add}, {@code &addc}, {@code &sub}, and {@code &subc} built-in
+ * functions.<br>
  * 
  * {@code &add dstRegister, src1Register, src2Imm};<br>
  * {@code &add dstRegister, src1Register, srcRegister2};<br>
  * {@code &addc dstRegister, src1Register, src2Imm};<br>
- * {@code &addc dstRegister, src1Register, srcRegister2};
+ * {@code &addc dstRegister, src1Register, srcRegister2};<br>
+ * {@code &sub dstRegister, src1Register, src2Imm};<br>
+ * {@code &sub dstRegister, src1Register, srcRegister2};<br>
+ * {@code &subc dstRegister, src1Register, src2Imm};<br>
+ * {@code &subc dstRegister, src1Register, srcRegister2};
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
 public class Add implements Interpretable
 {
-    public enum Variant
+    public enum Type
+    {
+        ADD("&add"),
+        ADDC("&addc"),
+        SUB("&sub"),
+        SUBC("&subc");
+        
+        public final String functionName;
+        
+        private Type(String functionName)
+        {
+            this.functionName = functionName;
+        }
+    }
+    public enum Operands
     {
         // destination_source1_source2
         REG_REG_IMM, // &add dstRegister, src1Register, src2Imm
         REG_REG_REG, // &add dstRegister, src1Register, srcRegister2
     }
     
-    private final Add.Variant variant;
-    
-    private final boolean isAddc;
+    private final Add.Type type;
+    private final Add.Operands operands;
     
     /**
-     * @param variant Selects the operand variant of this command
-     * @param isAddc  Selects the Add or Addc variant of this command
+     * @param type     Selects the actual function
+     * @param operands Selects the function variant (via the Operands set up)
      */
-    private Add(Add.Variant variant, boolean isAddc)
+    private Add(Add.Type type, Add.Operands operands)
     {
-        this.variant = variant;
-        this.isAddc  = isAddc;
+        this.type = type;
+        this.operands = operands;
     }
     
     // TODO interpret() once designed
     
     
     /**
-     * Creates a {@code &add} or {@code &addc} built-in function with the given variant.
+     * Creates a {@code &add}, {@code &addc}, {@code &sub}, or {@code &subc}
+     * built-in function with the given operands variant.
      * 
-     * @param variant Selects the operand variant of this command
-     * @param isAddc  Selects the Add or Addc variant of this command
+     * @param type     Selects the actual function
+     * @param operands Selects the function variant (via the Operands set up)
      * 
      * @return
      */
-    public static BuiltInFunction create(Add.Variant variant, boolean isAddc)
+    public static BuiltInFunction create(Add.Type type, Add.Operands operands)
     {
-        BuiltInFunction function = new BuiltInFunction((isAddc ? "&addc" : "&add"), false);
+        BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
         function.addParameter(new Variable(
             Variable.Type.REGISTER,
@@ -67,7 +86,7 @@ public class Add implements Interpretable
         ));
         function.addCommandSymbols(",");
         
-        switch (variant) {
+        switch (operands) {
             case REG_REG_IMM:
                 // &add dstRegister, src1Register, src2Imm
                 function.addParameter(new Variable(
@@ -88,7 +107,7 @@ public class Add implements Interpretable
                 break;
         }
         
-        function.setInterpretable(new Add(variant, isAddc));
+        function.setInterpretable(new Add(type, operands));
         return function;
     }
 }
