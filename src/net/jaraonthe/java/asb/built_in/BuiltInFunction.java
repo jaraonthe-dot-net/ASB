@@ -71,12 +71,24 @@ public class BuiltInFunction extends Function
         ast.addCommand(Length.create());
         
         // &mov
-        ast.addCommand(Mov.create(Mov.Variant.MEM_IMM));
-        ast.addCommand(Mov.create(Mov.Variant.MEM_MEM));
-        ast.addCommand(Mov.create(Mov.Variant.MEM_REG));
-        ast.addCommand(Mov.create(Mov.Variant.REG_IMM));
-        ast.addCommand(Mov.create(Mov.Variant.REG_MEM));
-        ast.addCommand(Mov.create(Mov.Variant.REG_REG));
+        for (Mov.Operands operands : Mov.Operands.values()) {
+            ast.addCommand(Mov.create(operands));
+        }
+        
+        // &print, &println
+        for (Print.Type type : Print.Type.values()) {
+            ast.addCommand(Print.create(type, Print.Operand.REGISTER));
+            ast.addCommand(Print.create(type, Print.Operand.IMMEDIATE));
+            ast.addCommand(Print.create(type, Print.Operand.STRING));
+        }
+        ast.addCommand(Print.create(Print.Type.PRINTLN, Print.Operand.NONE));
+        
+        // &print_*, &println_*
+        for (PrintFormatted.Type type : PrintFormatted.Type.values()) {
+            for (PrintFormatted.Format format : PrintFormatted.Format.values()) {
+                ast.addCommand(PrintFormatted.create(type, format));
+            }
+        }
         
         // &sign_extend
         ast.addCommand(SignExtend.create());

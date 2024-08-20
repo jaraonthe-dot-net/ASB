@@ -1,7 +1,12 @@
 package net.jaraonthe.java.asb.built_in;
 
+import java.math.BigInteger;
+
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -18,7 +23,7 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class Mov implements Interpretable
 {
-    public enum Variant
+    public enum Operands
     {
         // destination_source
         MEM_IMM, // &mov @dstAddress, imm
@@ -29,30 +34,69 @@ public class Mov implements Interpretable
         REG_REG, // &mov dstRegister, srcRegister
     }
     
-    private final Mov.Variant variant;
+    private final Mov.Operands operands;
     
     /**
-     * @param variant Selects the variant of this command
+     * @param operands Selects the operands of this command
      */
-    private Mov(Mov.Variant variant)
+    private Mov(Mov.Operands operands)
     {
-        this.variant = variant;
+        this.operands = operands;
+    }
+
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue src;
+        NumericValue dst;
+        switch (this.operands) {
+            case MEM_IMM:
+            case MEM_MEM:
+            case MEM_REG:
+            case REG_MEM:
+                // TODO memory (incl. lengths check)
+                throw new RuntimeException("memory not implemented yet");
+                
+            case REG_IMM:
+                src = context.frame.getNumericValue("src");
+                dst = context.frame.getNumericValue("dst");
+                BigInteger srcImm = src.read(context);
+                if (srcImm.bitLength() + (srcImm.signum() < 0 ? 1 : 0) > dst.length) {
+                    throw new RuntimeError(
+                        "Cannot &mov immediate " + srcImm + " to variable "
+                        + dst.getReferenced().variable.name + " as it is too big"
+                    );
+                }
+                dst.write(srcImm, context);
+                break;
+                
+            case REG_REG:
+                src = context.frame.getNumericValue("src");
+                dst = context.frame.getNumericValue("dst");
+                if (src.length != dst.length) {
+                    throw new RuntimeError(
+                        "Cannot &mov between two variables " + src.getReferenced().variable.name
+                        + " and " + dst.getReferenced().variable.name + " that do not have the same length"
+                    );
+                }
+                dst.write(src.read(context), context);
+                break;
+        }
     }
     
-    // TODO interpret() once designed
-    
     
     /**
-     * Creates a {@code &mov} built-in function with the given variant.
+     * Creates a {@code &mov} built-in function with the given operands.
      * 
-     * @param variant
+     * @param operands
      * @return
      */
-    public static BuiltInFunction create(Mov.Variant variant)
+    public static BuiltInFunction create(Mov.Operands operands)
     {
         BuiltInFunction function = new BuiltInFunction("&mov", false);
         
-        switch (variant) {
+        switch (operands) {
             case MEM_IMM:
                 // &mov @dstAddress, imm
                 function.addCommandSymbols("@");
@@ -65,7 +109,7 @@ public class Mov implements Interpretable
                 function.addCommandSymbols(",");
                 function.addParameter(new Variable(
                     Variable.Type.IMMEDIATE,
-                    "imm",
+                    "src",
                     Constraints.MAX_LENGTH
                 ));
                 break;
@@ -100,7 +144,7 @@ public class Mov implements Interpretable
                 function.addCommandSymbols(",");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "srcRegister",
+                    "src",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
@@ -110,14 +154,14 @@ public class Mov implements Interpretable
                 // &mov dstRegister, imm
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstRegister",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
                 function.addCommandSymbols(",");
                 function.addParameter(new Variable(
                     Variable.Type.IMMEDIATE,
-                    "imm",
+                    "src",
                     Constraints.MAX_LENGTH
                 ));
                 break;
@@ -126,7 +170,7 @@ public class Mov implements Interpretable
                 // &mov dstRegister, @srcAddress
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstRegister",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
@@ -143,21 +187,21 @@ public class Mov implements Interpretable
                 // &mov dstRegister, srcRegister
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstRegister",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
                 function.addCommandSymbols(",");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "srcRegister",
+                    "src",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
                 break;
         }
         
-        function.setInterpretable(new Mov(variant));
+        function.setInterpretable(new Mov(operands));
         return function;
     }
 }

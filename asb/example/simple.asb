@@ -34,9 +34,9 @@
     &mov rd'31:24, @address
 }
 
-lw a, 0(b)
-lw b, 2(a)
-lw a, -13(a)
+//lw a, 0(b)
+//lw b, 2(a)
+//lw a, -13(a)
 
 
 // AMD-64
@@ -79,3 +79,7 @@ lw a, -13(a)
     &mov rflags_new'7, result'sd_1 // sign
     &mov rflags, rflags_new
 }
+
+&println "Hello World"
+&print "a: "
+&println a

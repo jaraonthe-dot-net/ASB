@@ -296,4 +296,12 @@ public class AST
     {
         return !this.program.isEmpty();
     }
+    
+    /**
+     * @return the actual userland program
+     */
+    public List<Invocation> getProgram()
+    {
+        return this.program;
+    }
 }

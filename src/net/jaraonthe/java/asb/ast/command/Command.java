@@ -119,6 +119,15 @@ public class Command extends CommandLike
     }
     
     /**
+     * @param index 0 is the first (leftmost) parameter
+     * @return The parameter at given index
+     */
+    public Variable getParameterAt(int index)
+    {
+        return this.parameters.get(index);
+    }
+    
+    /**
      * @return Readonly parameter list
      */
     public List<Variable> getParameters()

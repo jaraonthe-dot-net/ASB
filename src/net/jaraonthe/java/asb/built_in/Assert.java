@@ -1,6 +1,7 @@
 package net.jaraonthe.java.asb.built_in;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.parse.Constraints;
 
@@ -71,8 +72,14 @@ public class Assert implements Interpretable
         this.b        = b;
         this.hasMessage = hasMessage;
     }
+
     
-    // TODO interpret() once designed
+    @Override
+    public void interpret(Context context)
+    {
+        // TODO
+        throw new RuntimeException("&assert not implemented yet");
+    }
     
     
     /**

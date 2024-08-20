@@ -25,12 +25,14 @@ import net.jaraonthe.java.asb.built_in.BuiltInFunction;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.LexicalError;
 import net.jaraonthe.java.asb.exception.ParseError;
+import net.jaraonthe.java.asb.interpret.Interpreter;
 
 /**
  * Parses ASB source code into AST.<br>
  * 
  * Takes care of all semantic rules and constraints. Applies all necessary
- * transformations. The resulting AST can be executed directly.<br>
+ * transformations. The resulting AST can be executed directly (see {@link
+ * Interpreter#interpret()}).<br>
  * 
  * Each Parser instance parses exactly one source file. Use {@link #parse()}
  * to run the parsing procedure in its entirety.
@@ -1209,7 +1211,7 @@ public class Parser
      * 
      * @param token       A NUMBER Token with a positive number
      * @param unsigned    False: Length is chosen to accomodate negative numbers
-     *                    as well (Twos Complement) ("max" behavior). (True:
+     *                    as well (two's-complement) ("max" behavior). (True:
      *                    "maxu" behavior)
      * @param elementName Used in a length error message. May be null
      * 

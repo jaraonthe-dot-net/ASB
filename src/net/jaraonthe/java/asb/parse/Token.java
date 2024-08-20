@@ -235,15 +235,15 @@ public class Token
     /**
      * Transforms a NUMBER token's content to a BigInteger value.<br>
      * 
-     * This should be used for all immediate values.
+     * This should be used for all immediate values.<br>
+     * 
+     * Note: This creates a negative BigInteger if the given number starts with
+     * '-'. For immediates this is fine, but for subsequent storing in registers
+     * (in interpretation stage) such negative values should be transformed.
      * 
      * @param token a NUMBER token
      * @return
      */
-    // TODO What about negative numbers? We either need to know the var length
-    //      to extend leading 1s accordingly, or use a negative BigInteger
-    //      (which may require special handling in several places)
-    //      - currently, a negative BigInteger is created
     public static BigInteger number2BigInteger(Token token)
     {
         if (!Token.getType(token).equals(Token.Type.NUMBER)) {

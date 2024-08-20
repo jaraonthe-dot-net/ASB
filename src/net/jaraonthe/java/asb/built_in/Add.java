@@ -1,7 +1,12 @@
 package net.jaraonthe.java.asb.built_in;
 
+import java.math.BigInteger;
+
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -23,9 +28,9 @@ public class Add implements Interpretable
 {
     public enum Type
     {
-        ADD("&add"),
+        ADD ("&add"),
         ADDC("&addc"),
-        SUB("&sub"),
+        SUB ("&sub"),
         SUBC("&subc");
         
         public final String functionName;
@@ -51,11 +56,71 @@ public class Add implements Interpretable
      */
     private Add(Add.Type type, Add.Operands operands)
     {
-        this.type = type;
+        this.type     = type;
         this.operands = operands;
     }
+
     
-    // TODO interpret() once designed
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue src1 = context.frame.getNumericValue("src1");
+        NumericValue src2 = context.frame.getNumericValue("src2");
+        NumericValue dst  = context.frame.getNumericValue("dst");
+        
+        // Check lengths
+        switch (this.type) {
+            case ADD:
+            case SUB:
+                if (src1.length != dst.length || src2.length != dst.length) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " two variables "
+                        + src1.getReferenced().variable.name + " and " + src2.getReferenced().variable.name
+                        + " that do not have the same length as the destination variable "
+                        + dst.getReferenced().variable.name
+                    );
+                }
+                break;
+                
+            case ADDC:
+            case SUBC:
+                if (src1.length != src2.length) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " two variables "
+                        + src1.getReferenced().variable.name + " and " + src2.getReferenced().variable.name
+                        + " that do not have the same length"
+                    );
+                }
+                if (src1.length + 1 != dst.length) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " into destination variable "
+                        + dst.getReferenced().variable.name
+                        + " as it does not have the expected length (src length + 1)"
+                    );
+                }
+                break;
+        }
+        
+        BigInteger src1Value = src1.read(context);
+        BigInteger src2Value = src2.read(context);
+        BigInteger result = null;
+        switch (this.type) {
+            case ADD:
+            case ADDC:
+                result = src1Value.add(src2Value);
+                break;
+            case SUB:
+            case SUBC:
+                result = src1Value.subtract(src2Value);
+                break;
+        }
+        if (this.type == Add.Type.ADD || this.type == Add.Type.SUB) {
+            // Cut off potential carry-out
+            result = result.clearBit(dst.length);
+        }
+        
+        dst.write(result, context);
+    }
     
     
     /**
@@ -91,7 +156,7 @@ public class Add implements Interpretable
                 // &add dstRegister, src1Register, src2Imm
                 function.addParameter(new Variable(
                     Variable.Type.IMMEDIATE,
-                    "src2Imm",
+                    "src2",
                     Constraints.MAX_LENGTH
                 ));
                 break;
@@ -100,7 +165,7 @@ public class Add implements Interpretable
                 // &add dstRegister, src1Register, srcRegister2
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "src2Register",
+                    "src2",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));

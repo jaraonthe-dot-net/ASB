@@ -9,7 +9,10 @@ import java.util.Map;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 
 /**
  * This is the implementation of a command or function, which is made up of
@@ -122,5 +125,20 @@ public class Implementation implements Interpretable, Iterable<Invocation>
         }
         
         return this.variables + "\n" + text;
+    }
+
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        // TODO this is temporary (as it doesn't support local variables with dynamic length)
+        for (Variable variable : this.variables.values()) {
+            if (variable.type == Variable.Type.LOCAL_VARIABLE) {
+                context.frame.addValue(new NumericValueStore(variable));
+            }
+        }
+        
+        for (Invocation invocation : this.program) {
+            invocation.interpret(context);
+        }
     }
 }

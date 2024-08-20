@@ -1,13 +1,19 @@
 package net.jaraonthe.java.asb.interpret;
 
+import net.jaraonthe.java.asb.exception.RuntimeError;
+
 /**
- * Something that can be executed by the Interpreter. This is either an
- * Implementation block as defined in ASB source code, or a specific class for
- * a built-in function.
+ * Something that can be executed by the Interpreter.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
 public interface Interpretable
 {
-    // TODO add interpret() method once we know what it's signature shall be
+    /**
+     * Interprets this entity.
+     * 
+     * @param context
+     * @throws RuntimeError
+     */
+    public void interpret(Context context) throws RuntimeError;
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.jaraonthe.java.asb.ast.AST;
+import net.jaraonthe.java.asb.interpret.Interpreter;
 import net.jaraonthe.java.asb.parse.Parser;
 
 /**
@@ -27,7 +28,11 @@ public class ASB
 	        filePaths.add(args[0]);
 	        
 	        AST ast = Parser.parse(filePaths);
-    	    System.out.println("Successfully parsed.");
+    	    System.out.println("Parsed successfully.");
+    	    
+    	    Interpreter.interpret(ast);
+    	    System.out.println("Ran successfully.");
+    	    
 	    } catch (Exception e) {
 	        //System.out.println(e);
             e.printStackTrace();

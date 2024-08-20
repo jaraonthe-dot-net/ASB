@@ -11,13 +11,18 @@ import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
+import net.jaraonthe.java.asb.interpret.Frame;
+import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.Value;
 
 /**
  * An Invocation of a command. This is what makes up the userland program.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class Invocation extends CommandLike
+public class Invocation extends CommandLike implements Interpretable
 {
     /**
      * This human-readable signature is only used when this Invocation is not
@@ -329,5 +334,33 @@ public class Invocation extends CommandLike
             return this.invokedCommand + this.arguments.toString();
         }
         return this.name + " " + this.readableSignature;
+    }
+    
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        // The frame for the command's interpretable must be constructed here,
+        // as it has to be populated with the argument values
+        Frame newFrame;
+        if (context.frame.parentFrame == null) {
+            // Switching from userland to implementations
+            newFrame = new Frame(context.frame);
+        } else {
+            // Invocation within an implementation
+            newFrame = new Frame(context.frame.parentFrame);
+        }
+        
+        int i = 0;
+        for (Argument argument : this.arguments) {
+            newFrame.addValue(Value.fromArgument(
+                argument,
+                this.invokedCommand.getParameterAt(i),
+                context
+            ));
+            i++;
+        }
+        
+        this.invokedCommand.getInterpretable().interpret(new Context(newFrame, context.ast));
     }
 }
