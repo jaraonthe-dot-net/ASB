@@ -26,7 +26,7 @@ public class Length implements Interpretable
         NumericValue dst = context.frame.getNumericValue("dst");
         if (length.bitLength() > dst.length) {
             throw new RuntimeError(
-                "Cannot store result of &length in " + dst.getReferenced().variable.name
+                "Cannot store result of &length in " + dst.getReferencedName()
                 + " as the result value is too big"
             );
         }

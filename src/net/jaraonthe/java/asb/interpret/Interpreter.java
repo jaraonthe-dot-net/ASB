@@ -1,12 +1,17 @@
 package net.jaraonthe.java.asb.interpret;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
+
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
+import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.value.NumericValueReference;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
+import net.jaraonthe.java.asb.interpret.value.VirtualNumericValue;
 import net.jaraonthe.java.asb.parse.Parser;
 
 /**
@@ -61,7 +66,7 @@ public class Interpreter
         int i = 0;
         for (Invocation invocation : this.ast.getProgram()) {
             // TODO a more sophisticated program run output
-            System.out.println(String.format("%4x: %s", i, invocation.toString()));
+            System.err.println(String.format("%4x: %s", i, invocation.toString()));
             invocation.interpret(context);
             
             i++;
@@ -72,28 +77,34 @@ public class Interpreter
      * Initializes the global frame.
      */
     private void initGlobalFrame() {
+        Queue<RegisterAlias> registerAliases = new ArrayDeque<>();
         for (Register register : this.ast.getRegisters()) {
             if (register instanceof RegisterAlias) {
+                registerAliases.add((RegisterAlias)register);
                 continue;
             }
-            // TODO VirtualRegister
+            if (register instanceof VirtualRegister) {
+                this.globalFrame.addValue(new VirtualNumericValue((VirtualRegister)register));
+                continue;
+            }
             this.globalFrame.addValue(new NumericValueStore(register));
         }
         
         // RegisterAlias
         // - this is done in an extra pass because the referenced register must
         //   already exist
-        // TODO Double-check in the Parser that virtual registers can only refer
-        //      to real registers in the language syntax - otherwise we need
-        //      to do something more complex here.
-        //      
-        for (Register register : this.ast.getRegisters()) {
-            if (!(register instanceof RegisterAlias)) {
+        while (!registerAliases.isEmpty()) {
+            RegisterAlias ra = registerAliases.poll();
+        
+            if (!this.globalFrame.valueExists(ra.aliasedRegister.name)) {
+                // The referenced register may be an alias as well, thus may not
+                // exist yet - let's retry later
+                registerAliases.add(ra);
                 continue;
             }
-            RegisterAlias ra = (RegisterAlias) register;
+            
             this.globalFrame.addValue(new NumericValueReference(
-                register,
+                ra,
                 this.globalFrame.getNumericValue(ra.aliasedRegister.name)
             ));
         }

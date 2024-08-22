@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
@@ -66,7 +67,7 @@ public class PrintFormatted implements Interpretable
 
     
     @Override
-    public void interpret(Context context)
+    public void interpret(Context context) throws RuntimeError
     {
         NumericValue parameter = context.frame.getNumericValue("parameter");
         BigInteger value = parameter.read(context);

@@ -131,6 +131,10 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     public void interpret(Context context) throws RuntimeError
     {
         // TODO this is temporary (as it doesn't support local variables with dynamic length)
+        //      - once changed (and in combination with jump support within
+        //        implementations), any interpretation code that accesses
+        //        local variables must be able to handle non-existence of that
+        //        variable !
         for (Variable variable : this.variables.values()) {
             if (variable.type == Variable.Type.LOCAL_VARIABLE) {
                 context.frame.addValue(new NumericValueStore(variable));

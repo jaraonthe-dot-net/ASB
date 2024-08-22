@@ -1,6 +1,7 @@
 package net.jaraonthe.java.asb.built_in;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.parse.Constraints;
@@ -58,10 +59,20 @@ public class Print implements Interpretable
 
     
     @Override
-    public void interpret(Context context)
+    public void interpret(Context context) throws RuntimeError
     {
-        if (this.operand != Print.Operand.NONE) {
-            System.out.print(context.frame.getValue("parameter"));
+        switch (this.operand) {
+            case REGISTER:
+            case IMMEDIATE:
+                // Always trigger a read on virtual registers and bitwise access
+                System.out.print(context.frame.getNumericValue("parameter").read(context));
+                break;
+            case STRING:
+                System.out.print(context.frame.getValue("parameter"));
+                break;
+            case NONE:
+                // nothing
+                break;
         }
         if (this.type == Print.Type.PRINTLN) {
             System.out.println();

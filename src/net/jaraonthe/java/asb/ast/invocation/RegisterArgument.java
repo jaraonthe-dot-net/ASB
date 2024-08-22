@@ -1,7 +1,11 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
+import java.math.BigInteger;
+
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -161,6 +165,7 @@ public class RegisterArgument extends Argument
                 );
             }
             
+            // TODO Also check that positions are within variable length (unless dynamic length)
             // from
             if (this.fromPosition != -1) {
                 if (!Constraints.isValidPosition(fromPosition)) {
@@ -320,5 +325,94 @@ public class RegisterArgument extends Argument
         }
         
         return this.register.name + "'" + position;
+    }
+
+    
+    /**
+     * Calculates the effective start position of bitwise access.
+     * 
+     * This also resolves dynamic position (via position register) using the
+     * given interpretation context.
+     * 
+     * @param context
+     * 
+     * @return
+     * 
+     * @throws RuntimeError
+     * @throws IllegaleStateException if {@link #hasPosition()} is false
+     */
+    public int getEffectiveFromPosition(Context context) throws RuntimeError
+    {
+        if (this.fromPosition != -1) {
+            return this.fromPosition;
+        }
+        if (this.fromPositionRegister != null) {
+            return this.register2Position(this.fromPositionRegister, context);
+        }
+        
+        throw new IllegalStateException(
+            "Cannot compute effetive fromPosition when not accessing Variable bitwise"
+        );
+    }
+    
+    /**
+     * Calculates the effective end position of bitwise access.
+     * 
+     * This also resolves dynamic position (via position register) using the
+     * given interpretation context.
+     * 
+     * @param context
+     * 
+     * @return
+     * 
+     * @throws RuntimeError
+     * @throws IllegaleStateException if {@link #hasPosition()} is false
+     */
+    public int getEffectiveToPosition(Context context) throws RuntimeError
+    {
+        if (this.toPosition != -1) {
+            return this.toPosition;
+        }
+        if (this.toPositionRegister != null) {
+            return this.register2Position(this.toPositionRegister, context);
+        }
+        
+        throw new IllegalStateException(
+            "Cannot compute effetive toPosition when not accessing Variable bitwise"
+        );
+    }
+    
+    
+    /**
+     * Ascertains a position value from the given position register.
+     * 
+     * @param register Either {@link #fromPositionRegister} or {@link #toPositionRegister}
+     * @param context
+     * 
+     * @return
+     * 
+     * @throws RuntimeError
+     */
+    private int register2Position(VariableLike register, Context context) throws RuntimeError
+    {
+        BigInteger value = context.frame.getNumericValue(register.name).read(context);
+        int position;
+        try {
+            position = value.intValueExact();
+            if (
+                !Constraints.isValidPosition(position)
+                || context.frame.getNumericValue(this.register.name).length <= position
+            ) {
+                throw new ArithmeticException("dummy");
+            }
+            
+        } catch (ArithmeticException e) {
+            throw new RuntimeError(
+                "Value stored in " + register.name
+                + " is used as bitwise access position, but is too big (is " + value + ")"
+            );
+        }
+        
+        return position;
     }
 }

@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
 /**
@@ -33,7 +34,11 @@ public class NumericValueStore extends NumericValue
      */
     public NumericValueStore(VariableLike variable)
     {
-        this(variable, null);
+        // TODO handle length ranges, dynamic length
+        super(variable, variable.maxLength);
+        
+        this.isImmediate = variable instanceof Variable
+            && ((Variable)variable).type == Variable.Type.IMMEDIATE;
     }
     
     /**
@@ -41,20 +46,23 @@ public class NumericValueStore extends NumericValue
      * 
      * This is usually how /immediate parameter values are created.
      * 
-     * @param variable the Variable which this Value is assigned to
+     * @param variable The Variable which this Value is assigned to
      * @param argument The argument that is used to provide the initial value.
      *                 May be null: Initial value is 0.
+     *
+     * @throws RuntimeError
      */
-    public NumericValueStore(VariableLike variable, ImmediateArgument argument)
+    public NumericValueStore(VariableLike variable, ImmediateArgument argument) throws RuntimeError
     {
-        // TODO handle length ranges, dynamic length
-        super(variable, variable.maxLength);
-        
-        this.isImmediate = variable instanceof Variable
-            && ((Variable)variable).type == Variable.Type.IMMEDIATE;
+        this(variable);
         
         if (argument != null) {
-            // TODO Check that length isn't too big (even when not normalized)
+            if (argument.getMinLength() > this.length) {
+                throw new RuntimeError(
+                    "Immediate " + argument.immediate + " is to large for variable "
+                    + this.getReferencedName()
+                );
+            }
             this.value = argument.immediate;
             
             if (!this.isImmediate) {
@@ -125,18 +133,14 @@ public class NumericValueStore extends NumericValue
     public void write(BigInteger value, Context context)
     {
         // TODO Check that length isn't too big (even when not normalized)
+        //      - do we actually need to check that here, or does that never
+        //        happen (because of checks somewhere else)?
         this.value = value;
         if (!this.isImmediate) {
             this.value = this.normalizeBigInteger(value);
         }
     }
 
-    @Override
-    public NumericValueStore getReferenced()
-    {
-        return this;
-    }
-    
     @Override
     public String toString()
     {

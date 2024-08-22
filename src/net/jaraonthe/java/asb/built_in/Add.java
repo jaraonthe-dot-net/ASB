@@ -75,9 +75,9 @@ public class Add implements Interpretable
                 if (src1.length != dst.length || src2.length != dst.length) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " two variables "
-                        + src1.getReferenced().variable.name + " and " + src2.getReferenced().variable.name
+                        + src1.getReferencedName() + " and " + src2.getReferencedName()
                         + " that do not have the same length as the destination variable "
-                        + dst.getReferenced().variable.name
+                        + dst.getReferencedName()
                     );
                 }
                 break;
@@ -87,14 +87,14 @@ public class Add implements Interpretable
                 if (src1.length != src2.length) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " two variables "
-                        + src1.getReferenced().variable.name + " and " + src2.getReferenced().variable.name
+                        + src1.getReferencedName() + " and " + src2.getReferencedName()
                         + " that do not have the same length"
                     );
                 }
                 if (src1.length + 1 != dst.length) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " into destination variable "
-                        + dst.getReferenced().variable.name
+                        + dst.getReferencedName()
                         + " as it does not have the expected length (src length + 1)"
                     );
                 }

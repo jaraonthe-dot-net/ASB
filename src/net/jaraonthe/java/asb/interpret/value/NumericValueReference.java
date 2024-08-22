@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.interpret.value;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
 /**
@@ -17,11 +18,10 @@ public class NumericValueReference extends NumericValue
      * The value this refers to.
      */
     public final NumericValue referenced;
-    // TODO handle bitwise access (through a dedicated class?)
     
     /**
-     * @param variable   the Variable which this Value is assigned to
-     * @param referenced the value this refers to
+     * @param variable   The Variable which this Value is assigned to
+     * @param referenced The value this refers to
      */
     public NumericValueReference(VariableLike variable, NumericValue referenced)
     {
@@ -30,21 +30,21 @@ public class NumericValueReference extends NumericValue
     }
     
     @Override
-    public BigInteger read(Context context)
+    public BigInteger read(Context context) throws RuntimeError
     {
         return this.referenced.read(context);
     }
 
     @Override
-    public void write(BigInteger value, Context context)
+    public void write(BigInteger value, Context context) throws RuntimeError
     {
         this.referenced.write(value, context);;
     }
 
     @Override
-    public NumericValueStore getReferenced()
+    public NumericValue getReferenced()
     {
-        return this.referenced.getReferenced();
+        return this.referenced;
     }
     
     @Override

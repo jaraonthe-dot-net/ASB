@@ -27,4 +27,26 @@ addi x5, x5, -25
     &print test1; &print " "; &print_x test1; &print " "; &println_b test1
 }
 test_sign_extend -3
+
+&println "VIRTUAL REGISTER"
+&print zero; addi zero, x0, 13; &print " => "; &println zero
+
+&println "BITWISE ACCESS"
+.define test_bitwise /immediate imm ''24 {
+    &mov t0, 0xd
+    &print_x t0
+    
+    &mov t0'19:8, imm'11:0
+    &print " => "; &print_x t0
+    
+    &mov t0'15:8, t0'0:7
+    &print " => "; &print_x t0
+    
+    &mov t0'15:8, t0'12:19
+    &print " => "; &print_x t0
+    
+    &println
+}
+test_bitwise -22
+
 &println "That's all folks"

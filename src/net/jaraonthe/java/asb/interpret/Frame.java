@@ -44,6 +44,17 @@ public class Frame
     }
     
     /**
+     * @return the topmost parent frame
+     */
+    public Frame getRootParentFrame()
+    {
+        if (this.parentFrame == null) {
+            return this;
+        }
+        return this.parentFrame.getRootParentFrame();
+    }
+    
+    /**
      * Adds a variable's value instance.
      * 
      * @param value
@@ -51,7 +62,11 @@ public class Frame
      */
     public Frame addValue(Value value)
     {
-        // TODO check here if name is already used?
+        if (this.values.containsKey(value.variable.name)) {
+            throw new IllegalArgumentException(
+                "Cannot add value for same variable name " + value.variable.name + " more than once"
+            );
+        }
         this.values.put(value.variable.name, value);
         return this;
     }
@@ -93,7 +108,7 @@ public class Frame
      * NumericValue}.
      * 
      * @param variableName
-     * @return NumericalValue with the given variableName, or null if it doesn't
+     * @return NumericValue with the given variableName, or null if it doesn't
      *         exist (neither here nor in the parent frame)
      */
     public NumericValue getNumericValue(String variableName)

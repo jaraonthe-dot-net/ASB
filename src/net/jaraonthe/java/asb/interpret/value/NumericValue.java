@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.interpret.value;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
 /**
@@ -39,29 +40,48 @@ abstract public class NumericValue extends Value
      * 
      * @param context
      * @return
+     * @throws RuntimeError
      */
-    abstract public BigInteger read(Context context);
+    abstract public BigInteger read(Context context) throws RuntimeError;
 
     /**
      * Overwrites the content of this value.
      * 
      * @param value
      * @param context
+     * 
+     * @throws RuntimeError
      */
-    abstract public void write(BigInteger value, Context context);
+    abstract public void write(BigInteger value, Context context) throws RuntimeError;
     
     /**
      * Instead of containing their own content, NumericValues may refer to
-     * a different value instead (e.g. virtual register).
+     * a different value instead (e.g. register alias).
      * 
-     * This allows to retrieve that referenced value.
+     * This allows to retrieve that referenced value.<br>
+     * 
+     * The returned value has the same length as this, and there is no
+     * behavioral difference between calling {@link #read()} or {@link #write()}
+     * on this or the returned value.
      * 
      * @return
      */
-    // TODO decide if the referenced values length is the same as for this, if
-    //      its read() and write() behave the same as for this - essentially
-    //      decide if bitwise access gives itself as referenced or the value it
-    //      operates on. This also determines what getReferenced() can be used
-    //      for.
-    abstract public NumericValueStore getReferenced();
+    public NumericValue getReferenced()
+    {
+        return this;
+    }
+    
+    /**
+     * Provides a variable name that represents the value used here. This uses
+     * the name associated with the referenced value as this is usually more
+     * meaningfull as e.g. the name of a command parameter.<br>
+     * 
+     * Subclasses may overwrite this to provide something more meaningful.
+     * 
+     * @return
+     */
+    public String getReferencedName()
+    {
+        return this.getReferenced().variable.name;
+    }
 }

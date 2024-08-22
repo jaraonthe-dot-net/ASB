@@ -25,8 +25,8 @@ public class SignExtend implements Interpretable
         NumericValue dst = context.frame.getNumericValue("dst");
         if (src.length > dst.length) {
             throw new RuntimeError(
-                "Cannot &sign_extend from bigger variable " + src.getReferenced().variable.name
-                + " to smaller variable " + dst.getReferenced().variable.name
+                "Cannot &sign_extend from bigger variable " + src.getReferencedName()
+                + " to smaller variable " + dst.getReferencedName()
             );
         }
         

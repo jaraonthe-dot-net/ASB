@@ -71,7 +71,6 @@ public class Invocation extends CommandLike implements Interpretable
     {
         return this.invokedCommand;
     }
-    // TODO getter for arguments - or an iterator instead?
     
     /**
      * Adds command symbols to this invocation's signature.<br>
@@ -342,14 +341,7 @@ public class Invocation extends CommandLike implements Interpretable
     {
         // The frame for the command's interpretable must be constructed here,
         // as it has to be populated with the argument values
-        Frame newFrame;
-        if (context.frame.parentFrame == null) {
-            // Switching from userland to implementations
-            newFrame = new Frame(context.frame);
-        } else {
-            // Invocation within an implementation
-            newFrame = new Frame(context.frame.parentFrame);
-        }
+        Frame newFrame = new Frame(context.frame.getRootParentFrame());
         
         int i = 0;
         for (Argument argument : this.arguments) {

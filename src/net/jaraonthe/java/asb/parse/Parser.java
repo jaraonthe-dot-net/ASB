@@ -580,7 +580,7 @@ public class Parser
                             
                             if (this.peekedIsType(Token.Type.NAME)) {
                                 // '' varName
-                                VariableLike lengthRegister = this.expectNumericalVariableLike(
+                                VariableLike lengthRegister = this.expectNumericVariableLike(
                                     implementation,
                                     "length"
                                 );
@@ -697,7 +697,7 @@ public class Parser
                         RegisterArgument argument;
                         if (this.peekedIsType(Token.Type.NAME)) {
                             // ' varName ...
-                            VariableLike fromPositionRegister = this.expectNumericalVariableLike(
+                            VariableLike fromPositionRegister = this.expectNumericVariableLike(
                                 implementation,
                                 "position"
                             );
@@ -707,7 +707,7 @@ public class Parser
                                 
                                 if (this.peekedIsType(Token.Type.NAME)) {
                                     // ' varName : varName
-                                    VariableLike toPositionRegister = this.expectNumericalVariableLike(
+                                    VariableLike toPositionRegister = this.expectNumericVariableLike(
                                         implementation,
                                         "position"
                                     );
@@ -732,7 +732,7 @@ public class Parser
                                 
                                 if (this.peekedIsType(Token.Type.NAME)) {
                                     // ' number : varName
-                                    VariableLike toPositionRegister = this.expectNumericalVariableLike(
+                                    VariableLike toPositionRegister = this.expectNumericVariableLike(
                                         implementation,
                                         "position"
                                     );
@@ -944,7 +944,7 @@ public class Parser
     
 
     /**
-     * Expects a NAME and resolves it to a numerical Register, Parameter, or
+     * Expects a NAME and resolves it to a numeric Register, Parameter, or
      * Local Variable.
      * 
      * I.e. the type of the resolved Variable must be numeric.
@@ -960,10 +960,10 @@ public class Parser
      * 
      * @throws LexicalError
      * @throws ParseError   if no NAME Token is encountered, or the encountered
-     *                      name cannot be resolved to an existing numerical
+     *                      name cannot be resolved to an existing numeric
      *                      Variable or Register.
      */
-    private VariableLike expectNumericalVariableLike(
+    private VariableLike expectNumericVariableLike(
         Implementation implementation,
         String purpose
     ) throws LexicalError, ParseError {

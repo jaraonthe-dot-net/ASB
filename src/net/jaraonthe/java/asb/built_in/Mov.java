@@ -65,7 +65,7 @@ public class Mov implements Interpretable
                 if (srcImm.bitLength() + (srcImm.signum() < 0 ? 1 : 0) > dst.length) {
                     throw new RuntimeError(
                         "Cannot &mov immediate " + srcImm + " to variable "
-                        + dst.getReferenced().variable.name + " as it is too big"
+                        + dst.getReferencedName() + " as it is too big"
                     );
                 }
                 dst.write(srcImm, context);
@@ -76,8 +76,8 @@ public class Mov implements Interpretable
                 dst = context.frame.getNumericValue("dst");
                 if (src.length != dst.length) {
                     throw new RuntimeError(
-                        "Cannot &mov between two variables " + src.getReferenced().variable.name
-                        + " and " + dst.getReferenced().variable.name + " that do not have the same length"
+                        "Cannot &mov between two variables " + src.getReferencedName()
+                        + " and " + dst.getReferencedName() + " that do not have the same length"
                     );
                 }
                 dst.write(src.read(context), context);
