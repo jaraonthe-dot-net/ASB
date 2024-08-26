@@ -152,7 +152,7 @@ public class RegisterArgument extends Argument
         this.toPositionRegister   = toPositionRegister;
 
         // Check arguments for consistency
-        if (this.hasPosition() == (this.toPosition == -1 && this.toPositionRegister == null)) {
+        if (this.hasPosition() == (toPosition == -1 && toPositionRegister == null)) {
             throw new IllegalArgumentException(
                 "Inconsistent position settings. Probably used -1 or null somewhere"
             );
@@ -165,31 +165,42 @@ public class RegisterArgument extends Argument
                 );
             }
             
-            // TODO Also check that positions are within variable length (unless dynamic length)
             // from
-            if (this.fromPosition != -1) {
+            if (fromPosition != -1) {
                 if (!Constraints.isValidPosition(fromPosition)) {
                     throw new IllegalArgumentException(
                         "Invalid argument " + register.name + " start position. Given value: " + fromPosition
                     );
                 }
-            } else if (!this.fromPositionRegister.isNumeric()) {
+                if (register.maxLength > 0 && fromPosition >= register.maxLength) {
+                    throw new IllegalArgumentException(
+                        "Argument " + register.name + " start position is not within parameter length. Given value: " + fromPosition
+                    );
+                }
+                
+            } else if (!fromPositionRegister.isNumeric()) {
                 throw new IllegalArgumentException(
-                    "Cannot use non-numeric variable " + this.fromPositionRegister.name
+                    "Cannot use non-numeric variable " + fromPositionRegister.name
                     + " as bitwise access position"
                 );
             }
             
             // to
-            if (this.toPosition != -1) {
+            if (toPosition != -1) {
                 if (!Constraints.isValidPosition(toPosition)) {
                     throw new IllegalArgumentException(
                         "Invalid argument " + register.name + " end position. Given value: " + toPosition
                     );
                 }
-            } else if (!this.toPositionRegister.isNumeric()) {
+                if (register.maxLength > 0 && toPosition >= register.maxLength) {
+                    throw new IllegalArgumentException(
+                        "Argument " + register.name + " end position is not within parameter length. Given value: " + toPosition
+                    );
+                }
+                
+            } else if (!toPositionRegister.isNumeric()) {
                 throw new IllegalArgumentException(
-                    "Cannot use non-numeric variable " + this.toPositionRegister.name
+                    "Cannot use non-numeric variable " + toPositionRegister.name
                     + " as bitwise access position"
                 );
             }

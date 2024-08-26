@@ -99,4 +99,19 @@ abstract public class NumericValue extends Value
     {
         return this.getReferenced().variable.name;
     }
+    
+    /**
+     * Checks that given value fits the length of this NumericValue.
+     * 
+     * @param value
+     * @throws IllegalArgumentException if value is too large
+     */
+    protected void checkValueLength(BigInteger value)
+    {
+        if (NumericValue.bitLength(value) > this.length) {
+            throw new IllegalArgumentException(
+                "Value is to large for " + this.getReferencedName() + ", is " + value
+            );
+        }
+    }
 }

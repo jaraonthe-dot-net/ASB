@@ -79,9 +79,8 @@ public class VirtualNumericValue extends NumericValue
     @Override
     public void write(BigInteger value, Context context) throws RuntimeError
     {
-        // TODO Check that length isn't too big (even when not normalized)
-        //      - do we actually need to check that here, or does that never
-        //        happen (because of checks somewhere else)?
+        this.checkValueLength(value);
+        
         Frame newFrame = new Frame(context.frame.getRootParentFrame());
         NumericValueStore in = new NumericValueStore(new Variable(
             Variable.Type.REGISTER,

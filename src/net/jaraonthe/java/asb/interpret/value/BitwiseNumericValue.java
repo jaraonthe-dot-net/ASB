@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
+import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * A numeric value derived from bitwise access to another value.
@@ -38,11 +39,22 @@ public class BitwiseNumericValue extends NumericValue
      */
     public BitwiseNumericValue(VariableLike variable, NumericValue accessed, int fromPosition, int toPosition)
     {
-        // TODO check positions fit accessed's length?
         super(variable, Math.abs(fromPosition - toPosition) + 1);
         this.accessed     = accessed;
         this.fromPosition = fromPosition;
         this.toPosition   = toPosition;
+
+        if (
+            !Constraints.isValidPosition(fromPosition)
+            || fromPosition >= accessed.length
+            || !Constraints.isValidPosition(toPosition)
+            || toPosition >= accessed.length
+        ) {
+            throw new IllegalArgumentException(
+                "Given position " + this.position2String() + " is not valid for "
+                + accessed.getReferencedName()
+            );
+        }
     }
     
     @Override
@@ -75,9 +87,7 @@ public class BitwiseNumericValue extends NumericValue
     @Override
     public void write(BigInteger value, Context context) throws RuntimeError
     {
-        // TODO Check that length isn't too big (even when not normalized)
-        //      - do we actually need to check that here, or does that never
-        //        happen (because of checks somewhere else)?
+        this.checkValueLength(value);
         
         // Modifying parts of the value & writing it back
 

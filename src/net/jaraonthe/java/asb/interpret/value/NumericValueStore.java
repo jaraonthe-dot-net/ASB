@@ -162,9 +162,8 @@ public class NumericValueStore extends NumericValue
     @Override
     public void write(BigInteger value, Context context)
     {
-        // TODO Check that length isn't too big (even when not normalized)
-        //      - do we actually need to check that here, or does that never
-        //        happen (because of checks somewhere else)?
+        this.checkValueLength(value);
+        
         this.value = value;
         if (!this.isImmediate) {
             this.value = NumericValueStore.normalizeBigInteger(value, this.length);
