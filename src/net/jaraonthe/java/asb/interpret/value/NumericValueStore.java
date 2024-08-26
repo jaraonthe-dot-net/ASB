@@ -79,7 +79,7 @@ public class NumericValueStore extends NumericValue
         if (argument != null) {
             if (argument.getMinLength() > this.length) {
                 throw new RuntimeError(
-                    "Immediate " + argument.immediate + " is too large for variable "
+                    "Immediate " + argument.immediate + " is too big for variable "
                     + this.getReferencedName()
                 );
             }
@@ -103,7 +103,7 @@ public class NumericValueStore extends NumericValue
      * 
      * @return
      * 
-     * @throws IllegalArgumentException if value is too large to fit in length
+     * @throws IllegalArgumentException if value is too big to fit in length
      */
     public static BigInteger normalizeBigInteger(BigInteger value, int length)
     {
@@ -113,7 +113,7 @@ public class NumericValueStore extends NumericValue
         
         if (NumericValue.bitLength(value) > length) {
             throw new IllegalArgumentException(
-                "BigInteger is too large to be normalized to " + length + " bits length; is: " + value
+                "BigInteger is too big to be normalized to " + length + " bits length; is: " + value
             );
         }
         

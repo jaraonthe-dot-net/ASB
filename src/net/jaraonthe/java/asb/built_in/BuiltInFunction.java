@@ -54,7 +54,16 @@ public class BuiltInFunction extends Function
         // &add, &addc, &sub, &subc
         for (Add.Type type : Add.Type.values()) {
             for (Add.Operands operands : Add.Operands.values()) {
-                ast.addCommand(Add.create(type, operands));
+                if (Add.isValidCombination(type, operands)) {
+                    ast.addCommand(Add.create(type, operands));
+                }
+            }
+        }
+        
+        // &and, &or, &xor
+        for (Logical.Type type : Logical.Type.values()) {
+            for (Logical.Operands operands : Logical.Operands.values()) {
+                ast.addCommand(Logical.create(type, operands));
             }
         }
         
@@ -67,6 +76,11 @@ public class BuiltInFunction extends Function
             }
         }
         
+        // &get... (system info)
+        for (SystemInfo.Type type : SystemInfo.Type.values()) {
+            ast.addCommand(SystemInfo.create(type));
+        }
+        
         // &length
         ast.addCommand(Length.create());
         
@@ -77,6 +91,11 @@ public class BuiltInFunction extends Function
         
         // &normalize
         ast.addCommand(Normalize.create());
+        
+        // &not
+        for (Not.Operand operand : Not.Operand.values()) {
+            ast.addCommand(Not.create(operand));
+        }
         
         // &print, &println
         for (Print.Type type : Print.Type.values()) {

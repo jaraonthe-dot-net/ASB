@@ -61,16 +61,39 @@ public class Mov implements Interpretable
         
         NumericValue src = context.frame.getNumericValue("src");
         NumericValue dst = context.frame.getNumericValue("dst");
+        BigInteger srcImm;
         switch (this.operands) {
             case MEM_IMM:
-            case MEM_REG:
+                this.checkAddress(dst, context, "to");
+                srcImm = src.read(context);
+                if (NumericValue.bitLength(srcImm) > context.memory.wordLength) {
+                    throw new RuntimeError(
+                        "Cannot &mov immediate " + srcImm + " to memory as it is too big"
+                    );
+                }
                 context.memory.write(
                     dst.read(context), // @dstAddress
-                    src.read(context)  // imm/srcRegister
+                    srcImm
+                );
+                break;
+            case MEM_REG:
+                this.checkAddress(dst, context, "to");
+                if (src.length != context.memory.wordLength) {
+                    throw new RuntimeError(
+                        "Cannot &mov to memory from " + src.getReferencedName()
+                        + " as it has a different length"
+                    );
+                }
+                
+                context.memory.write(
+                    dst.read(context), // @dstAddress
+                    src.read(context)  // srcRegister
                 );
                 break;
                 
             case MEM_MEM:
+                this.checkAddress(dst, context, "to");
+                this.checkAddress(src, context, "from");
                 context.memory.write(
                     dst.read(context),    // @dstAddress
                     context.memory.read(
@@ -86,6 +109,7 @@ public class Mov implements Interpretable
                         + " as it has a different length"
                     );
                 }
+                this.checkAddress(src, context, "from");
                 
                 dst.write(
                     context.memory.read(
@@ -96,7 +120,7 @@ public class Mov implements Interpretable
                 break;
                 
             case REG_IMM:
-                BigInteger srcImm = src.read(context);
+                srcImm = src.read(context);
                 if (NumericValue.bitLength(srcImm) > dst.length) {
                     throw new RuntimeError(
                         "Cannot &mov immediate " + srcImm + " to variable "
@@ -115,6 +139,26 @@ public class Mov implements Interpretable
                 }
                 dst.write(src.read(context), context);
                 break;
+        }
+    }
+    
+    /**
+     * Checks if the given value is a valid memory address; throws RuntimeError
+     * otherwise.
+     * 
+     * @param address
+     * @param context
+     * @param direction "to" or "from" - used in error message
+     * 
+     * @throws RuntimeError
+     */
+    private void checkAddress(NumericValue address, Context context, String direction) throws RuntimeError
+    {
+        if (address.length != context.memory.addressLength) {
+            throw new RuntimeError(
+                "Cannot &mov " + direction + " memory address given in "
+                + address.getReferencedName() + " as it doesn't have the proper length for an address"
+            );
         }
     }
     

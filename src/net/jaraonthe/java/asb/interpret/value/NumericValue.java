@@ -104,13 +104,13 @@ abstract public class NumericValue extends Value
      * Checks that given value fits the length of this NumericValue.
      * 
      * @param value
-     * @throws IllegalArgumentException if value is too large
+     * @throws IllegalArgumentException if value is too big
      */
     protected void checkValueLength(BigInteger value)
     {
         if (NumericValue.bitLength(value) > this.length) {
             throw new IllegalArgumentException(
-                "Value is to large for " + this.getReferencedName() + ", is " + value
+                "Value is to big for " + this.getReferencedName() + ", is " + value
             );
         }
     }

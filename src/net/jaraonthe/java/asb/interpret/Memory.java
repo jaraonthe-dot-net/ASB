@@ -60,7 +60,7 @@ public class Memory
      */
     public BigInteger read(BigInteger address) throws RuntimeError
     {
-        this.checkAddress(address);
+        address = this.checkAddress(address);
         
         BigInteger word = this.words.get(address);
         if (word == null) {
@@ -70,22 +70,20 @@ public class Memory
     }
     
     /**
-     * Overwrites the memory word at given address.
+     * Overwrites the memory word at the given address.
      * 
      * @param address
      * @param word
-     * 
-     * @throws RuntimeError
      */
-    public void write(BigInteger address, BigInteger word) throws RuntimeError
+    public void write(BigInteger address, BigInteger word)
     {
-        this.checkAddress(address);
-        if (NumericValueStore.bitLength(word) > this.wordLength) {
-            throw new RuntimeError("Memory word is too large: " + word);
-        }
+        address = this.checkAddress(address);
         
         if (word.signum() < 0) {
             word = NumericValueStore.normalizeBigInteger(word, this.wordLength);
+        }
+        if (NumericValueStore.bitLength(word) > this.wordLength) {
+            throw new IllegalArgumentException("Value is too big for memory: " + word);
         }
         
         this.words.put(address, word);
@@ -95,15 +93,16 @@ public class Memory
      * Checks that given address is valid, throws error otherwise
      * 
      * @param address
-     * @throws RuntimeError
+     * @throws IllegalArgumentException
      */
-    private void checkAddress(BigInteger address) throws RuntimeError
+    private BigInteger checkAddress(BigInteger address)
     {
         if (address.signum() < 0) {
-            throw new RuntimeError("Cannot access memory at negative address " + address);
+            address = NumericValueStore.normalizeBigInteger(address, this.addressLength);
         }
         if (address.bitLength() > this.addressLength) {
-            throw new RuntimeError("Memory address is too large: 0x" + address.toString(16));
+            throw new IllegalArgumentException("Memory address is too big: 0x" + address.toString(16));
         }
+        return address;
     }
 }

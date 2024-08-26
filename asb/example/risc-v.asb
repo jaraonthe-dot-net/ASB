@@ -79,12 +79,12 @@ test_immediate_indirection -9
     .variable tmp ''8
     .variable addr ''32
     
-    &mov addr, 15
+    &mov addr, 15; &print addr; &print ": "
     &mov tmp, @addr; &print_x tmp;
     &mov @addr, -42;
     &mov tmp, @addr; &print " => "; &println_x tmp
     
-    &mov addr, 12
+    &mov addr, 12; &print addr; &print ": "
     &mov tmp, @addr; &print_x tmp;
     &mov @addr, imm
     &mov tmp, @addr; &print " => "; &println_x tmp
@@ -93,5 +93,15 @@ test_immediate_indirection -9
 test_memory 113
 lw t0, 12(zero)
 &println_x t0
+
+&println "SYSTEM INFO"
+.define test_system_info /immediate length ''maxu14 {
+    .var tmp ''length
+    
+    &get_memory_word_length tmp;     &print "word length: ";              &print tmp
+    &get_memory_address_length tmp;  &print "; address length: ";         &print tmp
+    &get_program_counter_length tmp; &print "; program counter length: "; &println tmp
+}
+test_system_info 10
 
 &println "That's all folks"

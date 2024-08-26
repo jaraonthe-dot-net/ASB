@@ -7,20 +7,24 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
+import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &add}, {@code &addc}, {@code &sub}, and {@code &subc} built-in
  * functions.<br>
  * 
- * {@code &add dstRegister, src1Register, src2Imm};<br>
- * {@code &add dstRegister, src1Register, srcRegister2};<br>
+ * {@code &add  dstRegister, src1Register, src2Imm};<br>
+ * {@code &add  dstRegister, src1Register, srcRegister2};<br>
  * {@code &addc dstRegister, src1Register, src2Imm};<br>
  * {@code &addc dstRegister, src1Register, srcRegister2};<br>
- * {@code &sub dstRegister, src1Register, src2Imm};<br>
- * {@code &sub dstRegister, src1Register, srcRegister2};<br>
+ * <br>
+ * {@code &sub  dstRegister, src1Register, src2Imm};<br>
+ * {@code &sub  dstRegister, src1Register, srcRegister2};<br>
+ * {@code &sub  dstRegister, src1Imm,      src2Register};<br>
  * {@code &subc dstRegister, src1Register, src2Imm};<br>
- * {@code &subc dstRegister, src1Register, srcRegister2};
+ * {@code &subc dstRegister, src1Register, srcRegister2};<br>
+ * {@code &subc dstRegister, src1Imm,      src2Register};
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -44,7 +48,9 @@ public class Add implements Interpretable
     {
         // destination_source1_source2
         REG_REG_IMM, // &add dstRegister, src1Register, src2Imm
-        REG_REG_REG, // &add dstRegister, src1Register, srcRegister2
+        REG_REG_REG, // &add dstRegister, src1Register, src2Register
+        
+        REG_IMM_REG, // &sub dstRegister, src1Imm, src2Register // only for &sub/&subc
     }
     
     private final Add.Type type;
@@ -68,17 +74,27 @@ public class Add implements Interpretable
         NumericValue src2 = context.frame.getNumericValue("src2");
         NumericValue dst  = context.frame.getNumericValue("dst");
 
+        BigInteger src1Value = src1.read(context);
         BigInteger src2Value = src2.read(context);
+
         // Check lengths
+        NumericValue srcReg    = src1;
+        NumericValue srcImm    = src2; // which of course may also be a register
+        BigInteger srcImmValue = src2Value;
+        if (this.operands == Add.Operands.REG_IMM_REG) {
+            srcReg      = src2;
+            srcImm      = src1;
+            srcImmValue = src1Value;
+        }
         switch (this.type) {
             case ADD:
             case SUB:
                 if (
-                    src1.length != dst.length
+                    srcReg.length != dst.length
                     || (
-                        (this.operands == Add.Operands.REG_REG_IMM) ?
-                            (NumericValue.bitLength(src2Value) > dst.length)
-                            : (src2.length != dst.length)
+                        (this.operands != Add.Operands.REG_REG_REG) ?
+                            (NumericValue.bitLength(srcImmValue) > dst.length)
+                            : (srcImm.length != dst.length)
                     )
                 ) {
                     throw new RuntimeError(
@@ -93,9 +109,9 @@ public class Add implements Interpretable
             case ADDC:
             case SUBC:
                 if (
-                    this.operands == Add.Operands.REG_REG_IMM ?
-                        NumericValue.bitLength(src2Value) > src1.length
-                        : src2.length != src1.length
+                    this.operands != Add.Operands.REG_REG_REG ?
+                        NumericValue.bitLength(srcImmValue) > srcReg.length
+                        : srcImm.length != src1.length
                 ) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " two variables "
@@ -103,7 +119,7 @@ public class Add implements Interpretable
                         + " that do not have the same length"
                     );
                 }
-                if (src1.length + 1 != dst.length) {
+                if (srcReg.length + 1 != dst.length) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " into destination variable "
                         + dst.getReferencedName()
@@ -113,7 +129,6 @@ public class Add implements Interpretable
                 break;
         }
         
-        BigInteger src1Value = src1.read(context);
         BigInteger result = null;
         switch (this.type) {
             case ADD:
@@ -125,6 +140,7 @@ public class Add implements Interpretable
                 result = src1Value.subtract(src2Value);
                 break;
         }
+        result = NumericValueStore.normalizeBigInteger(result, srcReg.length + 1);
         if (this.type == Add.Type.ADD || this.type == Add.Type.SUB) {
             // Cut off potential carry-out
             result = result.clearBit(dst.length);
@@ -146,6 +162,12 @@ public class Add implements Interpretable
     public static BuiltInFunction create(Add.Type type, Add.Operands operands)
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
+        
+        if (!Add.isValidCombination(type, operands)) {
+            throw new IllegalArgumentException(
+                "Cannot create " + type.functionName +  " function with /reg, /imm, /reg operands"
+            );
+        }
 
         function.addParameter(new Variable(
             Variable.Type.REGISTER,
@@ -153,15 +175,32 @@ public class Add implements Interpretable
             Constraints.MIN_LENGTH,
             Constraints.MAX_LENGTH
         ));
-        function.addCommandSymbols(",");
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "src1",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
-        function.addCommandSymbols(",");
         
+        function.addCommandSymbols(",");
+        switch (operands) {
+            case REG_REG_IMM:
+            case REG_REG_REG:
+                // &add dstRegister, src1Register, src2Imm
+                // &add dstRegister, src1Register, src2Register
+                function.addParameter(new Variable(
+                    Variable.Type.REGISTER,
+                    "src1",
+                    Constraints.MIN_LENGTH,
+                    Constraints.MAX_LENGTH
+                ));
+                break;
+                
+            case REG_IMM_REG:
+                // &sub dstRegister, src1Imm, src2Register
+                function.addParameter(new Variable(
+                    Variable.Type.IMMEDIATE,
+                    "src1",
+                    Constraints.MAX_LENGTH
+                ));
+                break;
+        }
+        
+        function.addCommandSymbols(",");
         switch (operands) {
             case REG_REG_IMM:
                 // &add dstRegister, src1Register, src2Imm
@@ -173,7 +212,9 @@ public class Add implements Interpretable
                 break;
                 
             case REG_REG_REG:
-                // &add dstRegister, src1Register, srcRegister2
+            case REG_IMM_REG:
+                // &add dstRegister, src1Register, src2Register
+                // &sub dstRegister, src1Imm, src2Register
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
                     "src2",
@@ -185,5 +226,18 @@ public class Add implements Interpretable
         
         function.setInterpretable(new Add(type, operands));
         return function;
+    }
+    
+    /**
+     * @param type
+     * @param operands
+     * 
+     * @return True if the given values are a valid combination, i.e.
+     *         {@link #create()} will create a function with this input.
+     */
+    public static boolean isValidCombination(Add.Type type, Add.Operands operands)
+    {
+        return operands != Add.Operands.REG_IMM_REG
+            || type == Add.Type.SUB || type == Add.Type.SUBC;
     }
 }

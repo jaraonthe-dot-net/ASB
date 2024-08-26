@@ -109,5 +109,93 @@
     &sub rd, rs1, rs2
 }
 
-// TODO: slli, slti, sltiu, xori, srli, srai, ori, andi, auipc, sll, slt, sltu,
-//       xor, srl, sra, or, and, beq, bne, blt, bge, bltu, bgeu, jalr, jal
+
+/* LOGICAL */
+
+// And
+.define and /register rd''32, /register rs1''32, /register rs2''32 {
+    &and rd, rs1, rs2
+}
+// And immediate
+.define andi /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    &and rd, rs1, extended
+}
+
+// Or
+.define or /register rd''32, /register rs1''32, /register rs2''32 {
+    &or rd, rs1, rs2
+}
+// Or immediate
+.define ori /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    &or rd, rs1, extended
+}
+
+// Xor
+.define xor /register rd''32, /register rs1''32, /register rs2''32 {
+    &xor rd, rs1, rs2
+}
+// Xor immediate
+.define xori /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    &xor rd, rs1, extended
+}
+
+// Helper
+.define &sll /register rd''32, /register rs1''32, /register bits''5 {
+    .variable rs1_start ''5; &sub rs1_start, 31, bits
+    &mov rd'31:bits, rs1'rs1_start:0
+
+    .variable bits_1 ''5; &add bits_1, bits, -1
+    &mov rd'bits_1:0, 0
+}
+// Shift left logical
+.define sll /register rd''32, /register rs1''32, /register rs2''32 {
+    &sll rd, rs1, rs2'4:0
+}
+// Shift left logical immediate
+.define slli /register rd''32, /register rs1''32, /immediate uimm''5 {
+    &sll rd, rs1, uimm
+}
+
+// Helper
+.define &srl /register rd''32, /register rs1''32, /register bits''5 {
+    .variable rd_start ''5; &sub rd_start, 31, bits
+    &mov rd'rd_start:0, rs1'31:bits
+
+    .variable rd_start1 ''5; &add rd_start1, rd_start, 1
+    &mov rd'31:rd_start1, 0
+}
+// Shift right logical
+.define srl /register rd''32, /register rs1''32, /register rs2''32 {
+    &srl rd, rs1, rs2'4:0
+}
+// Shift right logical immediate
+.define srli /register rd''32, /register rs1''32, /immediate uimm''5 {
+    &srl rd, rs1, uimm
+}
+
+// Helper
+.define &sra /register rd''32, /register rs1''32, /register bits''5 {
+    .variable rd_start ''5; &sub rd_start, 31, bits
+    &mov rd'rd_start:0, rs1'31:bits
+
+    // TODO do not execute if bits == 0 (as length cannot be 0)!
+    .variable extension ''bits; &sign_extend extension, rd'rd_start
+
+    .variable rd_start1 ''5; &add rd_start1, rd_start, 1
+    &mov rd'31:rd_start1, extension
+}
+// Shift right arithmetic
+.define sra /register rd''32, /register rs1''32, /register rs2''32 {
+    &sra rd, rs1, rs2'4:0
+}
+// Shift right arithmetic immediate
+.define srai /register rd''32, /register rs1''32, /immediate uimm''5 {
+    &sra rd, rs1, uimm
+}
+
+// TODO: slti, sltiu, auipc, slt, sltu,
+//       beq, bne, blt, bge, bltu, bgeu, jalr, jal
+//       mul, mulh, mulhsu, mulhu, div, divu, rem, remu
