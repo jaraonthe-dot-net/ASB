@@ -71,7 +71,7 @@ public class VirtualNumericValue extends NumericValue
             newFrame.addValue(this.store);
         }
         
-        this.register.getGetterImplementation().interpret(new Context(newFrame, context.ast));
+        this.register.getGetterImplementation().interpret(context.withFrame(newFrame));
         
         return this.lastRead = out.read(context);
     }
@@ -95,7 +95,7 @@ public class VirtualNumericValue extends NumericValue
             newFrame.addValue(this.store);
         }
         
-        this.register.getSetterImplementation().interpret(new Context(newFrame, context.ast));
+        this.register.getSetterImplementation().interpret(context.withFrame(newFrame));
     }
 
     @Override

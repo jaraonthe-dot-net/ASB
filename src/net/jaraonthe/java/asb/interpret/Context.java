@@ -17,17 +17,36 @@ public class Context
     public final Frame frame;
     
     /**
+     * The memory of the virtual system. May be null (if no memory is configured).
+     */
+    public final Memory memory;
+    
+    /**
      * The AST of the program being executed.
      */
     public final AST ast;
 
     /**
      * @param frame
+     * @param memory May be null
      * @param ast
      */
-    public Context(Frame frame, AST ast)
+    public Context(Frame frame, Memory memory, AST ast)
     {
-        this.frame = frame;
-        this.ast   = ast;
+        this.frame  = frame;
+        this.memory = memory;
+        this.ast    = ast;
+    }
+    
+    /**
+     * Creates a new Context which is identical to this context except that the
+     * frame has been replaced with the given frame.
+     * 
+     * @param frame
+     * @return
+     */
+    public Context withFrame(Frame frame)
+    {
+        return new Context(frame, this.memory, this.ast);
     }
 }

@@ -74,4 +74,24 @@ test_length 23
 }
 test_immediate_indirection -9
 
+&println "MEMORY"
+.define test_memory /immediate imm ''8 {
+    .variable tmp ''8
+    .variable addr ''32
+    
+    &mov addr, 15
+    &mov tmp, @addr; &print_x tmp;
+    &mov @addr, -42;
+    &mov tmp, @addr; &print " => "; &println_x tmp
+    
+    &mov addr, 12
+    &mov tmp, @addr; &print_x tmp;
+    &mov @addr, imm
+    &mov tmp, @addr; &print " => "; &println_x tmp
+    &assert tmp == imm
+}
+test_memory 113
+lw t0, 12(zero)
+&println_x t0
+
 &println "That's all folks"

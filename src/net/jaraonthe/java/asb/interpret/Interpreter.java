@@ -15,7 +15,7 @@ import net.jaraonthe.java.asb.interpret.value.VirtualNumericValue;
 import net.jaraonthe.java.asb.parse.Parser;
 
 /**
- * Interpretes an AST that the {@link Parser} provided.
+ * Interprets an AST that the {@link Parser} provided.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -30,6 +30,11 @@ public class Interpreter
      * The global frame containing register values.
      */
     private Frame globalFrame = new Frame();
+    
+    /**
+     * The memory of the virtual system. May be null (if no memory is configured).
+     */
+    private Memory memory = null;
     
     
     /**
@@ -51,6 +56,9 @@ public class Interpreter
     protected Interpreter(AST ast)
     {
         this.ast = ast;
+        if (ast.hasMemory()) {
+            this.memory = new Memory(ast.getMemoryWordLength(), ast.getMemoryAddressLength());
+        }
         this.initGlobalFrame();
     }
 
@@ -61,7 +69,7 @@ public class Interpreter
      */
     private void run() throws RuntimeError
     {
-        Context context = new Context(this.globalFrame, this.ast);
+        Context context = new Context(this.globalFrame, this.memory, this.ast);
         
         int i = 0;
         for (Invocation invocation : this.ast.getProgram()) {

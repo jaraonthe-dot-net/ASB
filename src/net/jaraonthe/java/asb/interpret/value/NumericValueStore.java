@@ -100,12 +100,21 @@ public class NumericValueStore extends NumericValue
      * 
      * @param value
      * @param length The bit length to normalize to
+     * 
      * @return
+     * 
+     * @throws IllegalArgumentException if value is too large to fit in length
      */
     public static BigInteger normalizeBigInteger(BigInteger value, int length)
     {
         if (value.signum() >= 0) {
             return value;
+        }
+        
+        if (NumericValue.bitLength(value) > length) {
+            throw new IllegalArgumentException(
+                "BigInteger is too large to be normalized to " + length + " bits length; is: " + value
+            );
         }
         
         /* Negative => Make positive, apply bwo's-complement

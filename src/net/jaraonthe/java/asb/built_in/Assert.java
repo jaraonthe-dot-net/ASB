@@ -88,29 +88,46 @@ public class Assert implements Interpretable
         BigInteger aValue = a.read(context);
         BigInteger bValue = b.read(context);
         
+        int cmp          = 0;
+        boolean compared = false;
         // Normalize negative numbers
         if (aValue.signum() < 0) {
-            aValue = NumericValueStore.normalizeBigInteger(
-                aValue,
-                // Immediates are normalized to length of other operand
-                this.a == Assert.OperandType.IMM ? b.length : a.length
-            );
+            try {
+                aValue = NumericValueStore.normalizeBigInteger(
+                    aValue,
+                    // Immediates are normalized to length of other operand
+                    this.a == Assert.OperandType.IMM ? b.length : a.length
+                );
+            } catch (IllegalArgumentException e) {
+                // a is greater than b (as it is too big for b.length)
+                cmp      = 1;
+                compared = true;
+            }
         }
         if (bValue.signum() < 0) {
+            try {
             bValue = NumericValueStore.normalizeBigInteger(
                 bValue,
                 // Ditto
                 this.b == Assert.OperandType.IMM ? a.length : b.length
             );
+            } catch (IllegalArgumentException e) {
+                // a is less than b (as b is too big for a.length)
+                cmp      = -1;
+                compared = true;
+            }
+        }
+        if (!compared) {
+            cmp = aValue.compareTo(bValue);
         }
         
         boolean result = switch (this.operator) {
-            case EQUALS                 -> aValue.compareTo(bValue) == 0;
-            case GREATER_THAN           -> aValue.compareTo(bValue) > 0;
-            case GREATER_THAN_OR_EQUALS -> aValue.compareTo(bValue) >= 0;
-            case LESS_THAN              -> aValue.compareTo(bValue) < 0;
-            case LESS_THAN_OR_EQUALS    -> aValue.compareTo(bValue) <= 0;
-            case NOT_EQUALS             -> aValue.compareTo(bValue) != 0;
+            case EQUALS                 -> cmp == 0;
+            case GREATER_THAN           -> cmp > 0;
+            case GREATER_THAN_OR_EQUALS -> cmp >= 0;
+            case LESS_THAN              -> cmp < 0;
+            case LESS_THAN_OR_EQUALS    -> cmp <= 0;
+            case NOT_EQUALS             -> cmp != 0;
         };
         if (result) {
             return;

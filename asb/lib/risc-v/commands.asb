@@ -31,6 +31,8 @@
 }
 // Load word
 .define lw /register rd''32, /immediate imm''12(/register rs1''32) {
+    // TODO address should probably be divisible by for - check RISC-V docs &
+    //      add assert if applicable. And what about lh?
     .variable address ''32; &calculate_address address, imm(rs1)
     
     &mov rd'7:0, @address

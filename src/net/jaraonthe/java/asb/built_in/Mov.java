@@ -26,12 +26,19 @@ public class Mov implements Interpretable
     public enum Operands
     {
         // destination_source
-        MEM_IMM, // &mov @dstAddress, imm
-        MEM_MEM, // &mov @dstAddress, @srcAddress
-        MEM_REG, // &mov @dstAddress, srcRegister
-        REG_IMM, // &mov dstRegister, imm
-        REG_MEM, // &mov dstRegister, @srcAddress
-        REG_REG, // &mov dstRegister, srcRegister
+        MEM_IMM(true), // &mov @dstAddress, imm
+        MEM_MEM(true), // &mov @dstAddress, @srcAddress
+        MEM_REG(true), // &mov @dstAddress, srcRegister
+        REG_IMM(false), // &mov dstRegister, imm
+        REG_MEM(true), // &mov dstRegister, @srcAddress
+        REG_REG(false); // &mov dstRegister, srcRegister
+        
+        public final boolean usesMemory;
+        
+        private Operands(boolean usesMemory)
+        {
+            this.usesMemory = usesMemory;
+        }
     }
     
     private final Mov.Operands operands;
@@ -48,19 +55,47 @@ public class Mov implements Interpretable
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        NumericValue src;
-        NumericValue dst;
+        if (this.operands.usesMemory && context.memory == null) {
+            throw new RuntimeError("Cannot &mov to/from memory as it is not configured");
+        }
+        
+        NumericValue src = context.frame.getNumericValue("src");
+        NumericValue dst = context.frame.getNumericValue("dst");
         switch (this.operands) {
             case MEM_IMM:
-            case MEM_MEM:
             case MEM_REG:
+                context.memory.write(
+                    dst.read(context), // @dstAddress
+                    src.read(context)  // imm/srcRegister
+                );
+                break;
+                
+            case MEM_MEM:
+                context.memory.write(
+                    dst.read(context),    // @dstAddress
+                    context.memory.read(
+                        src.read(context) // @srcAddress
+                    )
+                );
+                break;
+                
             case REG_MEM:
-                // TODO memory (incl. lengths check)
-                throw new RuntimeException("memory not implemented yet");
+                if (dst.length != context.memory.wordLength) {
+                    throw new RuntimeError(
+                        "Cannot &mov memory word to variable " + dst.getReferencedName()
+                        + " as it has a different length"
+                    );
+                }
+                
+                dst.write(
+                    context.memory.read(
+                        src.read(context) // @srcAddress
+                    ),
+                    context
+                );
+                break;
                 
             case REG_IMM:
-                src = context.frame.getNumericValue("src");
-                dst = context.frame.getNumericValue("dst");
                 BigInteger srcImm = src.read(context);
                 if (NumericValue.bitLength(srcImm) > dst.length) {
                     throw new RuntimeError(
@@ -72,8 +107,6 @@ public class Mov implements Interpretable
                 break;
                 
             case REG_REG:
-                src = context.frame.getNumericValue("src");
-                dst = context.frame.getNumericValue("dst");
                 if (src.length != dst.length) {
                     throw new RuntimeError(
                         "Cannot &mov between two variables " + src.getReferencedName()
@@ -102,7 +135,7 @@ public class Mov implements Interpretable
                 function.addCommandSymbols("@");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstAddress",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
@@ -119,14 +152,14 @@ public class Mov implements Interpretable
                 function.addCommandSymbols("@");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstAddress",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
                 function.addCommandSymbols(",@");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "srcAddress",
+                    "src",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
@@ -137,7 +170,7 @@ public class Mov implements Interpretable
                 function.addCommandSymbols("@");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "dstAddress",
+                    "dst",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));
@@ -177,7 +210,7 @@ public class Mov implements Interpretable
                 function.addCommandSymbols(",@");
                 function.addParameter(new Variable(
                     Variable.Type.REGISTER,
-                    "srcAddress",
+                    "src",
                     Constraints.MIN_LENGTH,
                     Constraints.MAX_LENGTH
                 ));

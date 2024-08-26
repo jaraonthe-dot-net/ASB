@@ -350,6 +350,6 @@ public class CommandInvocation extends CommandLike implements Invocation
             i++;
         }
         
-        this.invokedCommand.getInterpretable().interpret(new Context(newFrame, context.ast));
+        this.invokedCommand.getInterpretable().interpret(context.withFrame(newFrame));
     }
 }
