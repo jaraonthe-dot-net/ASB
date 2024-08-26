@@ -80,14 +80,29 @@ abstract public class VariableLike
             return "";
         }
         if (this.minLength == this.maxLength) {
-            return String.valueOf(this.minLength);
+            return this.formatLengthNumber(this.minLength);
         }
         if (this.minLength == Constraints.MIN_LENGTH) {
-            return "<=" + this.maxLength;
+            return "<=" + this.formatLengthNumber(this.maxLength);
         }
         if (this.maxLength == Constraints.MAX_LENGTH) {
-            return ">=" + this.minLength;
+            return ">=" + this.formatLengthNumber(this.minLength);
         }
-        return this.minLength + ".." + this.maxLength;
+        return this.formatLengthNumber(this.minLength) + ".." + this.formatLengthNumber(this.maxLength);
+    }
+    
+    /**
+     * Formats the given length for human-readable output. I.e. a length of 0
+     * is represented by a destrictive text.
+     * 
+     * @param length
+     * @return
+     */
+    private String formatLengthNumber(int length)
+    {
+        if (length == 0) {
+            return "(dynamic)";
+        }
+        return String.valueOf(length);
     }
 }

@@ -30,12 +30,32 @@ public class NumericValueStore extends NumericValue
      * 
      * This is usually how registers and local variables are created.
      * 
-     * @param variable the Variable which this Value is assigned to
+     * @param variable The Variable which this Value is assigned to. Must have
+     *                 a non-dynamic exact length.
      */
     public NumericValueStore(VariableLike variable)
     {
-        // TODO handle length ranges, dynamic length
-        super(variable, variable.maxLength);
+        this(variable, variable.maxLength);
+        
+        if (variable.maxLength != variable.minLength || variable.maxLength < 1) {
+            throw new IllegalArgumentException(
+                "Cannot ascertain effective length from variable " + variable.name
+                + " with length range or dynamic length"
+            );
+        }
+    }
+    
+    /**
+     * Creates a new numeric value. The value is initialized to 0.
+     * 
+     * This is usually how registers and local variables are created.
+     * 
+     * @param variable        The Variable which this Value is assigned to
+     * @param effectiveLength The length to use for this Value.
+     */
+    public NumericValueStore(VariableLike variable, int effectiveLength)
+    {
+        super(variable, effectiveLength);
         
         this.isImmediate = variable instanceof Variable
             && ((Variable)variable).type == Variable.Type.IMMEDIATE;
@@ -59,14 +79,14 @@ public class NumericValueStore extends NumericValue
         if (argument != null) {
             if (argument.getMinLength() > this.length) {
                 throw new RuntimeError(
-                    "Immediate " + argument.immediate + " is to large for variable "
+                    "Immediate " + argument.immediate + " is too large for variable "
                     + this.getReferencedName()
                 );
             }
             this.value = argument.immediate;
             
             if (!this.isImmediate) {
-                this.value = this.normalizeBigInteger(value);
+                this.value = NumericValueStore.normalizeBigInteger(value, this.length);
             }
         }
     }
@@ -76,12 +96,13 @@ public class NumericValueStore extends NumericValue
      * 
      * I.e. a negative BigInteger is changed to a positive BigInteger containing
      * a two's-complement encoding of the negative value which is as long as
-     * {@code this.length}.
+     * given length.
      * 
      * @param value
+     * @param length The bit length to normalize to
      * @return
      */
-    private BigInteger normalizeBigInteger(BigInteger value)
+    public static BigInteger normalizeBigInteger(BigInteger value, int length)
     {
         if (value.signum() >= 0) {
             return value;
@@ -92,9 +113,9 @@ public class NumericValueStore extends NumericValue
          */
         
         // Amount of extended bytes incl. leading 0 byte to enforce positive value
-        int extTotalBytes = this.length / 8 + 1;
+        int extTotalBytes = length / 8 + 1;
         // Amount of content bits in the extended most significant byte
-        int extLeadingByteBits = this.length % 8;
+        int extLeadingByteBits = length % 8;
         
         // Byte arrays: MSB is in element #0 (big-endian)
         byte[] content = value.toByteArray(); // Minimum length two's-complement
@@ -137,7 +158,7 @@ public class NumericValueStore extends NumericValue
         //        happen (because of checks somewhere else)?
         this.value = value;
         if (!this.isImmediate) {
-            this.value = this.normalizeBigInteger(value);
+            this.value = NumericValueStore.normalizeBigInteger(value, this.length);
         }
     }
 

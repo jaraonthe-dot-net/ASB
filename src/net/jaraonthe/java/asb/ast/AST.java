@@ -47,12 +47,13 @@ public class AST
      * All commands and (built-in) functions, accessed via their identity.
      */
     // TODO maybe we don't require both command maps?
-    private Map<String, Command> commands = HashMap.newHashMap(32);
+    // TODO Finetune initial capacity once all built-in functions have been added (same below)
+    private Map<String, Command> commands = HashMap.newHashMap(100);
     
     /**
      * All commands and (built-in) functions, grouped by resolving class.
      */
-    private Map<String, Set<Command>> commandsResolvingMap = HashMap.newHashMap(16);
+    private Map<String, Set<Command>> commandsResolvingMap = HashMap.newHashMap(100);
     
     /**
      * The actual userland program.
@@ -210,7 +211,7 @@ public class AST
         
         String resolvingClass = command.getResolvingClass();
         if (!this.commandsResolvingMap.containsKey(resolvingClass)) {
-            this.commandsResolvingMap.put(resolvingClass, HashSet.newHashSet(2));
+            this.commandsResolvingMap.put(resolvingClass, HashSet.newHashSet(1));
         }
         this.commandsResolvingMap.get(resolvingClass).add(command);
         

@@ -62,7 +62,7 @@ public class Mov implements Interpretable
                 src = context.frame.getNumericValue("src");
                 dst = context.frame.getNumericValue("dst");
                 BigInteger srcImm = src.read(context);
-                if (srcImm.bitLength() + (srcImm.signum() < 0 ? 1 : 0) > dst.length) {
+                if (NumericValue.bitLength(srcImm) > dst.length) {
                     throw new RuntimeError(
                         "Cannot &mov immediate " + srcImm + " to variable "
                         + dst.getReferencedName() + " as it is too big"

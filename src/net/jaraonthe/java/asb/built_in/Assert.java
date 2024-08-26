@@ -1,8 +1,14 @@
 package net.jaraonthe.java.asb.built_in;
 
+import java.math.BigInteger;
+
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.AssertError;
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
+import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -75,10 +81,48 @@ public class Assert implements Interpretable
 
     
     @Override
-    public void interpret(Context context)
+    public void interpret(Context context) throws RuntimeError
     {
-        // TODO
-        throw new RuntimeException("&assert not implemented yet");
+        NumericValue a = context.frame.getNumericValue("a");
+        NumericValue b = context.frame.getNumericValue("b");
+        BigInteger aValue = a.read(context);
+        BigInteger bValue = b.read(context);
+        
+        // Normalize negative numbers
+        if (aValue.signum() < 0) {
+            aValue = NumericValueStore.normalizeBigInteger(
+                aValue,
+                // Immediates are normalized to length of other operand
+                this.a == Assert.OperandType.IMM ? b.length : a.length
+            );
+        }
+        if (bValue.signum() < 0) {
+            bValue = NumericValueStore.normalizeBigInteger(
+                bValue,
+                // Ditto
+                this.b == Assert.OperandType.IMM ? a.length : b.length
+            );
+        }
+        
+        boolean result = switch (this.operator) {
+            case EQUALS                 -> aValue.compareTo(bValue) == 0;
+            case GREATER_THAN           -> aValue.compareTo(bValue) > 0;
+            case GREATER_THAN_OR_EQUALS -> aValue.compareTo(bValue) >= 0;
+            case LESS_THAN              -> aValue.compareTo(bValue) < 0;
+            case LESS_THAN_OR_EQUALS    -> aValue.compareTo(bValue) <= 0;
+            case NOT_EQUALS             -> aValue.compareTo(bValue) != 0;
+        };
+        if (result) {
+            return;
+        }
+        
+        if (this.hasMessage) {
+            throw new AssertError(context.frame.getValue("message").toString());
+        }
+        throw new AssertError(
+            "Assert failed: " + a.getReferencedName() + " " + this.operator.symbols + " " + b.getReferencedName()
+            + " (Values: " + aValue + " " + this.operator.symbols + " " + bValue + ")"
+        );
     }
     
     

@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
+import net.jaraonthe.java.asb.ast.invocation.LocalVariableInitialization;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
-import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 
 /**
  * This is the implementation of a command or function, which is made up of
@@ -46,20 +46,25 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     }
 
     /**
-     * Adds a local variable.<br>
+     * Adds a local variable. This also adds the required
+     * LocalVariableInitialization to this program.
      * 
-     * @param variable
+     * @param variable of type LOCAL_VARIABLE
      * @return Fluent interface
+     * @throws ConstraintException if adding the LocalVariableInitialization
+     *                             would exceed maximum allowed program size
      */
-    public Implementation addVariable(Variable variable)
+    public Implementation addLocalVariable(Variable localVariable) throws ConstraintException
     {
-        if (this.variables.containsKey(variable.name)) {
+        if (this.variables.containsKey(localVariable.name)) {
             throw new IllegalArgumentException(
-                "Cannot add same variable " + variable.name + " more than once"
+                "Cannot add same variable " + localVariable.name + " more than once"
             );
         }
         
-        this.variables.put(variable.name, variable);
+        this.variables.put(localVariable.name, localVariable);
+        this.add(new LocalVariableInitialization(localVariable));
+        
         return this;
     }
     
@@ -130,17 +135,6 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        // TODO this is temporary (as it doesn't support local variables with dynamic length)
-        //      - once changed (and in combination with jump support within
-        //        implementations), any interpretation code that accesses
-        //        local variables must be able to handle non-existence of that
-        //        variable !
-        for (Variable variable : this.variables.values()) {
-            if (variable.type == Variable.Type.LOCAL_VARIABLE) {
-                context.frame.addValue(new NumericValueStore(variable));
-            }
-        }
-        
         for (Invocation invocation : this.program) {
             invocation.interpret(context);
         }

@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.interpret;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.Value;
 
@@ -72,6 +73,7 @@ public class Frame
     }
     
     /**
+     * @see #valueExistsLocally()
      * @param variableName
      * @return true if a value with the given variableName exists (either here
      *         or in the parent frame)
@@ -88,30 +90,58 @@ public class Frame
     }
     
     /**
+     * @see #valueExists()
      * @param variableName
-     * @return Value with the given variableName, or null if it doesn't exist
-     *         (neither here nor in the parent frame)
+     * @return true if a value with the given variableName exists within this
+     *         frame. This does NOT check the parent frame.
      */
-    public Value getValue(String variableName)
+    public boolean valueExistsLocally(String variableName)
+    {
+        return this.values.containsKey(variableName);
+    }
+    
+    /**
+     * @param variableName
+     * @return Value with the given variableName
+     * @throws RuntimeError if value doesn't exist (neither here nor in the
+     *                      parent frame). This usually means it is a local
+     *                      variable that hasn't been initialized yet.
+     */
+    public Value getValue(String variableName) throws RuntimeError
     {
         Value value = this.values.get(variableName);
-        if (value == null && this.parentFrame != null) {
+        if (value != null) {
+            return value;
+        }
+        if (this.parentFrame != null) {
             return this.parentFrame.getValue(variableName);
         }
-        return value;
+        // Note: This error message is based on the knowledge that the parser
+        //       statically checks all variable usages, thus only local
+        //       variables may not exist when interpreting. Of course, in case
+        //       of a bug in the parser or interpreter this may not be true (and
+        //       this a misleading error message).
+        throw new RuntimeError(
+            "Cannot use Local Variable " + variableName
+            + " as it hasn't been initialized yet - this is probably due to"
+            + "unintended jumps in a command implementation"
+        );
     }
     
     /**
      * Shortcut for {@code (NumericValue) frame.getValue(variableName)}.<br>
      * 
      * This should only be used when a value is expected to be of type {@link
-     * NumericValue}.
+     * NumericValue}.<br>
      * 
      * @param variableName
      * @return NumericValue with the given variableName, or null if it doesn't
      *         exist (neither here nor in the parent frame)
+     * @throws RuntimeError if value doesn't exist (neither here nor in the
+     *                      parent frame). This usually means it is a local
+     *                      variable that hasn't been initialized yet.
      */
-    public NumericValue getNumericValue(String variableName)
+    public NumericValue getNumericValue(String variableName) throws RuntimeError
     {
         return (NumericValue) this.getValue(variableName);
     }

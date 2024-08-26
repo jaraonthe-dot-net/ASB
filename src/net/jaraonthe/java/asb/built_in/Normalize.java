@@ -1,0 +1,56 @@
+package net.jaraonthe.java.asb.built_in;
+
+import java.math.BigInteger;
+
+import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
+import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
+import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
+import net.jaraonthe.java.asb.parse.Constraints;
+
+/**
+ * The {@code &normalize} built-in function.<br>
+ * 
+ * {@code &normalize variable}
+ *
+ * @author Jakob Rathbauer <jakob@jaraonthe.net>
+ */
+public class Normalize implements Interpretable
+{
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue operand = context.frame.getNumericValue("variable");
+        if (!(operand.variable instanceof Variable)) {
+            // Registers are never negative
+            return;
+        }
+        
+        BigInteger value = operand.read(context);
+        operand.write(NumericValueStore.normalizeBigInteger(value, operand.length), context);
+    }
+    
+    
+    /**
+     * Creates a {@code &normalize} built-in function.
+     * 
+     * @return
+     */
+    public static BuiltInFunction create()
+    {
+        BuiltInFunction function = new BuiltInFunction("&normalize", false);
+        
+        // &normalize register
+        function.addParameter(new Variable(
+            Variable.Type.REGISTER,
+            "variable",
+            Constraints.MIN_LENGTH,
+            Constraints.MAX_LENGTH
+        ));
+        
+        function.setInterpretable(new Normalize());
+        return function;
+    }
+}

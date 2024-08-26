@@ -49,4 +49,29 @@ test_sign_extend -3
 }
 test_bitwise -22
 
+&println "DYNAMIC LENGTH"
+.define test_length /immediate len ''maxu500 {
+    &normalize len
+    &assert len <= 500
+    
+    .variable test ''len
+    &mov test, -6
+    &print test; &print ", "; &print_x test; &print ", "; &println_b test
+    
+    &sub len, len, 2
+    &addc test, test'len:0, test'len:0
+    &print "*2: "; &print test; &print ", "; &print_x test; &print ", "; &println_b test
+}
+test_length 23
+
+&println "IMMEDIATE INDIRECTION"
+.define test_immediate_indirection /immediate imm ''9 {
+    &println imm
+    &test_immediate_indirection imm
+}
+.define &test_immediate_indirection /variable var ''9 {
+    &println var
+}
+test_immediate_indirection -9
+
 &println "That's all folks"

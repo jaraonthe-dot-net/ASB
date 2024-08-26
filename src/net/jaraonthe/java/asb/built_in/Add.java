@@ -67,12 +67,20 @@ public class Add implements Interpretable
         NumericValue src1 = context.frame.getNumericValue("src1");
         NumericValue src2 = context.frame.getNumericValue("src2");
         NumericValue dst  = context.frame.getNumericValue("dst");
-        
+
+        BigInteger src2Value = src2.read(context);
         // Check lengths
         switch (this.type) {
             case ADD:
             case SUB:
-                if (src1.length != dst.length || src2.length != dst.length) {
+                if (
+                    src1.length != dst.length
+                    || (
+                        (this.operands == Add.Operands.REG_REG_IMM) ?
+                            (NumericValue.bitLength(src2Value) > dst.length)
+                            : (src2.length != dst.length)
+                    )
+                ) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " two variables "
                         + src1.getReferencedName() + " and " + src2.getReferencedName()
@@ -84,7 +92,11 @@ public class Add implements Interpretable
                 
             case ADDC:
             case SUBC:
-                if (src1.length != src2.length) {
+                if (
+                    this.operands == Add.Operands.REG_REG_IMM ?
+                        NumericValue.bitLength(src2Value) > src1.length
+                        : src2.length != src1.length
+                ) {
                     throw new RuntimeError(
                         "Cannot " + this.type.functionName + " two variables "
                         + src1.getReferencedName() + " and " + src2.getReferencedName()
@@ -102,7 +114,6 @@ public class Add implements Interpretable
         }
         
         BigInteger src1Value = src1.read(context);
-        BigInteger src2Value = src2.read(context);
         BigInteger result = null;
         switch (this.type) {
             case ADD:

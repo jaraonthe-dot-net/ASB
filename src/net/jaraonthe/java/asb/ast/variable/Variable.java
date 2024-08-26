@@ -53,7 +53,7 @@ public class Variable extends VariableLike
          * This cannot be used as a Parameter in a command signature, as that
          * wouldn't make sense.
          */
-        LOCAL_VARIABLE('\u0011', ".var", Variable.Type.Length.EXACT, false);
+        LOCAL_VARIABLE('\u0011', ".variable", Variable.Type.Length.EXACT, false);
         
         public enum Length
         {
@@ -228,7 +228,7 @@ public class Variable extends VariableLike
         VariableLike lengthRegister
     ) {
         super(name, minLength, maxLength);
-        this.type = type;
+        this.type           = type;
         this.lengthRegister = lengthRegister;
         
         if (type == Variable.Type.LOCAL_VARIABLE && lengthRegister != null) {

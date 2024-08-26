@@ -75,6 +75,9 @@ public class BuiltInFunction extends Function
             ast.addCommand(Mov.create(operands));
         }
         
+        // &normalize
+        ast.addCommand(Normalize.create());
+        
         // &print, &println
         for (Print.Type type : Print.Type.values()) {
             ast.addCommand(Print.create(type, Print.Operand.REGISTER));

@@ -55,6 +55,21 @@ abstract public class NumericValue extends Value
     abstract public void write(BigInteger value, Context context) throws RuntimeError;
     
     /**
+     * Returns the bit length of the given BigInteger.<br>
+     * 
+     * Opposed to {@link BigInteger#bitLength()}, this also includes the sign
+     * bit in the returned length.
+     * 
+     * @param value
+     * @return
+     */
+    public static int bitLength(BigInteger value)
+    {
+        // This works for normalized as well as (possibly negative) immediate values
+        return value.bitLength() + (value.signum() < 0 ? 1 : 0);
+    }
+    
+    /**
      * Instead of containing their own content, NumericValues may refer to
      * a different value instead (e.g. register alias).
      * 

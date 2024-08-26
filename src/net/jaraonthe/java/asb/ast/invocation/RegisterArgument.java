@@ -409,7 +409,8 @@ public class RegisterArgument extends Argument
         } catch (ArithmeticException e) {
             throw new RuntimeError(
                 "Value stored in " + register.name
-                + " is used as bitwise access position, but is too big (is " + value + ")"
+                + " is used as bitwise access position, but is too "
+                + (value.signum() >= 0 ? "big" : "small") + " (is " + value + ")"
             );
         }
         

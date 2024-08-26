@@ -38,7 +38,7 @@ public class NumericValueReference extends NumericValue
     @Override
     public void write(BigInteger value, Context context) throws RuntimeError
     {
-        this.referenced.write(value, context);;
+        this.referenced.write(value, context);
     }
 
     @Override

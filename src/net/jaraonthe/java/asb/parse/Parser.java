@@ -11,6 +11,7 @@ import java.util.Set;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
+import net.jaraonthe.java.asb.ast.invocation.CommandInvocation;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.invocation.RawArgument;
@@ -122,7 +123,7 @@ public class Parser
                     break;
                 case NAME:
                 case FUNCTION_NAME:
-                    Invocation invocation = this.parseInvocation(t.content, null);
+                    CommandInvocation invocation = this.parseInvocation(t.content, null);
                     try {
                         invocation.resolve(this.ast, null);
                     } catch (ConstraintException e) {
@@ -562,81 +563,83 @@ public class Parser
         
         body: while (true) {
             Token t = this.tokenizer.next();
-            switch (Token.getType(t)) {
-                case DIRECTIVE:
-                    switch (t.content) {
-                        case ".variable":
-                        case ".var":
-                            String name = this.expectName();
-                            if (implementation.variableExists(name)) {
+            try {
+                switch (Token.getType(t)) {
+                    case DIRECTIVE:
+                        switch (t.content) {
+                            case ".variable":
+                            case ".var":
+                                String name = this.expectName();
+                                if (implementation.variableExists(name)) {
+                                    throw new ParseError(
+                                        "Cannot declare local variable " + name
+                                        + " more than once at " + t.origin
+                                    );
+                                }
+                                
+                                // Custom length parsing (to support length register)
+                                this.expect(Token.Type.BIT_LENGTH);
+                                this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
+                                
+                                if (this.peekedIsType(Token.Type.NAME)) {
+                                    // '' varName
+                                    VariableLike lengthRegister = this.expectNumericVariableLike(
+                                        implementation,
+                                        "length"
+                                    );
+                                    
+                                    implementation.addLocalVariable(new Variable(
+                                        Variable.Type.LOCAL_VARIABLE,
+                                        name,
+                                        lengthRegister
+                                    ));
+                                    
+                                } else {
+                                    implementation.addLocalVariable(new Variable(
+                                        Variable.Type.LOCAL_VARIABLE,
+                                        name,
+                                        this.parseAdvancedLengthFormat("Local variable")
+                                    ));
+                                }
+                                
+                                this.tokenizer.setMode(surroundingMode);
+                                this.expectStatementSeparator();
+                                break;
+                            default:
                                 throw new ParseError(
-                                    "Cannot declare local variable " + name + " more than once at " + t.origin
+                                    "Unexpected directive " + t.content + " at " + t.origin
                                 );
-                            }
-                            
-                            // Custom length parsing (to support length register)
-                            this.expect(Token.Type.BIT_LENGTH);
-                            this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
-                            
-                            if (this.peekedIsType(Token.Type.NAME)) {
-                                // '' varName
-                                VariableLike lengthRegister = this.expectNumericVariableLike(
-                                    implementation,
-                                    "length"
-                                );
-                                
-                                implementation.addVariable(new Variable(
-                                    Variable.Type.LOCAL_VARIABLE,
-                                    name,
-                                    lengthRegister
-                                ));
-                                
-                            } else {
-                                implementation.addVariable(new Variable(
-                                    Variable.Type.LOCAL_VARIABLE,
-                                    name,
-                                    this.parseAdvancedLengthFormat("Local variable")
-                                ));
-                            }
-                            
+                        }
+                        break;
+                        
+                    case NAME:
+                    case FUNCTION_NAME:
+                            this.tokenizer.setMode(Tokenizer.Mode.MAIN);
+                            implementation.add(this.parseInvocation(t.content, implementation));
                             this.tokenizer.setMode(surroundingMode);
-                            this.expectStatementSeparator();
-                            break;
-                        default:
-                            throw new ParseError(
-                                "Unexpected directive " + t.content + " at " + t.origin
-                            );
-                    }
-                    break;
-                    
-                case NAME:
-                case FUNCTION_NAME:
-                    try {
-                        this.tokenizer.setMode(Tokenizer.Mode.MAIN);
-                        implementation.add(this.parseInvocation(t.content, implementation));
-                        this.tokenizer.setMode(surroundingMode);
-                    } catch (ConstraintException e) {
+                        break;
+                        
+                    // TODO labels
+                
+                    case CLOSING_BRACES:
+                        break body;
+                        
+                    case EOF:
                         throw new ParseError(
-                            "Maximum program size exceeded in implementation at " + t.origin
-                            + ". " + e.getMessage()
+                            "Unexpected end of file, expected " + Token.Type.CLOSING_BRACES
                         );
-                    }
-                    break;
-                    
-                // TODO labels
-            
-                case CLOSING_BRACES:
-                    break body;
-                    
-                case EOF:
-                    throw new ParseError(
-                        "Unexpected end of file, expected " + Token.Type.CLOSING_BRACES
+                    default:
+                        throw new ParseError(
+                            "Unexpected " + t.type + ", expected " + Token.Type.CLOSING_BRACES
                     );
-                default:
-                    throw new ParseError(
-                        "Unexpected " + t.type + ", expected " + Token.Type.CLOSING_BRACES
+                        
+                }
+            } catch (ConstraintException e) {
+                // From implementation.addLocalVariable() or implementation.add()
+                throw new ParseError(
+                    "Maximum program size exceeded in implementation at " + Token.getOrigin(t)
+                    + ". " + e.getMessage()
                 );
-                    
             }
             this.skipStatementSeparators();
         }
@@ -658,9 +661,9 @@ public class Parser
      * @throws LexicalError
      * @throws ParseError
      */
-    private Invocation parseInvocation(String name, Implementation implementation) throws LexicalError, ParseError
+    private CommandInvocation parseInvocation(String name, Implementation implementation) throws LexicalError, ParseError
     {
-        Invocation invocation = new Invocation(name);
+        CommandInvocation invocation = new CommandInvocation(name);
         Tokenizer.Mode surroundingMode = this.tokenizer.getMode();
         while (true) {
             Token t = this.tokenizer.next();
@@ -1100,7 +1103,9 @@ public class Parser
                 result[0] = Constraints.MIN_LENGTH;
                 result[1] = this.parseAdvancedLengthFormat(elementName);
                 break;
-                
+
+            case LENGTH_MAX:
+            case LENGTH_MAXU:
             case NUMBER:
                 // '' number
                 result[0] = result[1] = this.parseAdvancedLengthFormat(elementName);

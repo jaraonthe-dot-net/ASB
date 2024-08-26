@@ -103,10 +103,15 @@ public class Interpreter
                 continue;
             }
             
-            this.globalFrame.addValue(new NumericValueReference(
-                ra,
-                this.globalFrame.getNumericValue(ra.aliasedRegister.name)
-            ));
+            try {
+                this.globalFrame.addValue(new NumericValueReference(
+                    ra,
+                    this.globalFrame.getNumericValue(ra.aliasedRegister.name)
+                ));
+            } catch (RuntimeError e) {
+                // Converting exception, as this case should never happen
+                throw new RuntimeException(e);
+            }
         }
     }
 }

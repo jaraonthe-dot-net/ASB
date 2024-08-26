@@ -1,11 +1,11 @@
 package net.jaraonthe.java.asb.ast;
 
 import net.jaraonthe.java.asb.ast.command.Command;
-import net.jaraonthe.java.asb.ast.invocation.Invocation;
+import net.jaraonthe.java.asb.ast.invocation.CommandInvocation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 
 /**
- * Stuff that both {@link Command} and {@link Invocation} have in common.
+ * Stuff that both {@link Command} and {@link CommandInvocation} have in common.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
