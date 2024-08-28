@@ -107,7 +107,7 @@ Instead of `.address` the alternative keyword `.addr` can be used. The sub-direc
 
 Replace `<wordLength>` with the amount of bits in each memory word, and `<addressLength>` with the amount of bits in a memory address.
 
-Memory size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first command that accesses data memory** is executed, memory MUST NOT be reconfigured any more; otherwise an error occurs.
+Memory size may be defined more than once; the latter definition effectively overriding earlier definitions. However, **after the first user program command** is executed, memory MUST NOT be reconfigured any more; otherwise an error occurs.
 
 Also, if a command is executed that accesses data memory, but memory size has not been configured by this point, an error occurs as well.
 

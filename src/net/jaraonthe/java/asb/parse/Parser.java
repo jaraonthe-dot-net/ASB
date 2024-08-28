@@ -186,8 +186,11 @@ public class Parser
                 
                 break;
             case ".memory":
-                // TODO check if first invocation of a command using memory was
-                //      already parsed -> configuring memory no longer allowed
+                if (this.ast.hasProgram()) {
+                    throw new ParseError(
+                        "Cannot configure memory after first command at" + directive.origin
+                    );
+                }
                 boolean isMultiLine = this.consumeOpeningBraces();
                 
                 int wordLength = -1;
