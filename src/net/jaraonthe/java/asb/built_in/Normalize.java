@@ -8,7 +8,6 @@ import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &normalize} built-in function.<br>
@@ -29,12 +28,7 @@ public class Normalize implements Interpretable
         BuiltInFunction function = new BuiltInFunction("&normalize", false);
         
         // &normalize register
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "variable",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "variable");
         
         function.setInterpretable(new Normalize());
         return function;

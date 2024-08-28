@@ -138,4 +138,22 @@ test_userland_jump nein
 nein:
     &println "never say nein"
 
+&println "Continue..."
+
+&println "MUL, DIV, REM"
+.define test_arithmetic /immediate factor ''16 {
+    .variable a ''32; &mov a, 25
+    .variable b ''16; &mov b, 8
+    
+    &print a; &print " * "; &print b; &print " = "
+    &mul a, a'15:0, b
+    &println a
+    
+    &print a; &print " / "; &print factor; &print " = "
+    &div a'31:16, a'15:0, factor
+    &rem a'15:0, a'15:0, factor
+    &print a'31:16; &print " remainder "; &println a'15:0
+}
+test_arithmetic 12
+
 &println "That's all folks"

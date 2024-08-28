@@ -37,12 +37,7 @@ public class Jump implements Interpretable
      */
     public static void addLabelParameter(BuiltInFunction function)
     {
-        function.addParameter(new Variable(
-            Variable.Type.LABEL,
-            "label",
-            Variable.LOCAL_LABEL_LENGTH,
-            true
-        ));
+        function.addParameterByType(Variable.Type.LABEL, "label");
     }
     
     

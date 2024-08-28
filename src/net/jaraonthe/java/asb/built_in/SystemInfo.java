@@ -7,7 +7,6 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &get_memory_word_length}, {@code &get_memory_address_length} (aka
@@ -65,12 +64,7 @@ public class SystemInfo implements Interpretable
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "dst",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "dst");
         
         function.setInterpretable(new SystemInfo(type));
         return function;

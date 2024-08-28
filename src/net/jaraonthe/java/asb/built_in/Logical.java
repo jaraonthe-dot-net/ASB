@@ -8,17 +8,16 @@ import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &and}, {@code &or}, and {@code &xor} built-in functions.<br>
  * 
  * {@code &and dstRegister, src1Register, src2Imm};<br>
- * {@code &and dstRegister, src1Register, srcRegister2};<br>
+ * {@code &and dstRegister, src1Register, src2Register};<br>
  * {@code &or  dstRegister, src1Register, src2Imm};<br>
- * {@code &or  dstRegister, src1Register, srcRegister2};<br>
+ * {@code &or  dstRegister, src1Register, src2Register};<br>
  * {@code &xor dstRegister, src1Register, src2Imm};<br>
- * {@code &xor dstRegister, src1Register, srcRegister2};
+ * {@code &xor dstRegister, src1Register, src2Register};
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -38,25 +37,18 @@ public class Logical implements Interpretable
         }
     }
     
-    public enum Operands
-    {
-        // destination_source1_source2
-        REG_REG_IMM, // &and dstRegister, src1Register, src2Imm
-        REG_REG_REG, // &and dstRegister, src1Register, srcRegister2
-    }
-    
     protected final Logical.Type type;
-    protected final Logical.Operands operands;
+    protected final BuiltInFunction.OperandType src2Type;
     
     
     /**
      * @param type     Selects the actual function
-     * @param operands Selects the function variant (via the Operands set up)
+     * @param src2Type Selects the function variant (via the src2 type)
      */
-    private Logical(Logical.Type type, Logical.Operands operands)
+    private Logical(Logical.Type type, BuiltInFunction.OperandType src2Type)
     {
-        this.type     = type;
-        this.operands = operands;
+        this.type = type;
+        this.src2Type = src2Type;
     }
 
     /**
@@ -64,51 +56,21 @@ public class Logical implements Interpretable
      * with the given operands variant.
      * 
      * @param type     Selects the actual function
-     * @param operands Selects the function variant (via the Operands set up)
+     * @param src2Type Selects the function variant (via the src2 type)
      * 
      * @return
      */
-    public static BuiltInFunction create(Logical.Type type, Logical.Operands operands)
+    public static BuiltInFunction create(Logical.Type type, BuiltInFunction.OperandType src2Type)
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "dst",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "src1",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "src1");
         function.addCommandSymbols(",");
+        function.addParameterByType(src2Type, "src2");
         
-        switch (operands) {
-            case REG_REG_IMM:
-                // &and dstRegister, src1Register, src2Imm
-                function.addParameter(new Variable(
-                    Variable.Type.IMMEDIATE,
-                    "src2",
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case REG_REG_REG:
-                // &and dstRegister, src1Register, srcRegister2
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src2",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-        }
-        
-        function.setInterpretable(new Logical(type, operands));
+        function.setInterpretable(new Logical(type, src2Type));
         return function;
     }
     
@@ -125,7 +87,7 @@ public class Logical implements Interpretable
         if (
             src1.length != dst.length
             || (
-                (this.operands == Logical.Operands.REG_REG_IMM) ?
+                (this.src2Type == BuiltInFunction.OperandType.IMMEDIATE) ?
                     (NumericValue.bitLength(src2Value) > dst.length)
                     : (src2.length != dst.length)
             )

@@ -27,8 +27,8 @@ public class Jumpif extends Compare
      */
     private Jumpif(
         Jumpif.Operator operator,
-        Jumpif.OperandType a,
-        Jumpif.OperandType b
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b
     ) {
         super(operator, a, b);
     }
@@ -46,8 +46,8 @@ public class Jumpif extends Compare
      */
     public static BuiltInFunction create(
         Jumpif.Operator operator,
-        Jumpif.OperandType a,
-        Jumpif.OperandType b
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b
     ) {
         BuiltInFunction function = new BuiltInFunction("&jumpif", false);
         

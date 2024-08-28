@@ -46,8 +46,6 @@ public class AST
     /**
      * All commands and (built-in) functions, accessed via their identity.
      */
-    // TODO maybe we don't require both command maps?
-    // TODO Finetune initial capacity once all built-in functions have been added (same below)
     private Map<String, Command> commands = HashMap.newHashMap(250);
     
     /**

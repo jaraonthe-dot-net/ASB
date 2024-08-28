@@ -41,7 +41,7 @@ public class SourceFile
      */
     public SourceFile(Path filePath) throws IOException
     {
-        this.filePath = filePath.toAbsolutePath();
+        this.filePath = filePath.toRealPath();
         this.lines    = Collections.unmodifiableList(Files.readAllLines(this.filePath));
     }
     

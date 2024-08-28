@@ -1,7 +1,5 @@
 package net.jaraonthe.java.asb.built_in;
 
-import java.math.BigInteger;
-
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -9,29 +7,29 @@ import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 
 /**
- * The {@code &length} built-in function.<br>
+ * The {@code &zero_extend} built-in function.<br>
  * 
- * {@code &length dstLength, srcRegister}
+ * {@code &zero_extend dstRegister, srcRegister}
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class Length implements Interpretable
+public class ZeroExtend implements Interpretable
 {
     /**
-     * Creates a {@code &length} built-in function.
+     * Creates a {@code &zero_extend} built-in function.
      * 
      * @return
      */
     public static BuiltInFunction create()
     {
-        BuiltInFunction function = new BuiltInFunction("&length", false);
+        BuiltInFunction function = new BuiltInFunction("&zero_extend", false);
         
-        // &length dstLength, srcRegister
+        // &zero_extend dstRegister, srcRegister
         function.addParameterByType(Variable.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
         function.addParameterByType(Variable.Type.REGISTER, "src");
         
-        function.setInterpretable(new Length());
+        function.setInterpretable(new ZeroExtend());
         return function;
     }
     
@@ -39,16 +37,15 @@ public class Length implements Interpretable
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        BigInteger length = BigInteger.valueOf(context.frame.getNumericValue("src").length);
-        
+        NumericValue src = context.frame.getNumericValue("src");
         NumericValue dst = context.frame.getNumericValue("dst");
-        if (length.bitLength() > dst.length) {
+        if (src.length > dst.length) {
             throw new RuntimeError(
-                "Cannot store result of &length in " + dst.getReferencedName()
-                + " as the result value is too big"
+                "Cannot &zero_extend from bigger variable " + src.getReferencedName()
+                + " to smaller variable " + dst.getReferencedName()
             );
         }
         
-        dst.write(length, context);
+        dst.write(src.read(context), context);
     }
 }

@@ -2,45 +2,39 @@
  * RISC-V commands
  */
 
-/* Helper functions */
+/* LOAD/STORE */
+
+// Helper
 .define &calculate_address /register result''32, /variable imm''12(/register rs1''32) {
     &sign_extend result, imm
     &add result, result, rs1
 }
-
-
-/* LOAD/STORE */
-
 // load byte
 .define lb /register rd''32, /immediate imm''12(/register rs1''32) {
     .variable address ''32; &calculate_address address, imm(rs1)
     
-    .variable byte ''8
-    &mov byte, @address
-    &sign_extend rd, byte
+    &mov rd'7:0, @address
+    &sign_extend rd, rd'7:0
 }
 // Load half
 .define lh /register rd''32, /immediate imm''12(/register rs1''32) {
     .variable address ''32; &calculate_address address, imm(rs1)
     
-    &mov rd'7:0, @address
+    &mov rd'7:0,  @address
     &add address, address, 1
-    .variable byte ''8
-    &mov byte, @address
-    &sign_extend rd'31:8, byte
+    &mov rd'15:8, @address
+    &sign_extend  rd'31:8, rd'15:8
 }
 // Load word
 .define lw /register rd''32, /immediate imm''12(/register rs1''32) {
-    // TODO address should probably be divisible by four - check RISC-V docs &
-    //      add assert if applicable. And what about lh?
     .variable address ''32; &calculate_address address, imm(rs1)
     
-    &mov rd'7:0, @address
-    &add address, address, 1
-    &mov rd'15:8, @address
-    &add address, address, 1
+    &mov rd'7:0,   @address
+    &add address,   address, 1
+    &mov rd'15:8,  @address
+    &add address,   address, 1
     &mov rd'23:16, @address
-    &add address, address, 1
+    &add address,   address, 1
     &mov rd'31:24, @address
 }
 // Load byte unsigned
@@ -55,8 +49,8 @@
     .variable address ''32; &calculate_address address, imm(rs1)
     
     &mov rd, 0
-    &mov rd'7:0, @address
-    &add address, address, 1
+    &mov rd'7:0,  @address
+    &add address,  address, 1
     &mov rd'15:8, @address
 }
 // Load upper immediate
@@ -76,7 +70,7 @@
     .variable address ''32; &calculate_address address, imm(rs1)
     
     &mov @address, rs2'7:0
-    &add address, address, 1
+    &add  address, address, 1
     &mov @address, rs2'15:8
 }
 // Store word
@@ -84,16 +78,16 @@
     .variable address ''32; &calculate_address address, imm(rs1)
     
     &mov @address, rs2'7:0
-    &add address, address, 1
+    &add  address, address,  1
     &mov @address, rs2'15:8
-    &add address, address, 1
+    &add  address, address,  1
     &mov @address, rs2'23:16
-    &add address, address, 1
+    &add  address, address,  1
     &mov @address, rs2'31:24
 }
 
 
-/* ARITHMETICAL */
+/* ARITHMETIC */
 
 // Add
 .define add /register rd''32, /register rs1''32, /register rs2''32 {
@@ -107,6 +101,149 @@
 // Sub
 .define sub /register rd''32, /register rs1''32, /register rs2''32 {
     &sub rd, rs1, rs2
+}
+
+// Helper
+.define &less_than_signed /register result''1, /register a''32, /register b''32 {
+    &jumpif a'31 < b'31, false // a positive, b negative
+    &jumpif a'31 > b'31, true  // a negative, b positive
+    &jumpif a >= b, false      // both positive/negative
+  true:
+    &mov result, 1
+    &jump end
+  false:
+    &mov result, 0
+  end:
+}
+// Set less than
+.define slt /register rd''32, /register rs1''32, /register rs2''32 {
+    .variable result ''1
+    
+    &less_than_signed result, rs1, rs2
+    &zero_extend rd, result
+}
+// Set less than immediate
+.define slti /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    .variable result ''1
+    
+    &less_than_signed result, rs1, extended
+    &zero_extend rd, result
+}
+// Set less than unsigned
+.define sltu /register rd''32, /register rs1''32, /register rs2''32  {
+    &jumpif rs1 >= rs2, else
+    &mov rd, 1
+    &jump end
+  else:
+    &mov rd, 0
+  end:
+}
+// Set less than immediate unsigned
+.define sltiu /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable extended ''32; &sign_extend extended, imm
+    
+    &jumpif rs1 >= extended, else
+    &mov rd, 1
+    &jump end
+  else:
+    &mov rd, 0
+  end:
+}
+
+
+/* M extension */
+
+// Multiply
+.define mul /register rd''32, /register rs1''32, /register rs2''32 {
+    .variable result''64
+    &mul result, rs1, rs2
+    &mov rd, result'31:0
+}
+// Multiply high signed signed
+.define mulh /register rd''32, /register rs1''32, /register rs2''32 {
+    // sign-extend to double length before multiplying
+    // (see https://en.wikipedia.org/wiki/Two%27s_complement#Multiplication)
+    .variable ext1''64; &sign_extend ext1, rs1
+    .variable ext2''64; &sign_extend ext2, rs2
+    
+    .variable result''128
+    &mul result, rs1, rs2
+    &mov rd, result'63:32
+}
+// Multiply high unsigned unsigned
+.define mulhu /register rd''32, /register rs1''32, /register rs2''32 {
+    .variable result''64
+    &mul result, rs1, rs2
+    &mov rd, result'63:32
+}
+// Multiply high signed unsigned
+.define mulhsu /register rd''32, /register rs1''32, /register rs2''32 {
+    .variable ext1''64; &sign_extend ext1, rs1
+    .variable ext2''64; &zero_extend ext2, rs2
+    
+    .variable result''128
+    &mul result, rs1, rs2
+    &mov rd, result'63:32
+}
+
+// Helpers
+.define &abs /register dst''32, /register src''32 {
+    &mov dst, src
+    &jumpif dst'31 == 0, end
+    &twos_complement dst
+  end:
+}
+.define &twos_complement /register reg''32 {
+    &not reg, reg
+    &add reg, reg, 1
+}
+// Divide
+.define div /register rd''32, /register rs1''32, /register rs2''32 {
+    &jumpif rs1'31 == 1, negative
+    &jumpif rs2'31 == 1, negative
+    
+    &div rd, rs1, rs2
+    &jump end
+    
+  negative:
+    .variable result_is_negative''1
+    &movif rs1'31 != rs2'31, result_is_negative, 1
+    
+    .variable abs1''32; &abs abs1, rs1
+    .variable abs2''32; &abs abs2, rs2
+    
+    &div rd, abs1, abs2
+    &jumpif result_is_negative == 0, end
+    &twos_complement rd
+  end:
+}
+// Remainder
+.define rem /register rd''32, /register rs1''32, /register rs2''32 {
+    &jumpif rs1'31 == 1, negative
+    &jumpif rs2'31 == 1, negative
+    
+    &rem rd, rs1, rs2
+    &jump end
+    
+  negative:
+    .variable abs1''32; &abs abs1, rs1
+    .variable abs2''32; &abs abs2, rs2
+    
+    &rem rd, abs1, abs2
+    // remainder is negative if rs1 is negative
+    &jumpif rs1'31 == 0, end
+    &twos_complement rd
+  end:
+}
+
+// Divide unsigned
+.define divu /register rd''32, /register rs1''32, /register rs2''32 {
+    &div rd, rs1, rs2
+}
+// Remainder unsigned
+.define remu /register rd''32, /register rs1''32, /register rs2''32 {
+    &rem rd, rs1, rs2
 }
 
 
@@ -159,34 +296,22 @@
     &sll rd, rs1, uimm
 }
 
-// Helper
-.define &srl /register rd''32, /register rs1''32, /register bits''5 {
-    .variable rd_start ''5; &sub rd_start, 31, bits
-    &mov rd'rd_start:0, rs1'31:bits
-
-    .variable rd_start1 ''5; &add rd_start1, rd_start, 1
-    &mov rd'31:rd_start1, 0
-}
 // Shift right logical
 .define srl /register rd''32, /register rs1''32, /register rs2''32 {
-    &srl rd, rs1, rs2'4:0
+    &zero_extend rd, rs1'31:rs2
 }
 // Shift right logical immediate
 .define srli /register rd''32, /register rs1''32, /immediate uimm''5 {
-    &srl rd, rs1, uimm
+    &zero_extend rd, rs1'31:uimm
 }
 
-// Helper
-.define &sra /register rd''32, /register rs1''32, /register bits''5 {
-    &sign_extend rd, rs1'31:bits
-}
 // Shift right arithmetic
 .define sra /register rd''32, /register rs1''32, /register rs2''32 {
-    &sra rd, rs1, rs2'4:0
+    &sign_extend rd, rs1'31:rs2
 }
 // Shift right arithmetic immediate
 .define srai /register rd''32, /register rs1''32, /immediate uimm''5 {
-    &sra rd, rs1, uimm
+    &sign_extend rd, rs1'31:uimm
 }
 
 
@@ -222,14 +347,15 @@
     &set_pc label
   end:
 }
+
 // Branch if <
 .define blt /register rs1''32, /register rs2''32, /label label {
     &checkLabel label
     
-    &jumpif rs1'31 < rs2'31, end    // rs1 positive, rs2 negative
-    &jumpif rs1'31 > rs2'31, branch // rs1 negative, rs2 positive
-    &jumpif rs1 >= rs2, end         // both positive/negative
-  branch:
+    .variable result''1;
+    &less_than_signed result, rs1, rs2
+    
+    &jumpif result == 0, end
     &set_pc label
   end:
 }
@@ -237,10 +363,11 @@
 .define bge /register rs1''32, /register rs2''32, /label label {
     &checkLabel label
     
-    &jumpif rs1'31 > rs2'31, end    // rs1 negative, rs2 positive
-    &jumpif rs1'31 < rs2'31, branch // rs1 positive, rs2 negative
-    &jumpif rs1 < rs2, end
-  branch:
+    
+    .variable result''1;
+    &less_than_signed result, rs1, rs2
+    
+    &jumpif result == 1, end
     &set_pc label
   end:
 }
@@ -261,6 +388,4 @@
   end:
 }
 
-// TODO: slti, sltiu, auipc, slt, sltu,
-//       jalr, jal
-//       mul, mulh, mulhsu, mulhu, div, divu, rem, remu
+// TODO: auipc, jalr, jal

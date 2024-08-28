@@ -2,13 +2,11 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * Contains common code for built-in functions that compare two values with each
@@ -18,12 +16,6 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 abstract public class Compare implements Interpretable
 {
-    public enum OperandType
-    {
-        IMMEDIATE,
-        REGISTER
-    }
-    
     public enum Operator
     {
         EQUALS                ("=="),
@@ -42,8 +34,8 @@ abstract public class Compare implements Interpretable
     }
     
     protected final Compare.Operator operator;
-    protected final Compare.OperandType a;
-    protected final Compare.OperandType b;
+    protected final BuiltInFunction.OperandType a;
+    protected final BuiltInFunction.OperandType b;
     
     
     /**
@@ -55,8 +47,8 @@ abstract public class Compare implements Interpretable
      */
     protected Compare(
         Compare.Operator operator,
-        Compare.OperandType a,
-        Compare.OperandType b
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b
     ) {
         this.operator   = operator;
         this.a          = a;
@@ -78,46 +70,20 @@ abstract public class Compare implements Interpretable
     protected static void addComparisonOperands(
         BuiltInFunction function,
         Compare.Operator operator,
-        Compare.OperandType a,
-        Compare.OperandType b
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b
     ) {
-        if (a == Compare.OperandType.IMMEDIATE && b == Compare.OperandType.IMMEDIATE) {
+        if (a == BuiltInFunction.OperandType.IMMEDIATE && b == BuiltInFunction.OperandType.IMMEDIATE) {
             throw new IllegalArgumentException(
                 "Cannot create " + function.name + " function with two immediate operands"
             );
         }
         
-        Compare.addOperand(function, a, "a");
+        function.addParameterByType(a, "a");
         function.addCommandSymbols(operator.symbols);
-        Compare.addOperand(function, b, "b");
+        function.addParameterByType(b, "b");
     }
     
-    /**
-     * @param function
-     * @param type
-     * @param name
-     */
-    private static void addOperand(BuiltInFunction function, Compare.OperandType type, String name)
-    {
-        switch (type) {
-        case IMMEDIATE:
-            function.addParameter(new Variable(
-                Variable.Type.IMMEDIATE,
-                name,
-                Constraints.MAX_LENGTH
-            ));
-            break;
-        case REGISTER:
-            function.addParameter(new Variable(
-                Variable.Type.REGISTER,
-                name,
-                Constraints.MIN_LENGTH,
-                Constraints.MAX_LENGTH
-            ));
-            break;
-        }
-    }
-
     
     /**
      * Compares a and b parameters.
@@ -164,7 +130,7 @@ abstract public class Compare implements Interpretable
                 aValue = NumericValueStore.normalizeBigInteger(
                     aValue,
                     // Immediates are normalized to length of other operand
-                    this.a == Compare.OperandType.IMMEDIATE ? b.length : a.length
+                    this.a == BuiltInFunction.OperandType.IMMEDIATE ? b.length : a.length
                 );
             } catch (IllegalArgumentException e) {
                 // a is greater than b (as it is too big for b.length)
@@ -177,7 +143,7 @@ abstract public class Compare implements Interpretable
             bValue = NumericValueStore.normalizeBigInteger(
                 bValue,
                 // Ditto
-                this.b == Compare.OperandType.IMMEDIATE ? a.length : b.length
+                this.b == BuiltInFunction.OperandType.IMMEDIATE ? a.length : b.length
             );
             } catch (IllegalArgumentException e) {
                 // a is less than b (as b is too big for a.length)

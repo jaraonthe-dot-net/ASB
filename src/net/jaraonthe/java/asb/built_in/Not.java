@@ -8,7 +8,6 @@ import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &not} built-in function.<br>
@@ -20,61 +19,32 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class Not implements Interpretable
 {
-    public enum Operand
-    {
-        REGISTER,
-        IMMEDIATE,
-    }
-    
-    protected final Not.Operand operand;
+    protected final BuiltInFunction.OperandType src;
     
     
     /**
-     * @param operand Selects the function variant (via the Operand type)
+     * @param src Selects the function variant (via the src type)
      */
-    private Not(Not.Operand operand)
+    private Not(BuiltInFunction.OperandType src)
     {
-        this.operand = operand;
+        this.src = src;
     }
     
     /**
      * Creates a {@code &not} built-in function with the given operand variant.
      * 
-     * @param operand Selects the function variant (via the Operand type)
+     * @param src Selects the function variant (via the src type)
      * @return
      */
-    public static BuiltInFunction create(Not.Operand operand)
+    public static BuiltInFunction create(BuiltInFunction.OperandType src)
     {
         BuiltInFunction function = new BuiltInFunction("&not", false);
 
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "dst",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
+        function.addParameterByType(src, "src");
         
-        switch (operand) {
-            case REGISTER:
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-        
-            case IMMEDIATE:
-                function.addParameter(new Variable(
-                    Variable.Type.IMMEDIATE,
-                    "src",
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-        }
-        
-        function.setInterpretable(new Not(operand));
+        function.setInterpretable(new Not(src));
         return function;
     }
 
@@ -88,7 +58,7 @@ public class Not implements Interpretable
         BigInteger srcValue = src.read(context);
         // Check lengths
         if (
-            (this.operand == Not.Operand.IMMEDIATE) ?
+            (this.src == BuiltInFunction.OperandType.IMMEDIATE) ?
                 (NumericValue.bitLength(srcValue) > dst.length)
                 : (src.length != dst.length)
         ) {

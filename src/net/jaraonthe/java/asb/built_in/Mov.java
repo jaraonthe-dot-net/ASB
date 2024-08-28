@@ -7,7 +7,6 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &mov} built-in function.<br>
@@ -91,22 +90,13 @@ public class Mov implements Interpretable
     {
         switch (type) {
         case IMMEDIATE:
-            function.addParameter(new Variable(
-                Variable.Type.IMMEDIATE,
-                name,
-                Constraints.MAX_LENGTH
-            ));
+            function.addParameterByType(Variable.Type.IMMEDIATE, name);
             break;
         case ADDRESS:
             function.addCommandSymbols("@");
             // Fall-through
         case REGISTER:
-            function.addParameter(new Variable(
-                Variable.Type.REGISTER,
-                name,
-                Constraints.MIN_LENGTH,
-                Constraints.MAX_LENGTH
-            ));
+            function.addParameterByType(Variable.Type.REGISTER, name);
             break;
         }
     }

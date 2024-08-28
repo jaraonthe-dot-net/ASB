@@ -7,7 +7,6 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &sign_extend} built-in function.<br>
@@ -28,19 +27,9 @@ public class SignExtend implements Interpretable
         BuiltInFunction function = new BuiltInFunction("&sign_extend", false);
         
         // &sign_extend dstRegister, srcRegister
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "dst",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "src",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "src");
         
         function.setInterpretable(new SignExtend());
         return function;

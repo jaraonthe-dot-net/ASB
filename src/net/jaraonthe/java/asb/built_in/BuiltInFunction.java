@@ -3,7 +3,9 @@ package net.jaraonthe.java.asb.built_in;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Function;
 import net.jaraonthe.java.asb.ast.command.Implementation;
+import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * A built-in function, which is not defined in ASB source code provided by the
@@ -42,37 +44,137 @@ public class BuiltInFunction extends Function
     }
     
     
+    /* Common stuff for any bult-in function class */
+
     /**
-     * Inits and adds all built-in functions to the given AST.
+     * Type of an operand which is either /register or /immediate.<br>
+     * 
+     * May be used by any built-in function class.
+     *
+     * @author Jakob Rathbauer <jakob@jaraonthe.net>
+     */
+    public enum OperandType
+    {
+        IMMEDIATE (Variable.Type.IMMEDIATE),
+        REGISTER  (Variable.Type.REGISTER);
+        
+        public final Variable.Type variableType;
+        
+        private OperandType(Variable.Type type)
+        {
+            this.variableType = type;
+        }
+    }
+    
+    /**
+     * Adds a parameter to this built-in function based on the given type.
+     * 
+     * @param type
+     * @param name
+     * @return
+     */
+    public BuiltInFunction addParameterByType(BuiltInFunction.OperandType type, String name)
+    {
+        return this.addParameterByType(type.variableType, name);
+    }
+    
+    /**
+     * Adds a parameter to this built-in function based on the given type.
+     * 
+     * @param type
+     * @param name
+     * 
+     * @return Fluent interface
+     */
+    public BuiltInFunction addParameterByType(Variable.Type type, String name)
+    {
+        switch (type) {
+        case IMMEDIATE:
+            this.addParameter(new Variable(
+                Variable.Type.IMMEDIATE,
+                name,
+                Constraints.MAX_LENGTH
+            ));
+            break;
+            
+        case REGISTER:
+            this.addParameter(new Variable(
+                Variable.Type.REGISTER,
+                name,
+                Constraints.MIN_LENGTH,
+                Constraints.MAX_LENGTH
+            ));
+            break;
+            
+        case LABEL:
+            // i.e. a local label
+            this.addParameter(new Variable(
+                Variable.Type.LABEL,
+                name,
+                Variable.LOCAL_LABEL_LENGTH,
+                true
+            ));
+            break;
+            
+        case STRING:
+            this.addParameter(new Variable(
+                Variable.Type.STRING,
+                name
+            ));
+            break;
+            
+        default:
+            throw new IllegalArgumentException("Cannot use type " + type);
+        }
+        
+        return this;
+    }
+    
+    
+    /**
+     * Initializes and adds all built-in functions to the given AST.
      * 
      * @param ast
      */
     public static void initBuiltInFunctions(AST ast)
     {
-        // TODO Add: &zero_extend, multiplication, division, remainder
-        
-        // &add, &addc, &sub, &subc
-        for (Add.Type type : Add.Type.values()) {
-            for (Add.Operands operands : Add.Operands.values()) {
-                if (Add.isValidCombination(type, operands)) {
-                    ast.addCommand(Add.create(type, operands));
+        // &add, &addc, &sub, &subc, &mul, &div, &rem
+        for (Arithmetic.Type type : Arithmetic.Type.values()) {
+            for (Arithmetic.Operands operands : Arithmetic.Operands.values()) {
+                if (Arithmetic.isValidCombination(type, operands)) {
+                    ast.addCommand(Arithmetic.create(type, operands));
                 }
             }
         }
         
         // &and, &or, &xor
         for (Logical.Type type : Logical.Type.values()) {
-            for (Logical.Operands operands : Logical.Operands.values()) {
-                ast.addCommand(Logical.create(type, operands));
+            for (BuiltInFunction.OperandType src2Type : BuiltInFunction.OperandType.values()) {
+                ast.addCommand(Logical.create(type, src2Type));
             }
         }
         
         // &assert
         for (Assert.Operator operator : Assert.Operator.values()) {
             for (boolean hasMessage : new boolean[]{false, true}) {
-                ast.addCommand(Assert.create(operator, Assert.OperandType.IMMEDIATE, Assert.OperandType.REGISTER,  hasMessage));
-                ast.addCommand(Assert.create(operator, Assert.OperandType.REGISTER,  Assert.OperandType.IMMEDIATE, hasMessage));
-                ast.addCommand(Assert.create(operator, Assert.OperandType.REGISTER,  Assert.OperandType.REGISTER,  hasMessage));
+                ast.addCommand(Assert.create(
+                    operator,
+                    BuiltInFunction.OperandType.IMMEDIATE,
+                    BuiltInFunction.OperandType.REGISTER,
+                    hasMessage
+                ));
+                ast.addCommand(Assert.create(
+                    operator,
+                    BuiltInFunction.OperandType.REGISTER,
+                    BuiltInFunction.OperandType.IMMEDIATE,
+                    hasMessage
+                ));
+                ast.addCommand(Assert.create(
+                    operator,
+                    BuiltInFunction.OperandType.REGISTER,
+                    BuiltInFunction.OperandType.REGISTER,
+                    hasMessage
+                ));
             }
         }
         
@@ -91,9 +193,21 @@ public class BuiltInFunction extends Function
         
         // &jumpif
         for (Jumpif.Operator operator : Jumpif.Operator.values()) {
-            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.IMMEDIATE, Jumpif.OperandType.REGISTER));
-            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.REGISTER,  Jumpif.OperandType.IMMEDIATE));
-            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.REGISTER,  Jumpif.OperandType.REGISTER));
+            ast.addCommand(Jumpif.create(
+                operator,
+                BuiltInFunction.OperandType.IMMEDIATE,
+                BuiltInFunction.OperandType.REGISTER
+            ));
+            ast.addCommand(Jumpif.create(
+                operator,
+                BuiltInFunction.OperandType.REGISTER,
+                BuiltInFunction.OperandType.IMMEDIATE
+            ));
+            ast.addCommand(Jumpif.create(
+                operator,
+                BuiltInFunction.OperandType.REGISTER,
+                BuiltInFunction.OperandType.REGISTER
+            ));
         }
         
         // &length
@@ -107,9 +221,9 @@ public class BuiltInFunction extends Function
         
         // &movif
         for (Compare.Operator operator : Compare.Operator.values()) {
-            for (Compare.OperandType a : Compare.OperandType.values()) {
-                for (Compare.OperandType b : Compare.OperandType.values()) {
-                    if (a == b && b == Compare.OperandType.IMMEDIATE) {
+            for (BuiltInFunction.OperandType a : BuiltInFunction.OperandType.values()) {
+                for (BuiltInFunction.OperandType b : BuiltInFunction.OperandType.values()) {
+                    if (a == b && b == BuiltInFunction.OperandType.IMMEDIATE) {
                         continue;
                     }
                     for (Mov.OperandType src : Mov.OperandType.values()) {
@@ -124,17 +238,17 @@ public class BuiltInFunction extends Function
         ast.addCommand(Normalize.create());
         
         // &not
-        for (Not.Operand operand : Not.Operand.values()) {
-            ast.addCommand(Not.create(operand));
+        for (BuiltInFunction.OperandType src : BuiltInFunction.OperandType.values()) {
+            ast.addCommand(Not.create(src));
         }
         
         // &print, &println
         for (Print.Type type : Print.Type.values()) {
-            ast.addCommand(Print.create(type, Print.Operand.REGISTER));
-            ast.addCommand(Print.create(type, Print.Operand.IMMEDIATE));
-            ast.addCommand(Print.create(type, Print.Operand.STRING));
+            ast.addCommand(Print.create(type, Print.OperandType.REGISTER));
+            ast.addCommand(Print.create(type, Print.OperandType.IMMEDIATE));
+            ast.addCommand(Print.create(type, Print.OperandType.STRING));
         }
-        ast.addCommand(Print.create(Print.Type.PRINTLN, Print.Operand.NONE));
+        ast.addCommand(Print.create(Print.Type.PRINTLN, Print.OperandType.NONE));
         
         // &print_*, &println_*
         for (PrintFormatted.Type type : PrintFormatted.Type.values()) {
@@ -145,5 +259,8 @@ public class BuiltInFunction extends Function
         
         // &sign_extend
         ast.addCommand(SignExtend.create());
+        
+        // &zero_extend
+        ast.addCommand(ZeroExtend.create());
     }
 }

@@ -38,8 +38,8 @@ public class Assert extends Compare
      */
     private Assert(
         Assert.Operator operator,
-        Assert.OperandType a,
-        Assert.OperandType b,
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b,
         boolean hasMessage
     ) {
         super(operator, a, b);
@@ -60,8 +60,8 @@ public class Assert extends Compare
      */
     public static BuiltInFunction create(
         Assert.Operator operator,
-        Assert.OperandType a,
-        Assert.OperandType b,
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b,
         boolean hasMessage
     ) {
         BuiltInFunction function = new BuiltInFunction("&assert", true);

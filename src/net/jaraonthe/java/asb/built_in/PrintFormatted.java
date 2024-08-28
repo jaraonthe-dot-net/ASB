@@ -7,7 +7,6 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &print_*} and {@code &println_*} built-in functions.
@@ -82,12 +81,7 @@ public class PrintFormatted implements Interpretable
             true
         );
 
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "parameter",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "parameter");
         
         function.setInterpretable(new PrintFormatted(type, format));
         return function;

@@ -8,16 +8,15 @@ import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &get_program_counter} (aka {@code &get_pc}) and
  * {@code &set_program_counter} (aka {@code &set_pc}) built-in functions.<br>
  * 
  * {@code &get_program_counter dstRegister};<br>
- * {@code &get_pc              dstLength};<br>
+ * {@code &get_pc              dstRegister};<br>
  * {@code &set_program_counter srcRegister};<br>
- * {@code &set_pc              srcLength};
+ * {@code &set_pc              srcRegister};
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -61,12 +60,7 @@ public class ProgramCounter implements Interpretable
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "register",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
+        function.addParameterByType(Variable.Type.REGISTER, "register");
         
         function.setInterpretable(new ProgramCounter(type));
         return function;

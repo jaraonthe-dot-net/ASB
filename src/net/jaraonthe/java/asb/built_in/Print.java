@@ -4,7 +4,6 @@ import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &print} and {@code &println} built-in functions.
@@ -36,26 +35,33 @@ public class Print implements Interpretable
         }
     }
     
-    public enum Operand
+    public enum OperandType
     {
-        REGISTER,
-        IMMEDIATE,
-        STRING,
-        NONE,
+        IMMEDIATE (Variable.Type.IMMEDIATE),
+        REGISTER  (Variable.Type.REGISTER),
+        STRING    (Variable.Type.STRING),
+        NONE      (null);
+        
+        public final Variable.Type variableType;
+        
+        private OperandType(Variable.Type type)
+        {
+            this.variableType = type;
+        }
     }
     
     protected final Print.Type type;
-    protected final Print.Operand operand;
+    protected final Print.OperandType operand;
     
     
     /**
      * @param type    Selects the actual function
      * @param operand Selects the function variant (via the Operand type)
      */
-    private Print(Print.Type type, Print.Operand operands)
+    private Print(Print.Type type, Print.OperandType operand)
     {
         this.type    = type;
-        this.operand = operands;
+        this.operand = operand;
     }
     
     /**
@@ -67,9 +73,9 @@ public class Print implements Interpretable
      * 
      * @return
      */
-    public static BuiltInFunction create(Print.Type type, Print.Operand operand)
+    public static BuiltInFunction create(Print.Type type, Print.OperandType operand)
     {
-        if (operand == Print.Operand.NONE && type != Print.Type.PRINTLN) {
+        if (operand == Print.OperandType.NONE && type != Print.Type.PRINTLN) {
             throw new IllegalArgumentException(
                 "Cannot create &print function without operand"
             );
@@ -77,34 +83,8 @@ public class Print implements Interpretable
         
         BuiltInFunction function = new BuiltInFunction(type.functionName, true);
 
-        switch (operand) {
-            case REGISTER:
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "parameter",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case IMMEDIATE:
-                function.addParameter(new Variable(
-                    Variable.Type.IMMEDIATE,
-                    "parameter",
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case STRING:
-                function.addParameter(new Variable(
-                    Variable.Type.STRING,
-                    "parameter"
-                ));
-                break;
-            
-            case NONE:
-                // Nothing
-                break;
+        if (operand != Print.OperandType.NONE) {
+            function.addParameterByType(operand.variableType, "parameter");
         }
         
         function.setInterpretable(new Print(type, operand));

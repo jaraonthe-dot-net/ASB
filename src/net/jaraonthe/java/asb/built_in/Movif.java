@@ -35,8 +35,8 @@ public class Movif extends Compare
      */
     private Movif(
         Compare.Operator operator,
-        Compare.OperandType a,
-        Compare.OperandType b,
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b,
         Mov.OperandType dst,
         Mov.OperandType src
     ) {
@@ -60,8 +60,8 @@ public class Movif extends Compare
      */
     public static BuiltInFunction create(
         Compare.Operator operator,
-        Compare.OperandType a,
-        Compare.OperandType b,
+        BuiltInFunction.OperandType a,
+        BuiltInFunction.OperandType b,
         Mov.OperandType dst,
         Mov.OperandType src
     ) {
