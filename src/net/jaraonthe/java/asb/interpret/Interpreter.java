@@ -1,6 +1,7 @@
 package net.jaraonthe.java.asb.interpret;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 
 import net.jaraonthe.java.asb.ast.AST;
@@ -71,13 +72,25 @@ public class Interpreter
     {
         Context context = new Context(this.globalFrame, this.memory, this.ast);
         
-        int i = 0;
-        for (Invocation invocation : this.ast.getProgram()) {
-            // TODO a more sophisticated program run output
-            System.err.println(String.format("%4x: %s", i, invocation.toString()));
-            invocation.interpret(context);
+        List<Invocation> program = this.ast.getProgram();
+        while (true) {
+            int currentProgramCounter = this.globalFrame.programCounter;
+            Invocation invocation;
+            try {
+                invocation = program.get(currentProgramCounter);
+            } catch (IndexOutOfBoundsException e) {
+                break;
+            }
+            // Incrementing pc before execution so that jumps can modify pc
+            // without extra complexity
+            this.globalFrame.programCounter++;
             
-            i++;
+            // TODO a more sophisticated program run output
+            System.err.println(String.format(
+                "%4x: %s", currentProgramCounter, invocation.toString()
+            ));
+            // This may modify the program Counter
+            invocation.interpret(context);
         }
     }
     

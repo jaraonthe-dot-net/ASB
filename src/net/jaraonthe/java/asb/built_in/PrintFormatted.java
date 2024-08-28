@@ -52,8 +52,9 @@ public class PrintFormatted implements Interpretable
         }
     }
     
-    private final PrintFormatted.Type type;
-    private final PrintFormatted.Format format;
+    protected final PrintFormatted.Type type;
+    protected final PrintFormatted.Format format;
+    
     
     /**
      * @param type   Selects the actual function
@@ -63,6 +64,33 @@ public class PrintFormatted implements Interpretable
     {
         this.type   = type;
         this.format = format;
+    }
+
+    /**
+     * Creates a {@code &print_*} or {@code &println_*} built-in function with
+     * the given format variant.
+     * 
+     * @param type   Selects the actual function
+     * @param format Selects the function variant
+     * 
+     * @return
+     */
+    public static BuiltInFunction create(PrintFormatted.Type type, PrintFormatted.Format format)
+    {
+        BuiltInFunction function = new BuiltInFunction(
+            type.functionNameMain + format.functionNamePostfix,
+            true
+        );
+
+        function.addParameter(new Variable(
+            Variable.Type.REGISTER,
+            "parameter",
+            Constraints.MIN_LENGTH,
+            Constraints.MAX_LENGTH
+        ));
+        
+        function.setInterpretable(new PrintFormatted(type, format));
+        return function;
     }
 
     
@@ -118,33 +146,5 @@ public class PrintFormatted implements Interpretable
     private String padToLength(String number, int length)
     {
         return String.format("%" + length + "s", number).replace(' ', '0');
-    }
-    
-    
-    /**
-     * Creates a {@code &print_*} or {@code &println_*} built-in function with
-     * the given format variant.
-     * 
-     * @param type   Selects the actual function
-     * @param format Selects the function variant
-     * 
-     * @return
-     */
-    public static BuiltInFunction create(PrintFormatted.Type type, PrintFormatted.Format format)
-    {
-        BuiltInFunction function = new BuiltInFunction(
-            type.functionNameMain + format.functionNamePostfix,
-            true
-        );
-
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "parameter",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
-        
-        function.setInterpretable(new PrintFormatted(type, format));
-        return function;
     }
 }

@@ -49,6 +49,13 @@ public class LocalVariableInitialization implements Invocation
         // Nothing
         return this;
     }
+
+    @Override
+    public Invocation resolveLabelNames(AST ast, Implementation implementation)
+    {
+        // Nothing
+        return this;
+    }
     
     @Override
     public String toString()
@@ -56,6 +63,7 @@ public class LocalVariableInitialization implements Invocation
         return this.localVariable.toString();
     }
 
+    
     @Override
     public void interpret(Context context) throws RuntimeError
     {

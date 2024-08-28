@@ -18,21 +18,7 @@ import net.jaraonthe.java.asb.parse.Constraints;
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
 public class Normalize implements Interpretable
-{
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        NumericValue operand = context.frame.getNumericValue("variable");
-        if (!(operand.variable instanceof Variable)) {
-            // Registers are never negative
-            return;
-        }
-        
-        BigInteger value = operand.read(context);
-        operand.write(NumericValueStore.normalizeBigInteger(value, operand.length), context);
-    }
-    
-    
+{    
     /**
      * Creates a {@code &normalize} built-in function.
      * 
@@ -52,5 +38,19 @@ public class Normalize implements Interpretable
         
         function.setInterpretable(new Normalize());
         return function;
+    }
+    
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue operand = context.frame.getNumericValue("variable");
+        if (!(operand.variable instanceof Variable)) {
+            // Registers are never negative
+            return;
+        }
+        
+        BigInteger value = operand.read(context);
+        operand.write(NumericValueStore.normalizeBigInteger(value, operand.length), context);
     }
 }

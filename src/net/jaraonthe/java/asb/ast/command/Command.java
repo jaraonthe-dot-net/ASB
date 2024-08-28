@@ -96,7 +96,7 @@ public class Command extends CommandLike
         
         // Length & group details
         boolean hasDetails = false;
-        if (parameter.type.hasLength()) {
+        if (parameter.type.hasLength() && parameter.type != Variable.Type.LABEL) {
             hasDetails              = true;
             this.signature         += parameter.lengthAsString();
             this.readableSignature += "''" + parameter.lengthAsString();

@@ -18,23 +18,6 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class Length implements Interpretable
 {
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        BigInteger length = BigInteger.valueOf(context.frame.getNumericValue("src").length);
-        
-        NumericValue dst = context.frame.getNumericValue("dst");
-        if (length.bitLength() > dst.length) {
-            throw new RuntimeError(
-                "Cannot store result of &length in " + dst.getReferencedName()
-                + " as the result value is too big"
-            );
-        }
-        
-        dst.write(length, context);
-    }
-    
-    
     /**
      * Creates a {@code &length} built-in function.
      * 
@@ -61,5 +44,22 @@ public class Length implements Interpretable
         
         function.setInterpretable(new Length());
         return function;
+    }
+    
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        BigInteger length = BigInteger.valueOf(context.frame.getNumericValue("src").length);
+        
+        NumericValue dst = context.frame.getNumericValue("dst");
+        if (length.bitLength() > dst.length) {
+            throw new RuntimeError(
+                "Cannot store result of &length in " + dst.getReferencedName()
+                + " as the result value is too big"
+            );
+        }
+        
+        dst.write(length, context);
     }
 }

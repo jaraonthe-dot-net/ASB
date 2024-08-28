@@ -36,7 +36,7 @@ public class Tokenizer
         LENGTH,
         
         /**
-         * When parsing a bit position
+         * When parsing a bit position.
          */
         POSITION,
     }

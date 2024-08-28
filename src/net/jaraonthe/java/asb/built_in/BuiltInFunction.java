@@ -49,7 +49,7 @@ public class BuiltInFunction extends Function
      */
     public static void initBuiltInFunctions(AST ast)
     {
-        // TODO Add more
+        // TODO Add: &zero_extend, multiplication, division, remainder
         
         // &add, &addc, &sub, &subc
         for (Add.Type type : Add.Type.values()) {
@@ -70,9 +70,9 @@ public class BuiltInFunction extends Function
         // &assert
         for (Assert.Operator operator : Assert.Operator.values()) {
             for (boolean hasMessage : new boolean[]{false, true}) {
-                ast.addCommand(Assert.create(operator, Assert.OperandType.IMM, Assert.OperandType.REG, hasMessage));
-                ast.addCommand(Assert.create(operator, Assert.OperandType.REG, Assert.OperandType.IMM, hasMessage));
-                ast.addCommand(Assert.create(operator, Assert.OperandType.REG, Assert.OperandType.REG, hasMessage));
+                ast.addCommand(Assert.create(operator, Assert.OperandType.IMMEDIATE, Assert.OperandType.REGISTER,  hasMessage));
+                ast.addCommand(Assert.create(operator, Assert.OperandType.REGISTER,  Assert.OperandType.IMMEDIATE, hasMessage));
+                ast.addCommand(Assert.create(operator, Assert.OperandType.REGISTER,  Assert.OperandType.REGISTER,  hasMessage));
             }
         }
         
@@ -81,12 +81,43 @@ public class BuiltInFunction extends Function
             ast.addCommand(SystemInfo.create(type));
         }
         
+        // &get_program_counter, &set_program_counter
+        for (ProgramCounter.Type type : ProgramCounter.Type.values()) {
+            ast.addCommand(ProgramCounter.create(type));
+        }
+        
+        // &jump
+        ast.addCommand(Jump.create());
+        
+        // &jumpif
+        for (Jumpif.Operator operator : Jumpif.Operator.values()) {
+            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.IMMEDIATE, Jumpif.OperandType.REGISTER));
+            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.REGISTER,  Jumpif.OperandType.IMMEDIATE));
+            ast.addCommand(Jumpif.create(operator, Jumpif.OperandType.REGISTER,  Jumpif.OperandType.REGISTER));
+        }
+        
         // &length
         ast.addCommand(Length.create());
         
         // &mov
-        for (Mov.Operands operands : Mov.Operands.values()) {
-            ast.addCommand(Mov.create(operands));
+        for (Mov.OperandType src : Mov.OperandType.values()) {
+            ast.addCommand(Mov.create(Mov.OperandType.ADDRESS, src));
+            ast.addCommand(Mov.create(Mov.OperandType.REGISTER, src));
+        }
+        
+        // &movif
+        for (Compare.Operator operator : Compare.Operator.values()) {
+            for (Compare.OperandType a : Compare.OperandType.values()) {
+                for (Compare.OperandType b : Compare.OperandType.values()) {
+                    if (a == b && b == Compare.OperandType.IMMEDIATE) {
+                        continue;
+                    }
+                    for (Mov.OperandType src : Mov.OperandType.values()) {
+                        ast.addCommand(Movif.create(operator, a, b, Mov.OperandType.ADDRESS, src));
+                        ast.addCommand(Movif.create(operator, a, b, Mov.OperandType.REGISTER, src));
+                    }
+                }
+            }
         }
         
         // &normalize

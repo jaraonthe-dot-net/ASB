@@ -26,7 +26,8 @@ public class Not implements Interpretable
         IMMEDIATE,
     }
     
-    private final Not.Operand operand;
+    protected final Not.Operand operand;
+    
     
     /**
      * @param operand Selects the function variant (via the Operand type)
@@ -35,33 +36,6 @@ public class Not implements Interpretable
     {
         this.operand = operand;
     }
-
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        NumericValue src = context.frame.getNumericValue("src");
-        NumericValue dst = context.frame.getNumericValue("dst");
-
-        BigInteger srcValue = src.read(context);
-        // Check lengths
-        if (
-            (this.operand == Not.Operand.IMMEDIATE) ?
-                (NumericValue.bitLength(srcValue) > dst.length)
-                : (src.length != dst.length)
-        ) {
-            throw new RuntimeError(
-                "Cannot &not from variable " + src.getReferencedName() + " to "
-                + dst.getReferencedName() + " as they do not have the same length"
-            );
-        }
-        
-        dst.write(
-            NumericValueStore.normalizeBigInteger(srcValue.not(), dst.length),
-            context
-        );
-    }
-    
     
     /**
      * Creates a {@code &not} built-in function with the given operand variant.
@@ -102,5 +76,31 @@ public class Not implements Interpretable
         
         function.setInterpretable(new Not(operand));
         return function;
+    }
+
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue src = context.frame.getNumericValue("src");
+        NumericValue dst = context.frame.getNumericValue("dst");
+
+        BigInteger srcValue = src.read(context);
+        // Check lengths
+        if (
+            (this.operand == Not.Operand.IMMEDIATE) ?
+                (NumericValue.bitLength(srcValue) > dst.length)
+                : (src.length != dst.length)
+        ) {
+            throw new RuntimeError(
+                "Cannot &not from variable " + src.getReferencedName() + " to "
+                + dst.getReferencedName() + " as they do not have the same length"
+            );
+        }
+        
+        dst.write(
+            NumericValueStore.normalizeBigInteger(srcValue.not(), dst.length),
+            context
+        );
     }
 }

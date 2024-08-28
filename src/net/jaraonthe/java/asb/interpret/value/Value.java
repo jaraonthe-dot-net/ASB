@@ -1,8 +1,11 @@
 package net.jaraonthe.java.asb.interpret.value;
 
+import java.math.BigInteger;
+
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.invocation.Argument;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
+import net.jaraonthe.java.asb.ast.invocation.LabelArgument;
 import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
 import net.jaraonthe.java.asb.ast.variable.Variable;
@@ -39,7 +42,7 @@ abstract public class Value
      * @param parameter The invoked {@link Command}'s parameter that the
      *                  argument is used for
      * @param context   The context of the invocation (i.e. NOT of the invoked
-     *                  command's interpretable; i.e. all the variabless that
+     *                  command's interpretable; i.e. all the variables that
      *                  are visible at the invocation location are visible in
      *                  this context)
      * 
@@ -51,7 +54,7 @@ abstract public class Value
     {
         switch (argument.getVariableType()) {
             case REGISTER:
-                RegisterArgument ra = (RegisterArgument)argument;
+                RegisterArgument ra = (RegisterArgument) argument;
                 if (ra.hasPosition()) {
                     return new BitwiseNumericValue(
                         parameter,
@@ -72,14 +75,24 @@ abstract public class Value
                 );
                 
             case LABEL:
-                // TODO labels
-                throw new RuntimeException("labels not yet implemented");
+                if (parameter.localLabel) {
+                    return new LabelValue(
+                        parameter,
+                        (LabelArgument) argument,
+                        context.frame
+                    );
+                } else {
+                    NumericValueStore value = new NumericValueStore(parameter, context.ast.getPcLength());
+                    value.write(BigInteger.valueOf(((LabelArgument)argument).getLabelPosition()), context);
+                    return value;
+                }
                 
             case STRING:
                 return new StringValue(
                     parameter,
                     (StringArgument) argument
                 );
+                
             default:
                 throw new IllegalArgumentException("Cannot use Local Variable as argument");
         }

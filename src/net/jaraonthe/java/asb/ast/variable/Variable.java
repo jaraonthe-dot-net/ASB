@@ -32,9 +32,9 @@ public class Variable extends VariableLike
         IMMEDIATE('\u0012', "/immediate", Variable.Type.Length.EXACT, false),
         
         /**
-         * A label parameter pointing to a location in the program
+         * A label parameter pointing to a position in the program
          */
-        LABEL('\u0011', "/label", Variable.Type.Length.NO, false),
+        LABEL('\u0011', "/label", Variable.Type.Length.EXACT, false),
         // LABEL has same signatureMarker as REGISTER, as in the
         // resolvingSignature they  have to be the same (because syntactically
         // they cannot be distinguished in the invocation without going through
@@ -138,13 +138,17 @@ public class Variable extends VariableLike
         }
         
         /**
-         * @return True if this type supports length settings.
+         * @return True if this type supports length settings.<br>
+         *         Note that this is true for LABEL Types, though you may want
+         *         to treat that type in a special way.
          */
         public boolean hasLength()
         {
             return this.length != Variable.Type.Length.NO;
         }
     }
+    
+    public static final int LOCAL_LABEL_LENGTH = 31;
     
     
 
@@ -161,6 +165,13 @@ public class Variable extends VariableLike
     
     public final Variable.Type type;
     
+    /**
+     * For LABEL type only. True: This parameter is resolved to a label local to
+     * the invocation (can only be used by built-in functions). False: This
+     * label is resolved to userland code (default).
+     */
+    public final boolean localLabel;
+    
     private String group = null;
     
     
@@ -172,7 +183,7 @@ public class Variable extends VariableLike
      */
     public Variable(Variable.Type type, String name)
     {
-        this(type, name, -1, -1, null);
+        this(type, name, -1, -1, null, false);
     }
     
     /**
@@ -184,7 +195,7 @@ public class Variable extends VariableLike
      */
     public Variable(Variable.Type type, String name, int length)
     {
-        this(type, name, length, length, null);
+        this(type, name, length, length, null, false);
     }
     
     /**
@@ -197,7 +208,7 @@ public class Variable extends VariableLike
      */
     public Variable(Variable.Type type, String name, int minLength, int maxLength)
     {
-        this(type, name, minLength, maxLength, null);
+        this(type, name, minLength, maxLength, null, false);
     }
     
     /**
@@ -210,7 +221,21 @@ public class Variable extends VariableLike
      */
     public Variable(Variable.Type type, String name, VariableLike lengthRegister)
     {
-        this(type, name, 0, 0, lengthRegister);
+        this(type, name, 0, 0, lengthRegister, false);
+    }
+
+    /**
+     * Create a Label parameter.
+     * 
+     * @param type       Must be LABEL
+     * @param name
+     * @param length     exact length setting (usually either pc length or
+     *                   {@link #LOCAL_LABEL_LENGTH})
+     * @param localLabel True if this label is resolved locally
+     */
+    public Variable(Variable.Type type, String name, int length, boolean localLabel)
+    {
+        this(type, name, length, length, null, localLabel);
     }
     
     /**
@@ -225,11 +250,19 @@ public class Variable extends VariableLike
         String name,
         int minLength,
         int maxLength,
-        VariableLike lengthRegister
+        VariableLike lengthRegister,
+        boolean localLabel
     ) {
         super(name, minLength, maxLength);
         this.type           = type;
         this.lengthRegister = lengthRegister;
+        this.localLabel     = localLabel;
+        
+        if (localLabel && type != Variable.Type.LABEL) {
+            throw new IllegalArgumentException(
+                "localLabel can be only be true for LABEL type, but type is " + type
+            );
+        }
         
         if (type == Variable.Type.LOCAL_VARIABLE && lengthRegister != null) {
             if (!lengthRegister.isNumeric()) {

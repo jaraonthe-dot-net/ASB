@@ -48,17 +48,22 @@ public class AST
      */
     // TODO maybe we don't require both command maps?
     // TODO Finetune initial capacity once all built-in functions have been added (same below)
-    private Map<String, Command> commands = HashMap.newHashMap(100);
+    private Map<String, Command> commands = HashMap.newHashMap(250);
     
     /**
      * All commands and (built-in) functions, grouped by resolving class.
      */
-    private Map<String, Set<Command>> commandsResolvingMap = HashMap.newHashMap(100);
+    private Map<String, Set<Command>> commandsResolvingMap = HashMap.newHashMap(250);
     
     /**
      * The actual userland program.
      */
     private List<Invocation> program = new ArrayList<>(50);
+    
+    /**
+     * Label name => program position the label points to
+     */
+    private Map<String, Integer> labels = HashMap.newHashMap(8);
     
     
     public AST()
@@ -304,5 +309,47 @@ public class AST
     public List<Invocation> getProgram()
     {
         return this.program;
+    }
+    
+    
+    /**
+     * Adds a label pointing to the next program position.
+     * 
+     * @param labelName
+     * @return Fluent interface
+     */
+    public AST addLabel(String labelName)
+    {
+        if (this.labels.containsKey(labelName)) {
+            throw new IllegalArgumentException(
+                "Cannot add same label " + labelName + " more than once"
+            );
+        }
+        
+        this.labels.put(labelName, this.program.size());
+        return this;
+    }
+    
+    /**
+     * @param labelName
+     * @return True if a label with this name exists.
+     */
+    public boolean labelExists(String labelName)
+    {
+        return this.labels.containsKey(labelName);
+    }
+    
+    /**
+     * @param labelName
+     * @return The position this label points to, or -1 if the label doesn't
+     *         exist.
+     */
+    public int getLabel(String labelName)
+    {
+        Integer position = this.labels.get(labelName);
+        if (position == null) {
+            return -1;
+        }
+        return position.intValue();
     }
 }

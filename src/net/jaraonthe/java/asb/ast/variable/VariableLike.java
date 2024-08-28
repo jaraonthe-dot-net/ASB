@@ -48,7 +48,7 @@ abstract public class VariableLike
     
     /**
      * @return True if this register/variable holds a numeric value (i.e. NOT
-     *         string or label).
+     *         string).
      */
     public boolean isNumeric()
     {

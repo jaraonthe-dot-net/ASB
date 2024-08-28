@@ -18,6 +18,35 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class SignExtend implements Interpretable
 {
+    /**
+     * Creates a {@code &sign_extend} built-in function.
+     * 
+     * @return
+     */
+    public static BuiltInFunction create()
+    {
+        BuiltInFunction function = new BuiltInFunction("&sign_extend", false);
+        
+        // &sign_extend dstRegister, srcRegister
+        function.addParameter(new Variable(
+            Variable.Type.REGISTER,
+            "dst",
+            Constraints.MIN_LENGTH,
+            Constraints.MAX_LENGTH
+        ));
+        function.addCommandSymbols(",");
+        function.addParameter(new Variable(
+            Variable.Type.REGISTER,
+            "src",
+            Constraints.MIN_LENGTH,
+            Constraints.MAX_LENGTH
+        ));
+        
+        function.setInterpretable(new SignExtend());
+        return function;
+    }
+    
+    
     @Override
     public void interpret(Context context) throws RuntimeError
     {
@@ -76,34 +105,5 @@ public class SignExtend implements Interpretable
         }
         
         dst.write(new BigInteger(extended), context);
-    }
-    
-    
-    /**
-     * Creates a {@code &sign_extend} built-in function.
-     * 
-     * @return
-     */
-    public static BuiltInFunction create()
-    {
-        BuiltInFunction function = new BuiltInFunction("&sign_extend", false);
-        
-        // &sign_extend dstRegister, srcRegister
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "dst",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
-        function.addCommandSymbols(",");
-        function.addParameter(new Variable(
-            Variable.Type.REGISTER,
-            "src",
-            Constraints.MIN_LENGTH,
-            Constraints.MAX_LENGTH
-        ));
-        
-        function.setInterpretable(new SignExtend());
-        return function;
     }
 }

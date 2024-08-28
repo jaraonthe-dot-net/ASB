@@ -104,4 +104,38 @@ lw t0, 12(zero)
 }
 test_system_info 10
 
+&println "LABELS & JUMPS"
+my_label:
+    &println "my_label:"
+2ndLabel:
+    &println "2ndLabel:"
+
+.define test_jump {
+start:
+    &println "start:"
+    &jump 5
+skipped:
+    &assert zero != zero, "this should have been skipped"
+5:
+    &println "5:"
+    &jump .end
+skipped2:
+    &assert zero != zero, "this should have been skipped"
+.end:
+    &println ".end:"
+}
+test_jump
+
+.define test_userland_jump /label label {
+    &println_x label
+    .variable v ''32; &add v, label, 5
+    &println_x v
+    &add label, label, 1
+    &set_pc label
+}
+test_userland_jump nein
+
+nein:
+    &println "never say nein"
+
 &println "That's all folks"

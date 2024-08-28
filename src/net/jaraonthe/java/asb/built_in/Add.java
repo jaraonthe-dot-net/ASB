@@ -28,6 +28,7 @@ import net.jaraonthe.java.asb.parse.Constraints;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
+// TODO Rename to Arithmetic and add multiplication, division, remainder
 public class Add implements Interpretable
 {
     public enum Type
@@ -44,6 +45,7 @@ public class Add implements Interpretable
             this.functionName = functionName;
         }
     }
+    
     public enum Operands
     {
         // destination_source1_source2
@@ -53,8 +55,9 @@ public class Add implements Interpretable
         REG_IMM_REG, // &sub dstRegister, src1Imm, src2Register // only for &sub/&subc
     }
     
-    private final Add.Type type;
-    private final Add.Operands operands;
+    protected final Add.Type type;
+    protected final Add.Operands operands;
+    
     
     /**
      * @param type     Selects the actual function
@@ -66,90 +69,6 @@ public class Add implements Interpretable
         this.operands = operands;
     }
 
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        NumericValue src1 = context.frame.getNumericValue("src1");
-        NumericValue src2 = context.frame.getNumericValue("src2");
-        NumericValue dst  = context.frame.getNumericValue("dst");
-
-        BigInteger src1Value = src1.read(context);
-        BigInteger src2Value = src2.read(context);
-
-        // Check lengths
-        NumericValue srcReg    = src1;
-        NumericValue srcImm    = src2; // which of course may also be a register
-        BigInteger srcImmValue = src2Value;
-        if (this.operands == Add.Operands.REG_IMM_REG) {
-            srcReg      = src2;
-            srcImm      = src1;
-            srcImmValue = src1Value;
-        }
-        switch (this.type) {
-            case ADD:
-            case SUB:
-                if (
-                    srcReg.length != dst.length
-                    || (
-                        (this.operands != Add.Operands.REG_REG_REG) ?
-                            (NumericValue.bitLength(srcImmValue) > dst.length)
-                            : (srcImm.length != dst.length)
-                    )
-                ) {
-                    throw new RuntimeError(
-                        "Cannot " + this.type.functionName + " two variables "
-                        + src1.getReferencedName() + " and " + src2.getReferencedName()
-                        + " that do not have the same length as the destination variable "
-                        + dst.getReferencedName()
-                    );
-                }
-                break;
-                
-            case ADDC:
-            case SUBC:
-                if (
-                    this.operands != Add.Operands.REG_REG_REG ?
-                        NumericValue.bitLength(srcImmValue) > srcReg.length
-                        : srcImm.length != src1.length
-                ) {
-                    throw new RuntimeError(
-                        "Cannot " + this.type.functionName + " two variables "
-                        + src1.getReferencedName() + " and " + src2.getReferencedName()
-                        + " that do not have the same length"
-                    );
-                }
-                if (srcReg.length + 1 != dst.length) {
-                    throw new RuntimeError(
-                        "Cannot " + this.type.functionName + " into destination variable "
-                        + dst.getReferencedName()
-                        + " as it does not have the expected length (src length + 1)"
-                    );
-                }
-                break;
-        }
-        
-        BigInteger result = null;
-        switch (this.type) {
-            case ADD:
-            case ADDC:
-                result = src1Value.add(src2Value);
-                break;
-            case SUB:
-            case SUBC:
-                result = src1Value.subtract(src2Value);
-                break;
-        }
-        result = NumericValueStore.normalizeBigInteger(result, srcReg.length + 1);
-        if (this.type == Add.Type.ADD || this.type == Add.Type.SUB) {
-            // Cut off potential carry-out
-            result = result.clearBit(dst.length);
-        }
-        
-        dst.write(result, context);
-    }
-    
-    
     /**
      * Creates a {@code &add}, {@code &addc}, {@code &sub}, or {@code &subc}
      * built-in function with the given operands variant.
@@ -239,5 +158,88 @@ public class Add implements Interpretable
     {
         return operands != Add.Operands.REG_IMM_REG
             || type == Add.Type.SUB || type == Add.Type.SUBC;
+    }
+
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue src1 = context.frame.getNumericValue("src1");
+        NumericValue src2 = context.frame.getNumericValue("src2");
+        NumericValue dst  = context.frame.getNumericValue("dst");
+
+        BigInteger src1Value = src1.read(context);
+        BigInteger src2Value = src2.read(context);
+
+        // Check lengths
+        NumericValue srcReg    = src1;
+        NumericValue srcImm    = src2; // which of course may also be a register
+        BigInteger srcImmValue = src2Value;
+        if (this.operands == Add.Operands.REG_IMM_REG) {
+            srcReg      = src2;
+            srcImm      = src1;
+            srcImmValue = src1Value;
+        }
+        switch (this.type) {
+            case ADD:
+            case SUB:
+                if (
+                    srcReg.length != dst.length
+                    || (
+                        (this.operands != Add.Operands.REG_REG_REG) ?
+                            (NumericValue.bitLength(srcImmValue) > dst.length)
+                            : (srcImm.length != dst.length)
+                    )
+                ) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " two variables "
+                        + src1.getReferencedName() + " and " + src2.getReferencedName()
+                        + " that do not have the same length as the destination variable "
+                        + dst.getReferencedName()
+                    );
+                }
+                break;
+                
+            case ADDC:
+            case SUBC:
+                if (
+                    this.operands != Add.Operands.REG_REG_REG ?
+                        NumericValue.bitLength(srcImmValue) > srcReg.length
+                        : srcImm.length != src1.length
+                ) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " two variables "
+                        + src1.getReferencedName() + " and " + src2.getReferencedName()
+                        + " that do not have the same length"
+                    );
+                }
+                if (srcReg.length + 1 != dst.length) {
+                    throw new RuntimeError(
+                        "Cannot " + this.type.functionName + " into destination variable "
+                        + dst.getReferencedName()
+                        + " as it does not have the expected length (src length + 1)"
+                    );
+                }
+                break;
+        }
+        
+        BigInteger result = null;
+        switch (this.type) {
+            case ADD:
+            case ADDC:
+                result = src1Value.add(src2Value);
+                break;
+            case SUB:
+            case SUBC:
+                result = src1Value.subtract(src2Value);
+                break;
+        }
+        result = NumericValueStore.normalizeBigInteger(result, srcReg.length + 1);
+        if (this.type == Add.Type.ADD || this.type == Add.Type.SUB) {
+            // Cut off potential carry-out
+            result = result.clearBit(dst.length);
+        }
+        
+        dst.write(result, context);
     }
 }

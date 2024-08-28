@@ -15,13 +15,24 @@ public class ImmediateArgument extends Argument
      * The immediate value this contains
      */
     public final BigInteger immediate;
+    
+    /**
+     * The string representation of {@link #immediate}, as given in ASB source
+     * code.
+     * 
+     * This is required in case it is a label argument after all.
+     */
+    public final String asString;
 
     /**
      * @param immediate The numeric immediate value this contains
+     * @param asString  The string representation of immediate, as given in ASB
+     *                  source code
      */
-    public ImmediateArgument(BigInteger immediate)
+    public ImmediateArgument(BigInteger immediate, String asString)
     {
         this.immediate = immediate;
+        this.asString  = asString;
     }
     
     

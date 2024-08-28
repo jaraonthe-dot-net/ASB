@@ -14,6 +14,7 @@ import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.invocation.CommandInvocation;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
+import net.jaraonthe.java.asb.ast.invocation.LabelArgument;
 import net.jaraonthe.java.asb.ast.invocation.RawArgument;
 import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
@@ -52,12 +53,6 @@ public class Parser
      */
     private final Tokenizer tokenizer;
     
-    // TODO Be aware & handle potential "Fluke" Tokens:
-    //        Token           => may be this:
-    //      - NAME            => label name
-    //      - NUMBER          => label name
-    //      - DIRECTIVE       => label name
-    
     
     /**
      * Executes the entire parsing procedure.
@@ -92,6 +87,7 @@ public class Parser
         }
         
         Parser.resolveImplementationInvocations(ast);
+        Parser.resolveLabelNamesInUserland(ast);
         
         return ast;
     }
@@ -121,6 +117,7 @@ public class Parser
                 case DIRECTIVE:
                     this.parseDirective(t);
                     break;
+                    
                 case NAME:
                 case FUNCTION_NAME:
                     CommandInvocation invocation = this.parseInvocation(t.content, null);
@@ -137,10 +134,14 @@ public class Parser
                         );
                     }
                     break;
+                    
                 case LABEL:
-                    // TODO labels
-                    throw new RuntimeException("labels are not yet supported");
-                    //break;
+                    if (this.ast.labelExists(t.content)) {
+                        throw new ParseError("Label " + t.content + " already exists at " + t.origin);
+                    }
+                    this.ast.addLabel(t.content);
+                    break;
+                    
                 case STATEMENT_SEPARATOR:
                     // Nothing
                     break;
@@ -483,7 +484,13 @@ public class Parser
                     String name = this.expectName();
                     Variable parameter;
                     if (type.hasLength()) {
-                        int[] length = this.expectLengthRange("Parameter " + t.content);
+                        int[] length;
+                        if (type == Variable.Type.LABEL) {
+                            // Use pc length for label types
+                            length = new int[]{this.ast.getPcLength(), this.ast.getPcLength()};
+                        } else {
+                            length = this.expectLengthRange("Parameter " + t.content);
+                        }
                         if (type.length != Variable.Type.Length.RANGE && length[0] != length[1]) {
                             throw new ParseError(
                                 "Cannot use length range for " + type
@@ -619,7 +626,12 @@ public class Parser
                             this.tokenizer.setMode(surroundingMode);
                         break;
                         
-                    // TODO labels
+                    case LABEL:
+                        if (implementation.labelExists(t.content)) {
+                            throw new ParseError("Local label " + t.content + " already exists at " + t.origin);
+                        }
+                        implementation.addLabel(t.content);
+                        break;
                 
                     case CLOSING_BRACES:
                         break body;
@@ -661,8 +673,10 @@ public class Parser
      * @throws LexicalError
      * @throws ParseError
      */
-    private CommandInvocation parseInvocation(String name, Implementation implementation) throws LexicalError, ParseError
-    {
+    private CommandInvocation parseInvocation(
+        String name,
+        Implementation implementation
+    ) throws LexicalError, ParseError {
         CommandInvocation invocation = new CommandInvocation(name);
         Tokenizer.Mode surroundingMode = this.tokenizer.getMode();
         while (true) {
@@ -676,6 +690,7 @@ public class Parser
                     if (this.peekedIsType(Token.Type.BIT_POSITION)) {
                         
                         // BITWISE POSITIONAL ACCESS
+                        
                         this.tokenizer.next();
                         if (implementation == null) {
                             throw new ParseError(
@@ -771,13 +786,15 @@ public class Parser
                     
                     // Fall-through (it can only be a label)
                 case LABEL_NAME:
-                 // TODO support label
-                    throw new RuntimeException("labels not yet implemented");
-                    //break;
+                case DIRECTIVE: // Fluke Token - is indeed label in this context
+                    invocation.addArgument(new LabelArgument(t.content));
+                    break;
+                    
                 case NUMBER:
                  // immediate
-                    invocation.addArgument(new ImmediateArgument(Token.number2BigInteger(t)));
+                    invocation.addArgument(new ImmediateArgument(Token.number2BigInteger(t), t.content));
                     break;
+                    
                 case STRING:
                  // string
                     invocation.addArgument(new StringArgument(t.content));
@@ -1294,6 +1311,9 @@ public class Parser
      * implementations (whereas invocations within userland program are
      * resolved immediately).<br>
      * 
+     * Takes care of {@link Invocation#resolve() resolve()} and
+     * {@link Invocation#resolveLabelNames() resolveLabelNames()}.<br>
+     * 
      * This is called once after all parsing is done.
      * 
      * @param ast
@@ -1319,6 +1339,9 @@ public class Parser
     /**
      * Used by {@link #resolveImplementationInvocations()}.
      * 
+     * Takes care of {@link Invocation#resolve() resolve()} and
+     * {@link Invocation#resolveLabelNames() resolveLabelNames()}.
+     * 
      * @param implementation
      * @param ast
      * 
@@ -1329,10 +1352,33 @@ public class Parser
         for (Invocation invocation : implementation) {
             try {
                 invocation.resolve(ast, implementation);
+                invocation.resolveLabelNames(ast, implementation);
             } catch (ConstraintException e) {
-                // TODO include origin (somehow?)
+                // TODO include origin (store it in Invocation) - same below
                 throw new ParseError(e.getMessage());
             }
         }
+    }
+    
+    
+    /**
+     * Resolves label names that are used as arguments within invocations that
+     * are part of userland code.<br>
+     * 
+     * This is called once after all parsing is done.
+     * 
+     * @param ast
+     * @throws ParseError
+     */
+    private static void resolveLabelNamesInUserland(AST ast) throws ParseError
+    {
+        for (Invocation invocation : ast.getProgram()) {
+            try {
+                invocation.resolveLabelNames(ast, null);
+            } catch (ConstraintException e) {
+                throw new ParseError(e.getMessage());
+            }
+        }
+        
     }
 }

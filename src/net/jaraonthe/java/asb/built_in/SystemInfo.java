@@ -40,7 +40,8 @@ public class SystemInfo implements Interpretable
         }
     }
     
-    private final SystemInfo.Type type;
+    protected final SystemInfo.Type type;
+    
     
     /**
      * @param type Selects the actual function
@@ -49,32 +50,6 @@ public class SystemInfo implements Interpretable
     {
         this.type = type;
     }
-
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        BigInteger length = BigInteger.valueOf(
-            switch (this.type) {
-                case GET_MEMORY_WORD_LENGTH -> context.ast.getMemoryWordLength();
-                case GET_MEMORY_ADDRESS_LENGTH,
-                    GET_MEMORY_ADDR_LENGTH  -> context.ast.getMemoryAddressLength();
-                case GET_PROGRAM_COUNTER_LENGTH,
-                    GET_PC_LENGTH           -> context.ast.getPcLength();
-            }
-        );
-        
-        NumericValue dst  = context.frame.getNumericValue("dst");
-        if (length.bitLength() > dst.length) {
-            throw new RuntimeError(
-                "Cannot store result of " + this.type.functionName + " in "
-                + dst.getReferencedName() + " as the result value is too big"
-            );
-        }
-        
-        dst.write(length, context);
-    }
-    
     
     /**
      * Creates a {@code &get_memory_word_length},
@@ -99,5 +74,30 @@ public class SystemInfo implements Interpretable
         
         function.setInterpretable(new SystemInfo(type));
         return function;
+    }
+
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        BigInteger length = BigInteger.valueOf(
+            switch (this.type) {
+                case GET_MEMORY_WORD_LENGTH -> context.ast.getMemoryWordLength();
+                case GET_MEMORY_ADDRESS_LENGTH,
+                    GET_MEMORY_ADDR_LENGTH  -> context.ast.getMemoryAddressLength();
+                case GET_PROGRAM_COUNTER_LENGTH,
+                    GET_PC_LENGTH           -> context.ast.getPcLength();
+            }
+        );
+        
+        NumericValue dst = context.frame.getNumericValue("dst");
+        if (length.bitLength() > dst.length) {
+            throw new RuntimeError(
+                "Cannot store result of " + this.type.functionName + " in "
+                + dst.getReferencedName() + " as the result value is too big"
+            );
+        }
+        
+        dst.write(length, context);
     }
 }

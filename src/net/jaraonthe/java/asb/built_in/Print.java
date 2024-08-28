@@ -44,8 +44,9 @@ public class Print implements Interpretable
         NONE,
     }
     
-    private final Print.Type type;
-    private final Print.Operand operand;
+    protected final Print.Type type;
+    protected final Print.Operand operand;
+    
     
     /**
      * @param type    Selects the actual function
@@ -56,29 +57,6 @@ public class Print implements Interpretable
         this.type    = type;
         this.operand = operands;
     }
-
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        switch (this.operand) {
-            case REGISTER:
-            case IMMEDIATE:
-                // Always trigger a read on virtual registers and bitwise access
-                System.out.print(context.frame.getNumericValue("parameter").read(context));
-                break;
-            case STRING:
-                System.out.print(context.frame.getValue("parameter"));
-                break;
-            case NONE:
-                // nothing
-                break;
-        }
-        if (this.type == Print.Type.PRINTLN) {
-            System.out.println();
-        }
-    }
-    
     
     /**
      * Creates a {@code &print} or {@code &println} built-in function with the
@@ -131,5 +109,27 @@ public class Print implements Interpretable
         
         function.setInterpretable(new Print(type, operand));
         return function;
+    }
+
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        switch (this.operand) {
+            case REGISTER:
+            case IMMEDIATE:
+                // Always trigger a read on virtual registers and bitwise access
+                System.out.print(context.frame.getNumericValue("parameter").read(context));
+                break;
+            case STRING:
+                System.out.print(context.frame.getValue("parameter"));
+                break;
+            case NONE:
+                // nothing
+                break;
+        }
+        if (this.type == Print.Type.PRINTLN) {
+            System.out.println();
+        }
     }
 }

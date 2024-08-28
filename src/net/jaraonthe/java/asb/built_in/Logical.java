@@ -37,6 +37,7 @@ public class Logical implements Interpretable
             this.functionName = functionName;
         }
     }
+    
     public enum Operands
     {
         // destination_source1_source2
@@ -44,8 +45,9 @@ public class Logical implements Interpretable
         REG_REG_REG, // &and dstRegister, src1Register, srcRegister2
     }
     
-    private final Logical.Type type;
-    private final Logical.Operands operands;
+    protected final Logical.Type type;
+    protected final Logical.Operands operands;
+    
     
     /**
      * @param type     Selects the actual function
@@ -57,51 +59,6 @@ public class Logical implements Interpretable
         this.operands = operands;
     }
 
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        NumericValue src1 = context.frame.getNumericValue("src1");
-        NumericValue src2 = context.frame.getNumericValue("src2");
-        NumericValue dst  = context.frame.getNumericValue("dst");
-
-        BigInteger src2Value = src2.read(context);
-        // Check lengths
-        if (
-            src1.length != dst.length
-            || (
-                (this.operands == Logical.Operands.REG_REG_IMM) ?
-                    (NumericValue.bitLength(src2Value) > dst.length)
-                    : (src2.length != dst.length)
-            )
-        ) {
-            throw new RuntimeError(
-                "Cannot " + this.type.functionName + " two variables "
-                + src1.getReferencedName() + " and " + src2.getReferencedName()
-                + " that do not have the same length as the destination variable "
-                + dst.getReferencedName()
-            );
-        }
-        
-        src2Value = NumericValueStore.normalizeBigInteger(src2Value, dst.length);
-        BigInteger src1Value = src1.read(context);
-        BigInteger result = null;
-        switch (this.type) {
-            case AND:
-                result = src1Value.and(src2Value);
-                break;
-            case OR:
-                result = src1Value.or(src2Value);
-                break;
-            case XOR:
-                result = src1Value.xor(src2Value);
-                break;
-        }
-        
-        dst.write(result, context);
-    }
-    
-    
     /**
      * Creates a {@code &and}, {@code &or}, or {@code &xor} built-in function
      * with the given operands variant.
@@ -153,5 +110,49 @@ public class Logical implements Interpretable
         
         function.setInterpretable(new Logical(type, operands));
         return function;
+    }
+    
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
+    {
+        NumericValue src1 = context.frame.getNumericValue("src1");
+        NumericValue src2 = context.frame.getNumericValue("src2");
+        NumericValue dst  = context.frame.getNumericValue("dst");
+
+        BigInteger src2Value = src2.read(context);
+        // Check lengths
+        if (
+            src1.length != dst.length
+            || (
+                (this.operands == Logical.Operands.REG_REG_IMM) ?
+                    (NumericValue.bitLength(src2Value) > dst.length)
+                    : (src2.length != dst.length)
+            )
+        ) {
+            throw new RuntimeError(
+                "Cannot " + this.type.functionName + " two variables "
+                + src1.getReferencedName() + " and " + src2.getReferencedName()
+                + " that do not have the same length as the destination variable "
+                + dst.getReferencedName()
+            );
+        }
+        
+        src2Value = NumericValueStore.normalizeBigInteger(src2Value, dst.length);
+        BigInteger src1Value = src1.read(context);
+        BigInteger result = null;
+        switch (this.type) {
+            case AND:
+                result = src1Value.and(src2Value);
+                break;
+            case OR:
+                result = src1Value.or(src2Value);
+                break;
+            case XOR:
+                result = src1Value.xor(src2Value);
+                break;
+        }
+        
+        dst.write(result, context);
     }
 }

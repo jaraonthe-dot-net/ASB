@@ -23,121 +23,218 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class Mov implements Interpretable
 {
-    public enum Operands
+    public enum OperandType
     {
-        // destination_source
-        MEM_IMM(true), // &mov @dstAddress, imm
-        MEM_MEM(true), // &mov @dstAddress, @srcAddress
-        MEM_REG(true), // &mov @dstAddress, srcRegister
-        REG_IMM(false), // &mov dstRegister, imm
-        REG_MEM(true), // &mov dstRegister, @srcAddress
-        REG_REG(false); // &mov dstRegister, srcRegister
+        IMMEDIATE,
+        REGISTER,
+        ADDRESS;
+    }
+    
+    protected final Mov.OperandType dst;
+    protected final Mov.OperandType src;
+    
+    
+    /**
+     * @param dst Must not be IMMEDIATE
+     * @param src
+     */
+    private Mov(Mov.OperandType dst, Mov.OperandType src)
+    {
+        this.dst = dst;
+        this.src = src;
+    }
+    
+    /**
+     * Creates a {@code &mov} built-in function with the given operands.
+     * 
+     * @param dst Must not be IMMEDIATE
+     * @param src
+     * 
+     * @return
+     */
+    public static BuiltInFunction create(Mov.OperandType dst, Mov.OperandType src)
+    {
+        BuiltInFunction function = new BuiltInFunction("&mov", false);
         
-        public final boolean usesMemory;
+        Mov.addOperands(function, dst, src);
         
-        private Operands(boolean usesMemory)
-        {
-            this.usesMemory = usesMemory;
+        function.setInterpretable(new Mov(dst, src));
+        return function;
+    }
+    
+    /**
+     * Adds the {@code &mov} destination and source operands to the given function.
+     * 
+     * @param function
+     * @param dst
+     * @param src
+     */
+    public static void addOperands(BuiltInFunction function, Mov.OperandType dst, Mov.OperandType src)
+    {
+        if (dst == Mov.OperandType.IMMEDIATE) {
+            throw new IllegalArgumentException(
+                "Cannot create &mov function with an immediate destination operand"
+            );
+        }
+        
+        Mov.addOperand(function, dst, "dst");
+        function.addCommandSymbols(",");
+        Mov.addOperand(function, src, "src");
+    }
+    
+    /**
+     * @param function
+     * @param type
+     * @param name
+     */
+    private static void addOperand(BuiltInFunction function, Mov.OperandType type, String name)
+    {
+        switch (type) {
+        case IMMEDIATE:
+            function.addParameter(new Variable(
+                Variable.Type.IMMEDIATE,
+                name,
+                Constraints.MAX_LENGTH
+            ));
+            break;
+        case ADDRESS:
+            function.addCommandSymbols("@");
+            // Fall-through
+        case REGISTER:
+            function.addParameter(new Variable(
+                Variable.Type.REGISTER,
+                name,
+                Constraints.MIN_LENGTH,
+                Constraints.MAX_LENGTH
+            ));
+            break;
         }
     }
     
-    private final Mov.Operands operands;
-    
-    /**
-     * @param operands Selects the operands of this command
-     */
-    private Mov(Mov.Operands operands)
-    {
-        this.operands = operands;
-    }
-
     
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        if (this.operands.usesMemory && context.memory == null) {
+        Mov.move(context, this.dst, this.src);
+    }
+    
+    /**
+     * Executes a move.
+     * 
+     * @param context
+     * @param dst
+     * @param src
+     * 
+     * @throws RuntimeError
+     */
+    public static void move(Context context, Mov.OperandType dst, Mov.OperandType src) throws RuntimeError
+    {
+        if (
+            (dst == Mov.OperandType.ADDRESS || src == Mov.OperandType.ADDRESS)
+            && context.memory == null
+        ) {
             throw new RuntimeError("Cannot &mov to/from memory as it is not configured");
         }
         
-        NumericValue src = context.frame.getNumericValue("src");
-        NumericValue dst = context.frame.getNumericValue("dst");
-        BigInteger srcImm;
-        switch (this.operands) {
-            case MEM_IMM:
-                this.checkAddress(dst, context, "to");
-                srcImm = src.read(context);
-                if (NumericValue.bitLength(srcImm) > context.memory.wordLength) {
-                    throw new RuntimeError(
-                        "Cannot &mov immediate " + srcImm + " to memory as it is too big"
-                    );
+        NumericValue srcValue = context.frame.getNumericValue("src");
+        NumericValue dstValue = context.frame.getNumericValue("dst");
+        
+        if (dst == Mov.OperandType.ADDRESS) {
+            Mov.checkAddress(dstValue, context, "to");
+        }
+        if (src == Mov.OperandType.ADDRESS) {
+            Mov.checkAddress(srcValue, context, "from");
+        }
+        
+        switch (src) {
+            case IMMEDIATE:
+                BigInteger srcImm = srcValue.read(context);
+                switch (dst) {
+                    case ADDRESS:
+                        if (NumericValue.bitLength(srcImm) > context.memory.wordLength) {
+                            throw new RuntimeError(
+                                "Cannot &mov immediate " + srcImm + " to memory as it is too big"
+                            );
+                        }
+                        
+                        context.memory.write(
+                            dstValue.read(context), // @dstAddress
+                            srcImm
+                        );
+                        break;
+                        
+                    case REGISTER:
+                        if (NumericValue.bitLength(srcImm) > dstValue.length) {
+                            throw new RuntimeError(
+                                "Cannot &mov immediate " + srcImm + " to variable "
+                                + dstValue.getReferencedName() + " as it is too big"
+                            );
+                        }
+                        
+                        dstValue.write(srcImm, context);
+                        break;
+                        
+                    case IMMEDIATE:
+                        throw new RuntimeException("impossible");
                 }
-                context.memory.write(
-                    dst.read(context), // @dstAddress
-                    srcImm
-                );
-                break;
-            case MEM_REG:
-                this.checkAddress(dst, context, "to");
-                if (src.length != context.memory.wordLength) {
-                    throw new RuntimeError(
-                        "Cannot &mov to memory from " + src.getReferencedName()
-                        + " as it has a different length"
-                    );
-                }
-                
-                context.memory.write(
-                    dst.read(context), // @dstAddress
-                    src.read(context)  // srcRegister
-                );
-                break;
-                
-            case MEM_MEM:
-                this.checkAddress(dst, context, "to");
-                this.checkAddress(src, context, "from");
-                context.memory.write(
-                    dst.read(context),    // @dstAddress
-                    context.memory.read(
-                        src.read(context) // @srcAddress
-                    )
-                );
-                break;
-                
-            case REG_MEM:
-                if (dst.length != context.memory.wordLength) {
-                    throw new RuntimeError(
-                        "Cannot &mov memory word to variable " + dst.getReferencedName()
-                        + " as it has a different length"
-                    );
-                }
-                this.checkAddress(src, context, "from");
-                
-                dst.write(
-                    context.memory.read(
-                        src.read(context) // @srcAddress
-                    ),
-                    context
-                );
                 break;
                 
-            case REG_IMM:
-                srcImm = src.read(context);
-                if (NumericValue.bitLength(srcImm) > dst.length) {
-                    throw new RuntimeError(
-                        "Cannot &mov immediate " + srcImm + " to variable "
-                        + dst.getReferencedName() + " as it is too big"
-                    );
+            case ADDRESS:
+                BigInteger srcInteger = context.memory.read(srcValue.read(context)); // @srcAddress
+                switch (dst) {
+                    case ADDRESS:
+                        context.memory.write(
+                            dstValue.read(context), // @dstAddress
+                            srcInteger
+                        );
+                        break;
+                        
+                    case REGISTER:
+                        if (dstValue.length != context.memory.wordLength) {
+                            throw new RuntimeError(
+                                "Cannot &mov memory word to variable " + dstValue.getReferencedName()
+                                + " as it has a different length"
+                            );
+                        }
+                        
+                        dstValue.write(srcInteger, context);
+                        break;
+                        
+                    case IMMEDIATE:
+                        throw new RuntimeException("impossible");
                 }
-                dst.write(srcImm, context);
                 break;
                 
-            case REG_REG:
-                if (src.length != dst.length) {
-                    throw new RuntimeError(
-                        "Cannot &mov between two variables " + src.getReferencedName()
-                        + " and " + dst.getReferencedName() + " that do not have the same length"
-                    );
+            case REGISTER:
+                switch (dst) {
+                    case ADDRESS:
+                        if (srcValue.length != context.memory.wordLength) {
+                            throw new RuntimeError(
+                                "Cannot &mov to memory from " + srcValue.getReferencedName()
+                                + " as it has a different length"
+                            );
+                        }
+                        
+                        context.memory.write(
+                            dstValue.read(context), // @dstAddress
+                            srcValue.read(context)  // srcRegister
+                        );
+                        break;
+                        
+                    case REGISTER:
+                        if (srcValue.length != dstValue.length) {
+                            throw new RuntimeError(
+                                "Cannot &mov between two variables " + srcValue.getReferencedName()
+                                + " and " + dstValue.getReferencedName() + " that do not have the same length"
+                            );
+                        }
+                        
+                        dstValue.write(srcValue.read(context), context);
+                        break;
+                        
+                    case IMMEDIATE:
+                        throw new RuntimeException("impossible");
                 }
-                dst.write(src.read(context), context);
                 break;
         }
     }
@@ -152,7 +249,7 @@ public class Mov implements Interpretable
      * 
      * @throws RuntimeError
      */
-    private void checkAddress(NumericValue address, Context context, String direction) throws RuntimeError
+    private static void checkAddress(NumericValue address, Context context, String direction) throws RuntimeError
     {
         if (address.length != context.memory.addressLength) {
             throw new RuntimeError(
@@ -160,125 +257,5 @@ public class Mov implements Interpretable
                 + address.getReferencedName() + " as it doesn't have the proper length for an address"
             );
         }
-    }
-    
-    
-    /**
-     * Creates a {@code &mov} built-in function with the given operands.
-     * 
-     * @param operands
-     * @return
-     */
-    public static BuiltInFunction create(Mov.Operands operands)
-    {
-        BuiltInFunction function = new BuiltInFunction("&mov", false);
-        
-        switch (operands) {
-            case MEM_IMM:
-                // &mov @dstAddress, imm
-                function.addCommandSymbols("@");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",");
-                function.addParameter(new Variable(
-                    Variable.Type.IMMEDIATE,
-                    "src",
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case MEM_MEM:
-                // &mov @dstAddress, @srcAddress
-                function.addCommandSymbols("@");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",@");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case MEM_REG:
-                // &mov @dstAddress, srcRegister
-                function.addCommandSymbols("@");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case REG_IMM:
-                // &mov dstRegister, imm
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",");
-                function.addParameter(new Variable(
-                    Variable.Type.IMMEDIATE,
-                    "src",
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case REG_MEM:
-                // &mov dstRegister, @srcAddress
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",@");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-                
-            case REG_REG:
-                // &mov dstRegister, srcRegister
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "dst",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                function.addCommandSymbols(",");
-                function.addParameter(new Variable(
-                    Variable.Type.REGISTER,
-                    "src",
-                    Constraints.MIN_LENGTH,
-                    Constraints.MAX_LENGTH
-                ));
-                break;
-        }
-        
-        function.setInterpretable(new Mov(operands));
-        return function;
     }
 }

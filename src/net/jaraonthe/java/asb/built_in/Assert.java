@@ -6,10 +6,7 @@ import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.AssertError;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
-import net.jaraonthe.java.asb.interpret.Interpretable;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
-import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
-import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
  * The {@code &assert} built-in function.<br>
@@ -28,40 +25,12 @@ import net.jaraonthe.java.asb.parse.Constraints;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class Assert implements Interpretable
+public class Assert extends Compare
 {
-    public enum OperandType
-    {
-        IMM,
-        REG
-    }
-    
-    public enum Operator
-    {
-        EQUALS                ("=="),
-        GREATER_THAN          (">"),
-        GREATER_THAN_OR_EQUALS(">="),
-        LESS_THAN             ("<"),
-        LESS_THAN_OR_EQUALS   ("<="),
-        NOT_EQUALS            ("!=");
-        
-        public final String symbols;
-        
-        private Operator(String symbols)
-        {
-            this.symbols = symbols;
-        }
-    }
-    
-    public final Assert.Operator operator;
-    public final Assert.OperandType a;
-    public final Assert.OperandType b;
-    public final boolean hasMessage;
-    
+    protected final boolean hasMessage;
+
     
     /**
-     * At least one of a or b must be REG.
-     * 
      * @param operator
      * @param a
      * @param b
@@ -73,75 +42,9 @@ public class Assert implements Interpretable
         Assert.OperandType b,
         boolean hasMessage
     ) {
-        this.operator = operator;
-        this.a        = a;
-        this.b        = b;
+        super(operator, a, b);
         this.hasMessage = hasMessage;
     }
-
-    
-    @Override
-    public void interpret(Context context) throws RuntimeError
-    {
-        NumericValue a = context.frame.getNumericValue("a");
-        NumericValue b = context.frame.getNumericValue("b");
-        BigInteger aValue = a.read(context);
-        BigInteger bValue = b.read(context);
-        
-        int cmp          = 0;
-        boolean compared = false;
-        // Normalize negative numbers
-        if (aValue.signum() < 0) {
-            try {
-                aValue = NumericValueStore.normalizeBigInteger(
-                    aValue,
-                    // Immediates are normalized to length of other operand
-                    this.a == Assert.OperandType.IMM ? b.length : a.length
-                );
-            } catch (IllegalArgumentException e) {
-                // a is greater than b (as it is too big for b.length)
-                cmp      = 1;
-                compared = true;
-            }
-        }
-        if (bValue.signum() < 0) {
-            try {
-            bValue = NumericValueStore.normalizeBigInteger(
-                bValue,
-                // Ditto
-                this.b == Assert.OperandType.IMM ? a.length : b.length
-            );
-            } catch (IllegalArgumentException e) {
-                // a is less than b (as b is too big for a.length)
-                cmp      = -1;
-                compared = true;
-            }
-        }
-        if (!compared) {
-            cmp = aValue.compareTo(bValue);
-        }
-        
-        boolean result = switch (this.operator) {
-            case EQUALS                 -> cmp == 0;
-            case GREATER_THAN           -> cmp > 0;
-            case GREATER_THAN_OR_EQUALS -> cmp >= 0;
-            case LESS_THAN              -> cmp < 0;
-            case LESS_THAN_OR_EQUALS    -> cmp <= 0;
-            case NOT_EQUALS             -> cmp != 0;
-        };
-        if (result) {
-            return;
-        }
-        
-        if (this.hasMessage) {
-            throw new AssertError(context.frame.getValue("message").toString());
-        }
-        throw new AssertError(
-            "Assert failed: " + a.getReferencedName() + " " + this.operator.symbols + " " + b.getReferencedName()
-            + " (Values: " + aValue + " " + this.operator.symbols + " " + bValue + ")"
-        );
-    }
-    
     
     /**
      * Creates a {@code &assert} built-in function as configured.<br>
@@ -161,17 +64,9 @@ public class Assert implements Interpretable
         Assert.OperandType b,
         boolean hasMessage
     ) {
-        if (a == Assert.OperandType.IMM && b == Assert.OperandType.IMM) {
-            throw new IllegalArgumentException(
-                "Cannot create &assert function with two immediate operands"
-            );
-        }
+        BuiltInFunction function = new BuiltInFunction("&assert", true);
         
-        BuiltInFunction function = new BuiltInFunction("&assert", false);
-        
-        Assert.addOperand(function, a, "a");
-        function.addCommandSymbols(operator.symbols);
-        Assert.addOperand(function, b, "b");
+        Compare.addComparisonOperands(function, operator, a, b);
         
         if (hasMessage) {
             function.addCommandSymbols(",");
@@ -182,29 +77,25 @@ public class Assert implements Interpretable
         return function;
     }
     
-    /**
-     * @param function
-     * @param type
-     * @param name
-     */
-    private static void addOperand(BuiltInFunction function, Assert.OperandType type, String name)
+    
+    @Override
+    public void interpret(Context context) throws RuntimeError
     {
-        switch (type) {
-        case IMM:
-            function.addParameter(new Variable(
-                Variable.Type.IMMEDIATE,
-                name,
-                Constraints.MAX_LENGTH
-            ));
-            break;
-        case REG:
-            function.addParameter(new Variable(
-                Variable.Type.REGISTER,
-                name,
-                Constraints.MIN_LENGTH,
-                Constraints.MAX_LENGTH
-            ));
-            break;
+        NumericValue a = context.frame.getNumericValue("a");
+        NumericValue b = context.frame.getNumericValue("b");
+        BigInteger aValue = a.read(context);
+        BigInteger bValue = b.read(context);
+        
+        if (this.compare(context, aValue, bValue)) {
+            return;
         }
+        
+        if (this.hasMessage) {
+            throw new AssertError(context.frame.getValue("message").toString());
+        }
+        throw new AssertError(
+            "Assert failed: " + a.getReferencedName() + " " + this.operator.symbols + " " + b.getReferencedName()
+            + " (Values: " + aValue + " " + this.operator.symbols + " " + bValue + ")"
+        );
     }
 }

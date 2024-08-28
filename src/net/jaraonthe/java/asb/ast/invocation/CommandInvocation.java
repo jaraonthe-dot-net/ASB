@@ -43,6 +43,8 @@ public class CommandInvocation extends CommandLike implements Invocation
      */
     private List<Argument> arguments = new ArrayList<>(3);
     
+    private boolean isResolved = false;
+    
     
     /**
      * @param name of the invoked command
@@ -56,7 +58,7 @@ public class CommandInvocation extends CommandLike implements Invocation
     @Override
     public boolean isResolved()
     {
-        return this.invokedCommand != null;
+        return this.isResolved;
     }
     
     /**
@@ -129,7 +131,19 @@ public class CommandInvocation extends CommandLike implements Invocation
             );
         }
         
-        Set<Command> commandClass = ast.getCommandClass(this.getResolvingClass());
+        String resolvingClass = this.getResolvingClass();
+        Set<Command> commandClass = ast.getCommandClass(resolvingClass);
+        if (
+            (commandClass == null || commandClass.isEmpty())
+            && resolvingClass.contains(String.valueOf(Variable.Type.IMMEDIATE.signatureMarker))
+        ) {
+            // command with immediate parameter not found, let's try again with label
+            resolvingClass = resolvingClass.replace(
+                Variable.Type.IMMEDIATE.signatureMarker,
+                Variable.Type.LABEL.signatureMarker
+            );
+            commandClass = ast.getCommandClass(resolvingClass);
+        }
         if (commandClass == null || commandClass.isEmpty()) {
             throw new ConstraintException("No command found for Invocation " + this);
         }
@@ -216,9 +230,10 @@ public class CommandInvocation extends CommandLike implements Invocation
                             return false;
                         }
                         break;
-
-                    // TODO support label (i.e. either a Label Parameter, or
-                    //      a label literal)
+                        
+                    case LABEL:
+                        // That's fine
+                        break;
                     
                     case STRING:
                     // CMD: string
@@ -263,7 +278,11 @@ public class CommandInvocation extends CommandLike implements Invocation
                 }
                 
             } else if (argument instanceof ImmediateArgument) {
-            // INV: immediate
+            // INV: immediate/label
+                if (parameter.type == Variable.Type.LABEL) {
+                    // That's fine
+                    break;
+                }
                 if (parameter.type != Variable.Type.IMMEDIATE) {
                     return false;
                 }
@@ -272,6 +291,11 @@ public class CommandInvocation extends CommandLike implements Invocation
                     return false;
                 }
             
+            } else if (argument instanceof LabelArgument) {
+            // INV: label
+                if (parameter.type != Variable.Type.LABEL) {
+                    return false;
+                }
             } else if (argument instanceof StringArgument) {
             // INV: string
                 if (parameter.type != Variable.Type.STRING) {
@@ -311,22 +335,63 @@ public class CommandInvocation extends CommandLike implements Invocation
                             new RegisterArgument(ra.potentialRegister)
                         );
                         break;
-
-                    // TODO support label
-                    //      - don't forget that the label name may have to
-                    //        be resolved later (because the label may be
-                    //        defined later in source code), but here we can
-                    //        already create some LabelArgument if no
-                    //        Variable with the used name exists.
+                        
+                    case LABEL:
+                        this.arguments.set(index, new LabelArgument(ra.name));
+                        break;
                 }
+            } else if (
+                argument instanceof ImmediateArgument
+                && parameter.type == Variable.Type.LABEL
+            ) {
+                ImmediateArgument ia = (ImmediateArgument) argument;
+                int index = this.arguments.indexOf(ia);
+                this.arguments.set(index, new LabelArgument(ia.asString));
             }
         }
     }
     
+
+    @Override
+    public Invocation resolveLabelNames(AST ast, Implementation implementation) throws ConstraintException
+    {
+        if (this.invokedCommand == null) {
+            throw new IllegalStateException(
+                "Cannot resolve labels when invoked command isn't resolved yet"
+            );
+        }
+        
+        for (Argument argument : this.arguments) {
+            if (!(argument instanceof LabelArgument)) {
+                continue;
+            }
+            LabelArgument la = (LabelArgument) argument;
+            if (la.hasLabelPosition()) {
+                break;
+            }
+            
+            int labelPosition;
+            boolean localLabel = this.invokedCommand.getParameterAt(this.arguments.indexOf(la)).localLabel;
+            if (localLabel && implementation != null) {
+                labelPosition = implementation.getLabel(la.name);
+            } else {
+                labelPosition = ast.getLabel(la.name);
+            }
+            if (labelPosition == -1) {
+                throw new ConstraintException("Label " + la.name + " does not exist");
+            }
+            la.setLabelPosition(labelPosition);
+        }
+        
+        this.isResolved = true;
+        return this;
+    }
+    
+    
     @Override
     public String toString()
     {
-        if (this.isResolved()) {
+        if (this.invokedCommand != null) {
             return this.invokedCommand + this.arguments.toString();
         }
         return this.name + " " + this.readableSignature;

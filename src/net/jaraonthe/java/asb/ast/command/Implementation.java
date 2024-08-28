@@ -32,6 +32,11 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     
     private List<Invocation> program = new ArrayList<>(4);
     
+    /**
+     * Label name => program position the label points to
+     */
+    private Map<String, Integer> labels = HashMap.newHashMap(1);
+    
     
     /**
      * @param parameters The parameters of the containing command. May be null
@@ -121,6 +126,49 @@ public class Implementation implements Interpretable, Iterable<Invocation>
         return this.program.iterator();
     }
     
+    
+    /**
+     * Adds a label pointing to the next program position in this implementation.
+     * 
+     * @param labelName
+     * @return Fluent interface
+     */
+    public Implementation addLabel(String labelName)
+    {
+        if (this.labels.containsKey(labelName)) {
+            throw new IllegalArgumentException(
+                "Cannot add same label " + labelName + " more than once"
+            );
+        }
+        
+        this.labels.put(labelName, this.program.size());
+        return this;
+    }
+    
+    /**
+     * @param labelName
+     * @return True if a label with this name exists.
+     */
+    public boolean labelExists(String labelName)
+    {
+        return this.labels.containsKey(labelName);
+    }
+    
+    /**
+     * @param labelName
+     * @return The position this label points to, or -1 if the label doesn't
+     *         exist.
+     */
+    public int getLabel(String labelName)
+    {
+        Integer position = this.labels.get(labelName);
+        if (position == null) {
+            return -1;
+        }
+        return position.intValue();
+    }
+    
+
     @Override
     public String toString()
     {
@@ -135,7 +183,16 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        for (Invocation invocation : this.program) {
+        while (true) {
+            Invocation invocation;
+            try {
+                invocation = this.program.get(context.frame.programCounter);
+            } catch (IndexOutOfBoundsException e) {
+                break;
+            }
+            context.frame.programCounter++;
+            
+            // This may modify the program counter
             invocation.interpret(context);
         }
     }

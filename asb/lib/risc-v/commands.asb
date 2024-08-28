@@ -31,7 +31,7 @@
 }
 // Load word
 .define lw /register rd''32, /immediate imm''12(/register rs1''32) {
-    // TODO address should probably be divisible by for - check RISC-V docs &
+    // TODO address should probably be divisible by four - check RISC-V docs &
     //      add assert if applicable. And what about lh?
     .variable address ''32; &calculate_address address, imm(rs1)
     
@@ -178,14 +178,7 @@
 
 // Helper
 .define &sra /register rd''32, /register rs1''32, /register bits''5 {
-    .variable rd_start ''5; &sub rd_start, 31, bits
-    &mov rd'rd_start:0, rs1'31:bits
-
-    // TODO do not execute if bits == 0 (as length cannot be 0)!
-    .variable extension ''bits; &sign_extend extension, rd'rd_start
-
-    .variable rd_start1 ''5; &add rd_start1, rd_start, 1
-    &mov rd'31:rd_start1, extension
+    &sign_extend rd, rs1'31:bits
 }
 // Shift right arithmetic
 .define sra /register rd''32, /register rs1''32, /register rs2''32 {
@@ -196,6 +189,78 @@
     &sra rd, rs1, uimm
 }
 
+
+/* FLOW CONTROL */
+
+// Helper
+.define &checkLabel /register label''32 {
+    .variable tmp''32; &get_pc tmp
+    &jumpif label > tmp, else
+    
+    &sub tmp, tmp, label
+    &assert tmp <= 1024, "label address is too low for current pc"
+    &jump end
+    
+  else:
+    &sub tmp, label, tmp
+    &assert tmp <= 1023, "label address is too high for current pc"
+  end:
+}
+// Branch if =
+.define beq /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1 != rs2, end
+    &set_pc label
+  end:
+}
+// Branch if !=
+.define bne /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1 == rs2, end
+    &set_pc label
+  end:
+}
+// Branch if <
+.define blt /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1'31 < rs2'31, end    // rs1 positive, rs2 negative
+    &jumpif rs1'31 > rs2'31, branch // rs1 negative, rs2 positive
+    &jumpif rs1 >= rs2, end         // both positive/negative
+  branch:
+    &set_pc label
+  end:
+}
+// Branch if >=
+.define bge /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1'31 > rs2'31, end    // rs1 negative, rs2 positive
+    &jumpif rs1'31 < rs2'31, branch // rs1 positive, rs2 negative
+    &jumpif rs1 < rs2, end
+  branch:
+    &set_pc label
+  end:
+}
+// Branch if < unsigned
+.define bltu /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1 >= rs2, end
+    &set_pc label
+  end:
+}
+// Branch if >= unsigned
+.define bgeu /register rs1''32, /register rs2''32, /label label {
+    &checkLabel label
+    
+    &jumpif rs1 < rs2, end
+    &set_pc label
+  end:
+}
+
 // TODO: slti, sltiu, auipc, slt, sltu,
-//       beq, bne, blt, bge, bltu, bgeu, jalr, jal
+//       jalr, jal
 //       mul, mulh, mulhsu, mulhu, div, divu, rem, remu

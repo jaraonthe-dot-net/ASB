@@ -24,6 +24,11 @@ public class Frame
      * variable name => value
      */
     private Map<String, Value> values = HashMap.newHashMap(4);
+    
+    /**
+     * Points to the Invocation that is NEXT to be executed in this scope.
+     */
+    public int programCounter = 0;
 
     
     /**
