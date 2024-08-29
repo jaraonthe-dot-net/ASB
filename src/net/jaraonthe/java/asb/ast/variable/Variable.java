@@ -39,7 +39,7 @@ public class Variable extends VariableLike
         // resolvingSignature they  have to be the same (because syntactically
         // they cannot be distinguished in the invocation without going through
         // the resolving process). In signature they can be distinguished
-        // because one has length but not the other.
+        // because one has length but not the other (this is hardcoded).
         
         /**
          * A string parameter. This type cannot be used freely in the ASB

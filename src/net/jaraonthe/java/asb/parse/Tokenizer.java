@@ -749,7 +749,7 @@ public class Tokenizer
      * 
      * @param col
      * @return The char at col position in this.lineContent, or '\n' if this
-     *         position is to big for this string.
+     *         position is too big for this string.
      */
     private char safeCharAt(int col)
     {
@@ -765,7 +765,7 @@ public class Tokenizer
      * DO NOT invoke if at end-of-file.
      * 
      * @return The char at this.currentCol position in this.lineContent, or '\n'
-     *         if this position is to big for this string.
+     *         if this position is too big for this string.
      */
     private char safeCharAt()
     {

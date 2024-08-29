@@ -781,7 +781,7 @@ public class Parser
                         t.origin,
                         false
                     );
-                    if (potentialRegister != null) {
+                    if (potentialRegister != null && potentialRegister.isNumeric()) {
                         // May be a variable or label (depending on effective command)
                         invocation.addArgument(new RawArgument(t.content, potentialRegister));
                         break;

@@ -156,4 +156,31 @@ nein:
 }
 test_arithmetic 12
 
+&println "RESOLVING TIE-BREAKERS"
+.define test_tie_breaker /immediate imm ''8 {
+    &print "using smaller for imm "; &println imm
+}
+.define test_tie_breaker /immediate imm ''10 {
+    &print "using bigger for imm "; &println imm
+}
+.define test_tie_breaker /register reg ''8 {
+    &print "using smaller for reg ("; &print reg; &println ")"
+}
+.define test_tie_breaker /register reg ''10 {
+    &print "using bigger for reg ("; &print reg; &println ")"
+}
+.define test_tie_breaker /label l {
+    &print "using for label pointing to "; &println_x l
+}
+.define test_tie_breaker {
+    .var _8  ''8;  &mov _8,  -7
+    .var _10 ''10; &mov _10, 12
+    test_tie_breaker _8
+    test_tie_breaker _10
+    test_tie_breaker nein
+}
+test_tie_breaker 1
+test_tie_breaker 500
+test_tie_breaker
+
 &println "That's all folks"

@@ -1,6 +1,8 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -9,6 +11,7 @@ import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.CommandLike;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
+import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
@@ -21,7 +24,7 @@ import net.jaraonthe.java.asb.interpret.value.Value;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class CommandInvocation extends CommandLike implements Invocation
+public class CommandInvocation extends CommandLike implements Invocation, Comparator<Command>
 {
     /**
      * This human-readable signature is only used when this Invocation is not
@@ -125,6 +128,57 @@ public class CommandInvocation extends CommandLike implements Invocation
     @Override
     public CommandInvocation resolve(AST ast, Implementation implementation) throws ConstraintException
     {
+        /*
+         * Resolving invocation to invoked command procedure:
+         * - Command symbols must fit
+         * - Invocation arguments must fit command parameters:
+         *   Here we have some ambiguity, so it is more complex. There may be
+         *   more than one command that fits the arguments, in which case tie-
+         *   breakers are applied to decide which one is picked.
+         *   
+         * Arguments => Parameters:
+         * - ImmediateArgument => IMMEDIATE; if no command fits => LABEL
+         *   (this ignores any tie-breaker order, the IMMEDIATE is always
+         *   preferred if possible)
+         * - RegisterArgument  => REGISTER
+         * - LabelArgument     => LABEL
+         * - RawArgument       => REGISTER, LABEL
+         * - StringArgument    => STRING
+         * 
+         * Parameter constraints that must be satisfied:
+         * - IMMEDIATE: immediate length <= parameter length
+         * - REGISTER:
+         *   variable referenced in argument must exist; referenced variable
+         *   must be numeric; if parameter has group, register used in argument
+         *   must have same group; argument's length range must overlap with
+         *   parameter's length range (consider dynamic length -
+         *   RegisterArgument has a complex calculation for its length range
+         *   that is used here)
+         * 
+         * Tie-breakers are applied left to right to parameters; first parameter
+         * that is different between potential commands decides.
+         * The various tie-breakers (for each type applied in order as given):
+         * - ImmediateArgument (IMMEDIATE):
+         *   => select command with param with smaller length
+         *      (Rationale: It's probably more efficient to use this command
+         *      than one that can handle longer immediates)
+         * - RegisterArgument:
+         *   => prefer group over non-group param;
+         *   => if both have group: Prefer the one of which the group comes
+         *      first in the register's group list;
+         *   => as we have dynamic length we don't know which command to pick
+         *      and we move on to the next argument (this may lead to an error
+         *      being triggered)
+         *      (this may be changed in the future; it requires the invoked
+         *      command to be determined at runtime (which makes everything more
+         *      complex and I'd rather avoid that - I think it is possible to
+         *      work your way around this limitation when implementing commands)
+         * - RawArgument:
+         *   => prefer REGISTER over LABEL;
+         *   => if REGISTER: apply tie-breakers for RegisterArgument
+         *   
+         */
+        
         if (this.invokedCommand != null) {
             throw new IllegalStateException(
                 "Attempting to resolve an Invocation that has already been resolved"
@@ -132,43 +186,58 @@ public class CommandInvocation extends CommandLike implements Invocation
         }
         
         String resolvingClass = this.getResolvingClass();
-        Set<Command> commandClass = ast.getCommandClass(resolvingClass);
-        if (
-            (commandClass == null || commandClass.isEmpty())
-            && resolvingClass.contains(String.valueOf(Variable.Type.IMMEDIATE.signatureMarker))
-        ) {
-            // command with immediate parameter not found, let's try again with label
-            resolvingClass = resolvingClass.replace(
-                Variable.Type.IMMEDIATE.signatureMarker,
-                Variable.Type.LABEL.signatureMarker
-            );
-            commandClass = ast.getCommandClass(resolvingClass);
+        List<Command> viableCommands;
+        int tryAgain = 0;
+        if (resolvingClass.contains(String.valueOf(Variable.Type.IMMEDIATE.signatureMarker))) {
+            tryAgain = 1;
         }
-        if (commandClass == null || commandClass.isEmpty()) {
-            throw new ConstraintException("No command found for Invocation " + this);
-        }
-        
-        // viable commands (all these fit the invocation signature & arguments)
-        List<Command> viableCommands = new ArrayList<>(commandClass.size());
-        for (Command c : commandClass) {
-            if (this.isCommandViable(c, ast, implementation)) {
-                viableCommands.add(c);
+        do {
+            Set<Command> commandClass = ast.getCommandClass(resolvingClass);
+            if (commandClass == null) {
+                commandClass = HashSet.newHashSet(0);
             }
-        }
-        if (viableCommands.isEmpty()) {
-            // TODO this error could be due to using registers/vars that don't
-            //      exist - can that be detected somehow, and a more appropriate
-            //      error message be given in that case? Or at least point out
-            //      this potential root cause in the existing message.
-            throw new ConstraintException("No command found for Invocation " + this);
-        }
+            
+            // viable commands (all these fit the invocation signature & arguments)
+            viableCommands = new ArrayList<>(commandClass.size());
+            for (Command c : commandClass) {
+                if (this.isCommandViable(c, ast, implementation)) {
+                    viableCommands.add(c);
+                }
+            }
+            if (viableCommands.isEmpty()) {
+                if (tryAgain > 0) {
+                    // command with immediate parameter not found, let's try again with label
+                    resolvingClass = resolvingClass.replace(
+                        Variable.Type.IMMEDIATE.signatureMarker,
+                        Variable.Type.LABEL.signatureMarker
+                    );
+                    continue;
+                }
+                
+                // TODO this error could be due to using registers/vars that don't
+                //      exist - can that be detected somehow, and a more appropriate
+                //      error message be given in that case? For now, we just
+                //      point out this potential root cause in the message.
+                throw new ConstraintException(
+                    "No command found for Invocation " + this + " - maybe used registers don't exist?"
+                );
+            }
+            break;
+        } while(tryAgain-- > 0);
         
         if (viableCommands.size() > 1) {
             // select best command
-            // TODO choose a command variant (apply tie-breakers via sorting)
-            throw new RuntimeException(
-                "Resolving against multiple viable Command Variants not implemented yet"
-            );
+            viableCommands.sort(this);
+            
+            if (this.compare(viableCommands.get(0), viableCommands.get(1)) == 0) {
+                throw new ConstraintException(
+                    "Cannot determine which Command to invoke by " + this
+                    + ". Most likely this is due to dynamic length (or dynamic position) in"
+                    + " combination with several command variants that only differ by a parameter's"
+                    + " length; it is impossible to make a decision at compile time."
+                    + " Try to rewrite your program"
+                );
+            }
         }
         
         this.invokedCommand = viableCommands.getFirst();
@@ -207,7 +276,7 @@ public class CommandInvocation extends CommandLike implements Invocation
                     case REGISTER:
                     // CMD: register/var
                         if (!ra.potentialRegister.isNumeric()) {
-                            // i.e. this is a label or string parameter
+                            // Just to be safe
                             return false;
                         }
                         
@@ -235,17 +304,6 @@ public class CommandInvocation extends CommandLike implements Invocation
                         // That's fine
                         break;
                     
-                    case STRING:
-                    // CMD: string
-                        if (
-                            !(ra.potentialRegister instanceof Variable)
-                            || ((Variable)ra.potentialRegister).type != Variable.Type.STRING
-                        ) {
-                            // no local var found or incorrect type
-                            return false;
-                        }
-                        break;
-                        
                     default:
                         return false;
                 }
@@ -306,6 +364,77 @@ public class CommandInvocation extends CommandLike implements Invocation
         
         return true;
     }
+
+    @Override
+    public int compare(Command a, Command b)
+    {
+        // Applying tie-breakers (see note in resolve())
+        Iterator<Variable> iterA = a.getParameters().iterator();
+        Iterator<Variable> iterB = b.getParameters().iterator();
+        for (Argument argument : this.arguments) {
+            Variable paramA = iterA.next();
+            Variable paramB = iterB.next();
+            
+            if (argument instanceof LabelArgument || argument instanceof StringArgument) {
+                continue;
+            }
+            
+            if (argument instanceof ImmediateArgument) {
+                if (paramA.type == Variable.Type.LABEL) {
+                    // both candidates are expected to have the same type
+                    continue;
+                }
+                
+                // prefer smaller length
+                if (paramA.maxLength < paramB.maxLength) {
+                    return -1;
+                } else if (paramA.maxLength > paramB.maxLength) {
+                    return 1;
+                }
+                continue;
+            }
+            
+            if (argument instanceof RawArgument) {
+                if (paramA.type != paramB.type) {
+                    // prefer REGISTER over LABEL
+                    return paramA.type == Variable.Type.REGISTER ? -1 : 1;
+                }
+                if (paramA.type == Variable.Type.LABEL) {
+                    // both candidates have same type
+                    continue;
+                }
+            }
+            
+            // REGISTER parameters
+            
+            if (paramA.hasGroup() != paramB.hasGroup()) {
+                // prefer group over non-group
+                return paramA.hasGroup() ? -1 : 1;
+            }
+            if (!paramA.hasGroup()) {
+                // both have no group - this may mean we cannot decide after all
+                continue;
+            }
+
+            // prefer first listed group
+            Register referencedRegister;
+            if (argument instanceof RawArgument) {
+                referencedRegister = (Register) ((RawArgument)argument).potentialRegister;
+            } else {
+                referencedRegister = (Register) ((RegisterArgument)argument).register;
+            }
+            int posA = referencedRegister.getGroupPosition(paramA.getGroup());
+            int posB = referencedRegister.getGroupPosition(paramB.getGroup());
+            if (posA < posB) {
+                return -1;
+            }
+            if (posA > posB) {
+                return 1;
+            }
+        }
+        
+        return 0;
+    }
     
     /**
      * Conforms the invocation arguments to the invoked command. Must be called
@@ -328,8 +457,6 @@ public class CommandInvocation extends CommandLike implements Invocation
                 int index = this.arguments.indexOf(ra);
                 switch (parameter.type) {
                     case REGISTER:
-                    case STRING:
-                    // CMD: register/var/string
                         this.arguments.set(
                             index,
                             new RegisterArgument(ra.potentialRegister)

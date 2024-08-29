@@ -1,7 +1,7 @@
 package net.jaraonthe.java.asb.ast.variable;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.jaraonthe.java.asb.parse.Constraints;
 
@@ -14,7 +14,11 @@ import net.jaraonthe.java.asb.parse.Constraints;
  */
 public class Register extends VariableLike
 {
-    private Set<String> groups = HashSet.newHashSet(2);
+    /**
+     * Group name => position (in order in which groups are listed in this
+     * register)
+     */
+    private Map<String, Integer> groups = HashMap.newHashMap(1);
     
     
     /**
@@ -49,14 +53,33 @@ public class Register extends VariableLike
      */
     public Register addGroup(String group)
     {
-        this.groups.add(group);
+        if (this.groups.containsKey(group)) {
+            throw new IllegalArgumentException(
+                "Cannot add same group " + group + " more than once"
+            );
+        }
+        
+        this.groups.put(group, this.groups.size());
         return this;
     }
     
     @Override
     public boolean hasGroup(String group)
     {
-        return this.groups.contains(group);
+        return this.groups.containsKey(group);
+    }
+    
+    /**
+     * @param group
+     * @return The position at which this group was listed
+     */
+    public int getGroupPosition(String group)
+    {
+        Integer position = this.groups.get(group);
+        if (position == null) {
+            return -1;
+        }
+        return position.intValue();
     }
     
     @Override
@@ -64,7 +87,7 @@ public class Register extends VariableLike
     {
         String groupsString = "";
         if (!this.groups.isEmpty()) {
-            for (String group : this.groups) {
+            for (String group : this.groups.keySet()) {
                 if (!groupsString.isEmpty()) {
                     groupsString += ", ";
                 }

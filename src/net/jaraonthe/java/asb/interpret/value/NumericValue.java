@@ -110,7 +110,7 @@ abstract public class NumericValue extends Value
     {
         if (NumericValue.bitLength(value) > this.length) {
             throw new IllegalArgumentException(
-                "Value is to big for " + this.getReferencedName() + ", is " + value
+                "Value is too big for " + this.getReferencedName() + ", is " + value
             );
         }
     }
