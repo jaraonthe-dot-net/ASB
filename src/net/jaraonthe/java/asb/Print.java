@@ -36,11 +36,24 @@ public final class Print
      * 
      * @param text
      * @param color
-     * @param settings
+     * @param settings May be null
      */
     public static void printWithColor(String text, Print.Color color, Settings settings)
     {
-        System.out.print(Print.getEffectiveWithColor(text, color, settings));
+        System.out.print(Print.getEffectiveWithColor(text, color, false, settings));
+    }
+    
+    /**
+     * Does a print() with given color and in bold. Honors {@code
+     * settings.withColor}.
+     * 
+     * @param text
+     * @param color
+     * @param settings May be null
+     */
+    public static void printBoldWithColor(String text, Print.Color color, Settings settings)
+    {
+        System.out.print(Print.getEffectiveWithColor(text, color, true, settings));
     }
     
     /**
@@ -48,26 +61,41 @@ public final class Print
      * 
      * @param text
      * @param color
-     * @param settings
+     * @param settings May be null
      */
     public static void printlnWithColor(String text, Print.Color color, Settings settings)
     {
-        System.out.println(Print.getEffectiveWithColor(text, color, settings));
+        System.out.println(Print.getEffectiveWithColor(text, color, false, settings));
     }
+    
+    /**
+     * Does a println() with given color and in bold. Honors {@code
+     * settings.withColor}.
+     * 
+     * @param text
+     * @param color
+     * @param settings May be null
+     */
+    public static void printlnBoldWithColor(String text, Print.Color color, Settings settings)
+    {
+        System.out.println(Print.getEffectiveWithColor(text, color, true, settings));
+    }
+    
     
     /**
      * @param text
      * @param color
-     * @param settings
+     * @param bold
+     * @param settings May be null
      * 
      * @return The given text with color applied
      */
-    private static String getEffectiveWithColor(String text, Print.Color color, Settings settings)
+    private static String getEffectiveWithColor(String text, Print.Color color, boolean bold, Settings settings)
     {
-        if (!settings.getWithColor()) {
+        if (settings == null || !settings.getWithColor()) {
             return text;
         }
-        return "\033[" + color.foregroundCode + "m" + text + "\033[0m";
+        return "\033[" + (bold ? "1;" : "") + color.foregroundCode + "m" + text + "\033[0m";
     }
     
     

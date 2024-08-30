@@ -1,5 +1,8 @@
 package net.jaraonthe.java.asb.exception;
 
+import net.jaraonthe.java.asb.Print;
+import net.jaraonthe.java.asb.Settings;
+
 /**
  * Represents an error that is caused by user input.
  *
@@ -18,11 +21,27 @@ public class UserError extends Exception
     }
     
     /**
-     * @return A printable representation of this error message intended for
-     *         the user
+     * @return A title for this type of error
      */
-    public String getUserReadable()
+    protected String getTitle()
     {
-        return "Error: " + this.getMessage();
+        return "Error";
+    }
+    
+    /**
+     * Does a user-readable print in color, honoring settings.
+     * 
+     * @param settings May be null
+     */
+    public void print(Settings settings)
+    {
+        if (settings != null && settings.getDevMode()) {
+            // Print all the technical details
+            this.printStackTrace();
+            return;
+        }
+        
+        Print.printBoldWithColor(this.getTitle(), Print.Color.RED, settings);
+        Print.printlnWithColor(": " + this.getMessage(), Print.Color.RED, settings);
     }
 }

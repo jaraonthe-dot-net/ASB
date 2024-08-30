@@ -19,8 +19,8 @@ public class RuntimeError extends UserError
     }
 
     @Override
-    public String getUserReadable()
+    protected String getTitle()
     {
-        return "Runtime Error: " + this.getMessage();
+        return "Runtime Error";
     }
 }

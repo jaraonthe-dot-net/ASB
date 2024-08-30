@@ -21,8 +21,8 @@ public class AssertError extends RuntimeError
     }
 
     @Override
-    public String getUserReadable()
+    protected String getTitle()
     {
-        return "Assert Error: " + this.getMessage();
+        return "Assert Error";
     }
 }

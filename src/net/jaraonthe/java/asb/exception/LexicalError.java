@@ -19,8 +19,8 @@ public class LexicalError extends UserError
     }
 
     @Override
-    public String getUserReadable()
+    protected String getTitle()
     {
-        return "Parse Error: " + this.getMessage();
+        return "Parse Error";
     }
 }

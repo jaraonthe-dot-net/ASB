@@ -69,7 +69,7 @@ public class ASB
 	    try {
 	        settings = Settings.fromArgs(args);
 	    } catch (UserError e) {
-	        System.out.println(e.getUserReadable());
+	        e.print(null);
 	        return;
 	    }
 	    
@@ -96,12 +96,7 @@ public class ASB
             	    Interpreter.interpret(ast, settings);
             	    
         	    } catch (UserError e) {
-        	        if (settings.getDevMode()) {
-        	            // Print all the technical details
-        	            e.printStackTrace();
-        	        } else {
-        	            Print.printlnWithColor(e.getUserReadable(), Print.Color.RED, settings);
-        	        }
+        	        e.print(settings);
         	        return;
         	    } catch (Exception e) {
                     e.printStackTrace();
