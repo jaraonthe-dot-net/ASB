@@ -6,7 +6,7 @@ package net.jaraonthe.java.asb.exception;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class RuntimeError extends Exception
+public class RuntimeError extends UserError
 {
     private static final long serialVersionUID = 1L;
 
@@ -16,5 +16,11 @@ public class RuntimeError extends Exception
     public RuntimeError(String message)
     {
         super(message);
+    }
+
+    @Override
+    public String getUserReadable()
+    {
+        return "Runtime Error: " + this.getMessage();
     }
 }

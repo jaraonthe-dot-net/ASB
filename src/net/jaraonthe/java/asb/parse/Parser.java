@@ -168,7 +168,7 @@ public class Parser
         Token t;
         switch (directive.content) {
             case ".include":
-                t = this.expect(Token.Type.STRING);
+                t = this.expect(Token.Type.STRING, "file path");
                 this.expectStatementSeparator();
                 
                 // Resolve given path relatively against directory of current file
@@ -366,7 +366,7 @@ public class Parser
                             );
                         }
                         this.tokenizer.next();
-                        this.expect(Token.Type.OPENING_BRACES);
+                        this.expect(Token.Type.OPENING_BRACES, "opening braces (for .get implementation)");
                         parameters = new ArrayList<>(1);
                         parameters.add(new Variable(Variable.Type.REGISTER, "out", register.getLength()));
                         if (vr.hasStore()) {
@@ -384,7 +384,7 @@ public class Parser
                             );
                         }
                         this.tokenizer.next();
-                        this.expect(Token.Type.OPENING_BRACES);
+                        this.expect(Token.Type.OPENING_BRACES, "opening braces (for .set implementation)");
                         parameters = new ArrayList<>(1);
                         parameters.add(new Variable(Variable.Type.REGISTER, "in", register.getLength()));
                         if (vr.hasStore()) {
@@ -536,7 +536,7 @@ public class Parser
                         "Unexpected end of file, expected implementation at " + directiveOrigin
                     );
                 default:
-                    throw new ParseError("Unexpected " + t.type + " at " + t.origin);
+                    throw new ParseError("Unexpected " + t.type + " Token at " + t.origin);
             }
         }
         if (this.ast.commandExists(command.getIdentity())) {
@@ -588,7 +588,7 @@ public class Parser
                                 }
                                 
                                 // Custom length parsing (to support length register)
-                                this.expect(Token.Type.BIT_LENGTH);
+                                this.expect(Token.Type.BIT_LENGTH, "'' (to give bit length)");
                                 this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
                                 
                                 if (this.peekedIsType(Token.Type.NAME)) {
@@ -641,12 +641,13 @@ public class Parser
                         
                     case EOF:
                         throw new ParseError(
-                            "Unexpected end of file, expected " + Token.Type.CLOSING_BRACES
+                            "Unexpected end of file, expected closing braces in "
+                            + this.tokenizer.file.filePath.toString()
                         );
                     default:
                         throw new ParseError(
-                            "Unexpected " + t.type + ", expected " + Token.Type.CLOSING_BRACES
-                    );
+                            "Unexpected " + t.type + ", expected closing braces at " + t.origin
+                        );
                         
                 }
             } catch (ConstraintException e) {
@@ -735,7 +736,10 @@ public class Parser
                                     argument = new RegisterArgument(register, fromPositionRegister, toPositionRegister);
                                 } else {
                                     // ' varName : number
-                                    int toPosition = this.number2PositionInt(this.expect(Token.Type.NUMBER));
+                                    int toPosition = this.number2PositionInt(this.expect(
+                                        Token.Type.NUMBER,
+                                        "a number (as end of bitwise access range)"
+                                    ));
                                     Constraints.checkPositionWithinRegister(toPosition, register, t.origin);
                                     argument = new RegisterArgument(register, fromPositionRegister, toPosition);
                                 }
@@ -745,7 +749,10 @@ public class Parser
                             }
                         } else {
                             // ' number ...
-                            int fromPosition = this.number2PositionInt(this.expect(Token.Type.NUMBER));
+                            int fromPosition = this.number2PositionInt(this.expect(
+                                Token.Type.NUMBER,
+                                "a number (as beginning of bitwise access range)"
+                            ));
                             Constraints.checkPositionWithinRegister(fromPosition, register, t.origin);
                             
                             if (this.peekedIsType(Token.Type.POSITION_RANGE)) {
@@ -760,7 +767,10 @@ public class Parser
                                     argument = new RegisterArgument(register, fromPosition, toPositionRegister);
                                 } else {
                                     // ' number : number
-                                    int toPosition = this.number2PositionInt(this.expect(Token.Type.NUMBER));
+                                    int toPosition = this.number2PositionInt(this.expect(
+                                        Token.Type.NUMBER,
+                                        "a number (as end of bitwise access range)"
+                                    ));
                                     Constraints.checkPositionWithinRegister(toPosition, register, t.origin);
                                     argument = new RegisterArgument(register, fromPosition, toPosition);
                                 }
@@ -856,7 +866,7 @@ public class Parser
     private void expectClosingBracesIfMultiLine(boolean isMultiLine) throws LexicalError, ParseError
     {
         if (isMultiLine) {
-            this.expect(Token.Type.CLOSING_BRACES);
+            this.expect(Token.Type.CLOSING_BRACES, "closing braces for a multi-line directive");
         }
     }
     
@@ -877,21 +887,6 @@ public class Parser
      * Expects the given Token Type.
      * 
      * @param type
-     * 
-     * @return
-     * 
-     * @throws LexicalError
-     * @throws ParseError   if something unexpected is encountered
-     */
-    private Token expect(Token.Type type) throws LexicalError, ParseError
-    {
-        return this.expect(type, type + " Token");
-    }
-    
-    /**
-     * Expects the given Token Type.
-     * 
-     * @param type
      * @param expected Used in the error message, to inform about what was
      *                 expected instead of what is indeed encountered.
      * 
@@ -900,8 +895,6 @@ public class Parser
      * @throws LexicalError
      * @throws ParseError   if something unexpected is encountered
      */
-    // TODO Try to use this variant (with expected) in more places, i.e. improve
-    //      error messages with this
     private Token expect(Token.Type type, String expected) throws LexicalError, ParseError
     {
         Token t = this.tokenizer.next();
@@ -919,7 +912,7 @@ public class Parser
      */
     private void expectStatementSeparator() throws LexicalError, ParseError
     {
-        this.expect(Token.Type.STATEMENT_SEPARATOR);
+        this.expect(Token.Type.STATEMENT_SEPARATOR, "; or newline (statement separator)");
     }
     
     /**
@@ -946,7 +939,7 @@ public class Parser
      */
     private String expectName() throws LexicalError, ParseError
     {
-        return this.expect(Token.Type.NAME).content;
+        return this.expect(Token.Type.NAME, "a name").content;
     }
     
     /**
@@ -1076,7 +1069,7 @@ public class Parser
      */
     private int expectLength(String elementName) throws LexicalError, ParseError
     {
-        this.expect(Token.Type.BIT_LENGTH);
+        this.expect(Token.Type.BIT_LENGTH, "'' (to give bit length)");
         
         Tokenizer.Mode oldMode = this.tokenizer.getMode();
         this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
@@ -1102,7 +1095,7 @@ public class Parser
      */
     private int[] expectLengthRange(String elementName) throws LexicalError, ParseError
     {
-        this.expect(Token.Type.BIT_LENGTH);
+        this.expect(Token.Type.BIT_LENGTH, "'' (to give bit length)");
         
         Tokenizer.Mode oldMode = this.tokenizer.getMode();
         this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
@@ -1151,9 +1144,10 @@ public class Parser
                 break;
             
             case EOF:
-                // TODO include origin somehow (so we know which file it is
-                //      - check other end-of-file errors as well
-                throw new ParseError("Unexpected end of file, expected " + Token.Type.NUMBER);
+                throw new ParseError(
+                    "Unexpected end of file, expected a number in "
+                    + this.tokenizer.file.filePath.toString()
+                );
             
             default:
                 throw new ParseError("Unexpected " + this.tokenizer.peek().toStringWithOrigin());
@@ -1183,7 +1177,7 @@ public class Parser
                 // max<number>
                 this.tokenizer.next();
                 return this.number2fittingLengthInt(
-                    this.expect(Token.Type.NUMBER),
+                    this.expect(Token.Type.NUMBER, "a number (for max)"),
                     false,
                     elementName
                 );
@@ -1191,7 +1185,7 @@ public class Parser
                 // maxu<number> (unsigned)
                 this.tokenizer.next();
                 return this.number2fittingLengthInt(
-                    this.expect(Token.Type.NUMBER),
+                    this.expect(Token.Type.NUMBER, "a number (for maxu)"),
                     true,
                     elementName
                 );
@@ -1199,7 +1193,7 @@ public class Parser
             default:
                 // <number>
                 return this.number2LengthInt(
-                    this.expect(Token.Type.NUMBER),
+                    this.expect(Token.Type.NUMBER, "a number (as length)"),
                     elementName
                 );
         }
@@ -1297,13 +1291,16 @@ public class Parser
      */
     private void expectCommandSymbols(String expectedSymbols) throws LexicalError, ParseError
     {
-        String consumed = this.expect(Token.Type.COMMAND_SYMBOLS, "\"" + expectedSymbols + "\"").content;
+        Token token = this.expect(Token.Type.COMMAND_SYMBOLS, "\"" + expectedSymbols + "\"");
+        String consumed = token.content;
         
         // TODO support command symbols spanning several tokens - but for now it
         //      is not an issue as this is only used in one place, with an
         //      expectedSymbols that is one char long.
         if (!expectedSymbols.equals(consumed)) {
-            throw new ParseError("Expected \"" + expectedSymbols + "\" symbols, is \"" + consumed + "\"");
+            throw new ParseError(
+                "Expected \"" + expectedSymbols + "\" symbols, is \"" + consumed + "\" at " + token.origin
+            );
         }
     }
     

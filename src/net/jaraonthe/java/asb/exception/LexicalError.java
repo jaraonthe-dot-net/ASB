@@ -6,7 +6,7 @@ package net.jaraonthe.java.asb.exception;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class LexicalError extends Exception
+public class LexicalError extends UserError
 {
     private static final long serialVersionUID = 1L;
 
@@ -16,5 +16,11 @@ public class LexicalError extends Exception
     public LexicalError(String message)
     {
         super(message);
+    }
+
+    @Override
+    public String getUserReadable()
+    {
+        return "Parse Error: " + this.getMessage();
     }
 }

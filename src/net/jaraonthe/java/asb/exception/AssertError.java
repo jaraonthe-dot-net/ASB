@@ -19,4 +19,10 @@ public class AssertError extends RuntimeError
     {
         super(message);
     }
+
+    @Override
+    public String getUserReadable()
+    {
+        return "Assert Error: " + this.getMessage();
+    }
 }

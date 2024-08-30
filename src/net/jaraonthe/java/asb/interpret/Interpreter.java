@@ -4,6 +4,8 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
+import net.jaraonthe.java.asb.Print;
+import net.jaraonthe.java.asb.Settings;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
@@ -26,6 +28,11 @@ public class Interpreter
      * The AST that is interpreted by this Interpreter.
      */
     private final AST ast;
+
+    /**
+     * General program settings
+     */
+    private final Settings settings;
     
     /**
      * The global frame containing register values.
@@ -38,25 +45,30 @@ public class Interpreter
     private Memory memory = null;
     
     
+    
     /**
      * Executes the entire interpreting procedure; i.e. interpreting the
      * userland program.
      * 
-     * @param ast the AST that shall be interpreted
+     * @param ast      The AST that shall be interpreted
+     * @param settings General program settings
+     * 
      * @throws RuntimeError
      */
-    public static void interpret(AST ast) throws RuntimeError
+    public static void interpret(AST ast, Settings settings) throws RuntimeError
     {
-        new Interpreter(ast).run();
+        new Interpreter(ast, settings).run();
     }
     
     
     /**
-     * @param ast the AST that shall be interpreted by this Interpreter
+     * @param ast      The AST that shall be interpreted by this Interpreter
+     * @param settings General program settings
      */
-    protected Interpreter(AST ast)
+    protected Interpreter(AST ast, Settings settings)
     {
-        this.ast = ast;
+        this.ast      = ast;
+        this.settings = settings;
         if (ast.hasMemory()) {
             this.memory = new Memory(ast.getMemoryWordLength(), ast.getMemoryAddressLength());
         }
@@ -86,9 +98,13 @@ public class Interpreter
             this.globalFrame.programCounter++;
             
             // TODO a more sophisticated program run output
-            System.err.println(String.format(
-                "%4x: %s", currentProgramCounter, invocation.toString()
-            ));
+            if (this.settings.devMode) {
+                Print.printlnWithColor(
+                    String.format("%16x: %s", currentProgramCounter, invocation.toString()),
+                    Print.Color.YELLOW,
+                    settings
+                );
+            }
             // This may modify the program Counter
             invocation.interpret(context);
         }
