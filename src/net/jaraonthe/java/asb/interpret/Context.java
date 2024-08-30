@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.interpret;
 
+import net.jaraonthe.java.asb.Settings;
 import net.jaraonthe.java.asb.ast.AST;
 
 /**
@@ -25,17 +26,20 @@ public class Context
      * The AST of the program being executed.
      */
     public final AST ast;
+    
+    public final Settings settings;
 
     /**
      * @param frame
      * @param memory May be null
      * @param ast
      */
-    public Context(Frame frame, Memory memory, AST ast)
+    public Context(Frame frame, Memory memory, AST ast, Settings settings)
     {
-        this.frame  = frame;
-        this.memory = memory;
-        this.ast    = ast;
+        this.frame    = frame;
+        this.memory   = memory;
+        this.ast      = ast;
+        this.settings = settings;
     }
     
     /**
@@ -47,6 +51,6 @@ public class Context
      */
     public Context withFrame(Frame frame)
     {
-        return new Context(frame, this.memory, this.ast);
+        return new Context(frame, this.memory, this.ast, this.settings);
     }
 }

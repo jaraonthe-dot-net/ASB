@@ -88,15 +88,15 @@ public class ASB
 	            
 	        case MAIN:
         	    try {
-        	        if (settings.filePaths.isEmpty()) {
+        	        if (settings.getFilePaths().isEmpty()) {
         	            throw new UserError("No file given. See asb --help");
         	        }
         	        
-        	        AST ast = Parser.parse(settings.filePaths);
+        	        AST ast = Parser.parse(settings.getFilePaths());
             	    Interpreter.interpret(ast, settings);
             	    
         	    } catch (UserError e) {
-        	        if (settings.devMode) {
+        	        if (settings.getDevMode()) {
         	            // Print all the technical details
         	            e.printStackTrace();
         	        } else {

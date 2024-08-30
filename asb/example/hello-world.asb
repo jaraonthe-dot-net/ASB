@@ -1,0 +1,4 @@
+/**
+ * Run: asb hello-world.asb
+ */
+&println "Hello World"

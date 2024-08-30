@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.interpret;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
+import java.util.regex.Pattern;
 
 import net.jaraonthe.java.asb.Print;
 import net.jaraonthe.java.asb.Settings;
@@ -46,6 +47,9 @@ public class Interpreter
     private Memory memory = null;
     
     
+    private static final Pattern PRINT_STRING_PATTERN = Pattern.compile(" \"([^\"]|\\\")*\"");
+    
+    
     
     /**
      * Executes the entire interpreting procedure; i.e. interpreting the
@@ -83,9 +87,15 @@ public class Interpreter
      */
     private void run() throws RuntimeError
     {
-        Context context = new Context(this.globalFrame, this.memory, this.ast);
+        Context context = new Context(this.globalFrame, this.memory, this.ast, this.settings);
         
         List<Invocation> program = this.ast.getProgram();
+        int programAddressLength = Math.max( // length in hex
+            (int) Math.ceil(
+                Math.log(program.size()) / Math.log(16)
+            ),
+            1
+        );
         while (true) {
             int currentProgramCounter = this.globalFrame.programCounter;
             Invocation invocation;
@@ -97,17 +107,49 @@ public class Interpreter
             // Incrementing pc before execution so that jumps can modify pc
             // without extra complexity
             this.globalFrame.programCounter++;
+
+            this.printTrace(invocation, currentProgramCounter, programAddressLength);
             
-            // TODO a more sophisticated program run output
-            if (this.settings.devMode) {
-                Print.printlnWithColor(
-                    String.format("%16x: %s", currentProgramCounter, invocation.toString()),
-                    Print.Color.YELLOW,
-                    settings
-                );
-            }
             // This may modify the program Counter
             invocation.interpret(context);
+        }
+    }
+    
+    /**
+     * Prints the current trace (if so configured).
+     * 
+     * @param invocation
+     * @param currentProgramCounter
+     * @param programAddressLength  How many chars to reserve for the pc value
+     *                              output.
+     */
+    private void printTrace(Invocation invocation, int currentProgramCounter, int programAddressLength)
+    {
+        if (this.settings.getDevMode() || this.settings.getTrace()) {
+            if (this.settings.printOccurred) {
+                System.out.println();
+                this.settings.printOccurred = false;
+            }
+            
+            String text;
+            if (this.settings.getDevMode()) {
+                text = invocation.toString(); // incl. technical details
+            } else {
+                text = invocation.getOrigin().getContent(); // as written in ASB source code
+                // Remove &print & &println string arguments, as they are
+                // redundant information (they are printed on the next line)
+                text = Interpreter.PRINT_STRING_PATTERN.matcher(text).replaceFirst(":");
+            }
+            
+            Print.printlnWithColor(
+                String.format(
+                    "    %" + programAddressLength + "x: %s",
+                    currentProgramCounter,
+                    text
+                ),
+                Print.Color.YELLOW,
+                settings
+            );
         }
     }
     

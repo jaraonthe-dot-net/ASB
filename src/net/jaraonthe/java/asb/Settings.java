@@ -1,6 +1,7 @@
 package net.jaraonthe.java.asb;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.jaraonthe.java.asb.exception.UserError;
@@ -34,18 +35,31 @@ public class Settings
     /**
      * The files to be parsed, in parsing order.
      */
-    public final List<String> filePaths = new ArrayList<>();
+    private final List<String> filePaths = new ArrayList<>();
     
     /**
      * True: dev mode enabled, which changes application behavior to be more
      * verbose. This is an inofficial feature.
      */
-    public boolean devMode = false;
+    private boolean devMode = false;
+    
+    /**
+     * True: Log every invocation.
+     */
+    private boolean trace = false;
     
     /**
      * True: Use color in output.
      */
-    public boolean withColor = true;
+    private boolean withColor = true;
+    
+    /**
+     * Transitive state.
+     * 
+     * True: A &print or &print_* action has occurred. Shall be reset to false
+     * once a newline char is printed.
+     */
+    public boolean printOccurred = false;
     
     
     private Settings()
@@ -80,6 +94,39 @@ public class Settings
         return this.mode;
     }
     
+    /**
+     * @return The files to be parsed, in parsing order
+     */
+    public List<String> getFilePaths()
+    {
+        return Collections.unmodifiableList(this.filePaths);
+    }
+    
+    /**
+     * @return True: dev mode enabled, which changes application behavior to be
+     *         more verbose. This is an inofficial feature.
+     */
+    public boolean getDevMode()
+    {
+        return this.devMode;
+    }
+    
+    /**
+     * @return True: Log every invocation
+     */
+    public boolean getTrace()
+    {
+        return this.trace;
+    }
+    
+    /**
+     * @return True: Use color in output
+     */
+    public boolean getWithColor()
+    {
+        return this.withColor;
+    }
+    
     
     /**
      * Parses CLI args into application settings.
@@ -111,6 +158,10 @@ public class Settings
                 case "-C":
                 case "--no-color":
                     settings.withColor = false;
+                    break;
+                case "-t":
+                case "--trace":
+                    settings.trace = true;
                     break;
                     
                 case "-h":

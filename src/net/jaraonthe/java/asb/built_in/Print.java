@@ -95,6 +95,7 @@ public class Print implements Interpretable
     @Override
     public void interpret(Context context) throws RuntimeError
     {
+        context.settings.printOccurred = true;
         switch (this.operand) {
             case REGISTER:
             case IMMEDIATE:
@@ -102,7 +103,11 @@ public class Print implements Interpretable
                 System.out.print(BuiltInFunction.getNumericValue("parameter", context.frame).read(context));
                 break;
             case STRING:
-                System.out.print(BuiltInFunction.getValue("parameter", context.frame));
+                String text = BuiltInFunction.getValue("parameter", context.frame).toString();
+                System.out.print(text);
+                if (text.charAt(text.length() - 1) == '\n') {
+                    context.settings.printOccurred = false;
+                }
                 break;
             case NONE:
                 // nothing
@@ -110,6 +115,7 @@ public class Print implements Interpretable
         }
         if (this.type == Print.Type.PRINTLN) {
             System.out.println();
+            context.settings.printOccurred = false;
         }
     }
 }

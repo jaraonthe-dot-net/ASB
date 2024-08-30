@@ -64,7 +64,7 @@ public final class Print
      */
     private static String getEffectiveWithColor(String text, Print.Color color, Settings settings)
     {
-        if (!settings.withColor) {
+        if (!settings.getWithColor()) {
             return text;
         }
         return "\033[" + color.foregroundCode + "m" + text + "\033[0m";
