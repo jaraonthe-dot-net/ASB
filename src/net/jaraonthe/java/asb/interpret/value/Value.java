@@ -10,6 +10,7 @@ import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
@@ -48,10 +49,14 @@ abstract public class Value
      * 
      * @return
      * 
+     * @throws ConstraintException
      * @throws RuntimeError
      */
-    public static Value fromArgument(Argument argument, Variable parameter, Context context) throws RuntimeError
-    {
+    public static Value fromArgument(
+        Argument argument,
+        Variable parameter,
+        Context context
+    ) throws ConstraintException, RuntimeError {
         switch (argument.getVariableType()) {
             case REGISTER:
                 RegisterArgument ra = (RegisterArgument) argument;

@@ -18,6 +18,7 @@ import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Frame;
 import net.jaraonthe.java.asb.interpret.value.Value;
+import net.jaraonthe.java.asb.parse.Origin;
 
 /**
  * An Invocation of a command.
@@ -47,6 +48,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
     private List<Argument> arguments = new ArrayList<>(3);
     
     private boolean isResolved = false;
+    private Origin origin;
     
     
     /**
@@ -56,7 +58,25 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
     {
         super(name);
     }
+
     
+    @Override
+    public Origin getOrigin()
+    {
+        return this.origin;
+    }
+    
+    /**
+     * Sets this invocation's origin.
+     * 
+     * @param origin
+     * @return Fluent interface
+     */
+    public CommandInvocation setOrigin(Origin origin)
+    {
+        this.origin = origin;
+        return this;
+    }
     
     @Override
     public boolean isResolved()
@@ -534,14 +554,22 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
         
         int i = 0;
         for (Argument argument : this.arguments) {
-            newFrame.addValue(Value.fromArgument(
-                argument,
-                this.invokedCommand.getParameterAt(i),
-                context
-            ));
+            try {
+                newFrame.addValue(Value.fromArgument(
+                    argument,
+                    this.invokedCommand.getParameterAt(i),
+                    context
+                ));
+            } catch (ConstraintException e) {
+                throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
+            }
             i++;
         }
         
-        this.invokedCommand.getInterpretable().interpret(context.withFrame(newFrame));
+        try {
+            this.invokedCommand.getInterpretable().interpret(context.withFrame(newFrame));
+        } catch (ConstraintException e) {
+            throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
+        }
     }
 }

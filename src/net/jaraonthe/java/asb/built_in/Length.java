@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -37,13 +38,13 @@ public class Length implements Interpretable
     
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
-        BigInteger length = BigInteger.valueOf(context.frame.getNumericValue("src").length);
+        BigInteger length = BigInteger.valueOf(BuiltInFunction.getNumericValue("src", context.frame).length);
         
-        NumericValue dst = context.frame.getNumericValue("dst");
+        NumericValue dst = BuiltInFunction.getNumericValue("dst", context.frame);
         if (length.bitLength() > dst.length) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot store result of &length in " + dst.getReferencedName()
                 + " as the result value is too big"
             );

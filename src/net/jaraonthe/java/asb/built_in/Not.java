@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -50,10 +51,10 @@ public class Not implements Interpretable
 
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
-        NumericValue src = context.frame.getNumericValue("src");
-        NumericValue dst = context.frame.getNumericValue("dst");
+        NumericValue src = BuiltInFunction.getNumericValue("src", context.frame);
+        NumericValue dst = BuiltInFunction.getNumericValue("dst", context.frame);
 
         BigInteger srcValue = src.read(context);
         // Check lengths
@@ -62,7 +63,7 @@ public class Not implements Interpretable
                 (NumericValue.bitLength(srcValue) > dst.length)
                 : (src.length != dst.length)
         ) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot &not from variable " + src.getReferencedName() + " to "
                 + dst.getReferencedName() + " as they do not have the same length"
             );

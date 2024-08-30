@@ -91,7 +91,7 @@ public class PrintFormatted implements Interpretable
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        NumericValue parameter = context.frame.getNumericValue("parameter");
+        NumericValue parameter = BuiltInFunction.getNumericValue("parameter", context.frame);
         BigInteger value = parameter.read(context);
         switch (this.format) {
             case SIGNED:

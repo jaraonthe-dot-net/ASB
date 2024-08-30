@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -37,12 +38,12 @@ public class SignExtend implements Interpretable
     
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
-        NumericValue src = context.frame.getNumericValue("src");
-        NumericValue dst = context.frame.getNumericValue("dst");
+        NumericValue src = BuiltInFunction.getNumericValue("src", context.frame);
+        NumericValue dst = BuiltInFunction.getNumericValue("dst", context.frame);
         if (src.length > dst.length) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot &sign_extend from bigger variable " + src.getReferencedName()
                 + " to smaller variable " + dst.getReferencedName()
             );

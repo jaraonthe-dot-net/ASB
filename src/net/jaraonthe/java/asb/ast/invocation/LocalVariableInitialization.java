@@ -5,10 +5,12 @@ import java.math.BigInteger;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 import net.jaraonthe.java.asb.parse.Constraints;
+import net.jaraonthe.java.asb.parse.Origin;
 
 /**
  * A special kind of invocation: This initializes a local variable if it doesn't
@@ -25,6 +27,9 @@ public class LocalVariableInitialization implements Invocation
 {
     public final Variable localVariable;
     
+    private Origin origin;
+    
+    
     /**
      * @param localVariable
      */
@@ -35,6 +40,25 @@ public class LocalVariableInitialization implements Invocation
         }
         
         this.localVariable = localVariable;
+    }
+    
+
+    @Override
+    public Origin getOrigin()
+    {
+        return this.origin;
+    }
+    
+    /**
+     * Sets this invocation's origin.
+     * 
+     * @param origin
+     * @return Fluent interface
+     */
+    public LocalVariableInitialization setOrigin(Origin origin)
+    {
+        this.origin = origin;
+        return this;
     }
 
     @Override
@@ -74,8 +98,13 @@ public class LocalVariableInitialization implements Invocation
                 length = this.localVariable.maxLength;
             } else {
                 // dynamic length
-                BigInteger value = context.frame.getNumericValue(this.localVariable.lengthRegister.name)
-                    .read(context);
+                BigInteger value;
+                try {
+                    value = context.frame.getNumericValue(this.localVariable.lengthRegister.name)
+                        .read(context);
+                } catch (ConstraintException e) {
+                    throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
+                }
                 try {
                     length = value.intValueExact();
                     if (!Constraints.isValidLength(length)) {
@@ -86,7 +115,8 @@ public class LocalVariableInitialization implements Invocation
                     throw new RuntimeError(
                         "Value stored in " + this.localVariable.lengthRegister.name
                         + " is used as a local variable's length, but is too "
-                        + (value.signum() > 0 ? "big" : "small") + " (is " + value + ")"
+                        + (value.signum() > 0 ? "big" : "small") + " (is " + value + ") at "
+                        + this.getOrigin()
                     );
                 }
             }

@@ -120,7 +120,7 @@ public class Parser
                     
                 case NAME:
                 case FUNCTION_NAME:
-                    CommandInvocation invocation = this.parseInvocation(t.content, null);
+                    CommandInvocation invocation = this.parseInvocation(t.content, null, t.origin);
                     try {
                         invocation.resolve(this.ast, null);
                     } catch (ConstraintException e) {
@@ -531,10 +531,6 @@ public class Parser
                 case OPENING_BRACES:
                     break head;
                     
-                case EOF:
-                    throw new ParseError(
-                        "Unexpected end of file, expected implementation at " + directiveOrigin
-                    );
                 default:
                     throw new ParseError("Unexpected " + t.type + " Token at " + t.origin);
             }
@@ -598,18 +594,29 @@ public class Parser
                                         "length"
                                     );
                                     
-                                    implementation.addLocalVariable(new Variable(
-                                        Variable.Type.LOCAL_VARIABLE,
-                                        name,
-                                        lengthRegister
-                                    ));
+                                    implementation.addLocalVariable(
+                                        new Variable(
+                                            Variable.Type.LOCAL_VARIABLE,
+                                            name,
+                                            lengthRegister
+                                        ),
+                                        // Here (and below) we don't use the full Origin (from
+                                        // .variable until end of length definition), but only
+                                        // the origin of the .variable directive Token.
+                                        // For what we inted to do with this data this should be
+                                        // okay.
+                                        t.origin
+                                    );
                                     
                                 } else {
-                                    implementation.addLocalVariable(new Variable(
-                                        Variable.Type.LOCAL_VARIABLE,
-                                        name,
-                                        this.parseAdvancedLengthFormat("Local variable")
-                                    ));
+                                    implementation.addLocalVariable(
+                                        new Variable(
+                                            Variable.Type.LOCAL_VARIABLE,
+                                            name,
+                                            this.parseAdvancedLengthFormat("Local variable")
+                                        ),
+                                        t.origin
+                                    );
                                 }
                                 
                                 this.tokenizer.setMode(surroundingMode);
@@ -625,7 +632,7 @@ public class Parser
                     case NAME:
                     case FUNCTION_NAME:
                             this.tokenizer.setMode(Tokenizer.Mode.MAIN);
-                            implementation.add(this.parseInvocation(t.content, implementation));
+                            implementation.add(this.parseInvocation(t.content, implementation, t.origin));
                             this.tokenizer.setMode(surroundingMode);
                         break;
                         
@@ -671,6 +678,8 @@ public class Parser
      * @param name           The name of the invoked command
      * @param implementation The implementation we're currently within. Null if
      *                       within userland code.
+     * @param openingOrigin  The origin of the starting NAME or FUNCTION_NAME
+     *                       Token.
      * 
      * @return
      * 
@@ -679,10 +688,12 @@ public class Parser
      */
     private CommandInvocation parseInvocation(
         String name,
-        Implementation implementation
+        Implementation implementation,
+        Origin openingOrigin
     ) throws LexicalError, ParseError {
-        CommandInvocation invocation = new CommandInvocation(name);
+        CommandInvocation invocation   = new CommandInvocation(name);
         Tokenizer.Mode surroundingMode = this.tokenizer.getMode();
+        Origin previousOrigin          = openingOrigin;
         while (true) {
             Token t = this.tokenizer.next();
             switch (Token.getType(t)) {
@@ -814,11 +825,13 @@ public class Parser
                     break;
                     
                 case STATEMENT_SEPARATOR:
+                    invocation.setOrigin(openingOrigin.merge(previousOrigin));
                     return invocation;
                     
                 default:
                     throw new ParseError("Unexpected " + t.toStringWithOrigin());
             }
+            previousOrigin = t.origin;
         }
     }
     
@@ -1143,12 +1156,6 @@ public class Parser
                 
                 break;
             
-            case EOF:
-                throw new ParseError(
-                    "Unexpected end of file, expected a number in "
-                    + this.tokenizer.file.filePath.toString()
-                );
-            
             default:
                 throw new ParseError("Unexpected " + this.tokenizer.peek().toStringWithOrigin());
         }
@@ -1354,8 +1361,7 @@ public class Parser
                 invocation.resolve(ast, implementation);
                 invocation.resolveLabelNames(ast, implementation);
             } catch (ConstraintException e) {
-                // TODO include origin (store it in Invocation) - same below
-                throw new ParseError(e.getMessage());
+                throw new ParseError(e.getMessage() + " at " + invocation.getOrigin());
             }
         }
     }
@@ -1376,7 +1382,7 @@ public class Parser
             try {
                 invocation.resolveLabelNames(ast, null);
             } catch (ConstraintException e) {
-                throw new ParseError(e.getMessage());
+                throw new ParseError(e.getMessage() + " at " + invocation.getOrigin());
             }
         }
         

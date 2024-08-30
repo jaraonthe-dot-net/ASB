@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -103,7 +104,7 @@ public class Mov implements Interpretable
     
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
         Mov.move(context, this.dst, this.src);
     }
@@ -115,19 +116,23 @@ public class Mov implements Interpretable
      * @param dst
      * @param src
      * 
+     * @throws ConstraintException
      * @throws RuntimeError
      */
-    public static void move(Context context, Mov.OperandType dst, Mov.OperandType src) throws RuntimeError
-    {
+    public static void move(
+        Context context,
+        Mov.OperandType dst,
+        Mov.OperandType src
+    ) throws ConstraintException, RuntimeError {
         if (
             (dst == Mov.OperandType.ADDRESS || src == Mov.OperandType.ADDRESS)
             && context.memory == null
         ) {
-            throw new RuntimeError("Cannot &mov to/from memory as it is not configured");
+            throw new ConstraintException("Cannot &mov to/from memory as it is not configured");
         }
         
-        NumericValue srcValue = context.frame.getNumericValue("src");
-        NumericValue dstValue = context.frame.getNumericValue("dst");
+        NumericValue srcValue = BuiltInFunction.getNumericValue("src", context.frame);
+        NumericValue dstValue = BuiltInFunction.getNumericValue("dst", context.frame);
         
         if (dst == Mov.OperandType.ADDRESS) {
             Mov.checkAddress(dstValue, context, "to");
@@ -142,7 +147,7 @@ public class Mov implements Interpretable
                 switch (dst) {
                     case ADDRESS:
                         if (NumericValue.bitLength(srcImm) > context.memory.wordLength) {
-                            throw new RuntimeError(
+                            throw new ConstraintException(
                                 "Cannot &mov immediate " + srcImm + " to memory as it is too big"
                             );
                         }
@@ -155,7 +160,7 @@ public class Mov implements Interpretable
                         
                     case REGISTER:
                         if (NumericValue.bitLength(srcImm) > dstValue.length) {
-                            throw new RuntimeError(
+                            throw new ConstraintException(
                                 "Cannot &mov immediate " + srcImm + " to variable "
                                 + dstValue.getReferencedName() + " as it is too big"
                             );
@@ -181,7 +186,7 @@ public class Mov implements Interpretable
                         
                     case REGISTER:
                         if (dstValue.length != context.memory.wordLength) {
-                            throw new RuntimeError(
+                            throw new ConstraintException(
                                 "Cannot &mov memory word to variable " + dstValue.getReferencedName()
                                 + " as it has a different length"
                             );
@@ -199,7 +204,7 @@ public class Mov implements Interpretable
                 switch (dst) {
                     case ADDRESS:
                         if (srcValue.length != context.memory.wordLength) {
-                            throw new RuntimeError(
+                            throw new ConstraintException(
                                 "Cannot &mov to memory from " + srcValue.getReferencedName()
                                 + " as it has a different length"
                             );
@@ -213,7 +218,7 @@ public class Mov implements Interpretable
                         
                     case REGISTER:
                         if (srcValue.length != dstValue.length) {
-                            throw new RuntimeError(
+                            throw new ConstraintException(
                                 "Cannot &mov between two variables " + srcValue.getReferencedName()
                                 + " and " + dstValue.getReferencedName() + " that do not have the same length"
                             );
@@ -237,12 +242,12 @@ public class Mov implements Interpretable
      * @param context
      * @param direction "to" or "from" - used in error message
      * 
-     * @throws RuntimeError
+     * @throws ConstraintException
      */
-    private static void checkAddress(NumericValue address, Context context, String direction) throws RuntimeError
+    private static void checkAddress(NumericValue address, Context context, String direction) throws ConstraintException
     {
         if (address.length != context.memory.addressLength) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot &mov " + direction + " memory address given in "
                 + address.getReferencedName() + " as it doesn't have the proper length for an address"
             );

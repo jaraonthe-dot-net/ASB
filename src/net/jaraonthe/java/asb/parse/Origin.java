@@ -141,6 +141,45 @@ public class Origin
     {
         this(file, pos[0], pos[1], pos[0], pos[1]);
     }
+    
+    /**
+     * Merges two Origins together. I.e. the resulting Origin covers the area
+     * that is covered by either of the Origins plus any area between (in case
+     * they don't overlap).
+     * 
+     * @param o
+     * @return
+     */
+    public Origin merge(Origin o)
+    {
+        if (!this.file.filePath.equals(o.file.filePath)) {
+            throw new IllegalArgumentException(
+                "Cannot merge two Origins from different files together"
+            );
+        }
+        
+        int startLine = Math.min(this.startLine, o.startLine);
+        int startCol;
+        if (this.startLine < o.startLine) {
+            startCol = this.startCol;
+        } else if (this.startLine > o.startLine) {
+            startCol = o.startCol;
+        } else {
+            startCol = Math.min(this.startCol, o.startCol);
+        }
+        
+        int endLine = Math.max(this.endLine, o.endLine);
+        int endCol;
+        if (this.endLine > o.endLine) {
+            endCol = this.endCol;
+        } else if (this.endLine < o.endLine) {
+            endCol = o.endCol;
+        } else {
+            endCol = Math.max(this.endCol, o.endCol);
+        }
+        
+        return new Origin(this.file, startLine, startCol, endLine, endCol);
+    }
 	
 	
 	/**

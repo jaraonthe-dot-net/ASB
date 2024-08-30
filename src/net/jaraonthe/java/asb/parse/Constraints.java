@@ -43,30 +43,6 @@ abstract public class Constraints
      * Checks if given value is a valid length, throws exception otherwise.
      * 
      * @param length
-     * @throws ParseError if given value is not a valid length
-     */
-    public static void checkLength(int length) throws ParseError
-    {
-        Constraints.checkLength(length, null, null);
-    }
-    
-    /**
-     * Checks if given value is a valid length, throws exception otherwise.
-     * 
-     * @param length
-     * @param elementName Used in the error message. May be null
-     * 
-     * @throws ParseError if given value is not a valid length
-     */
-    public static void checkLength(int length, String elementName) throws ParseError
-    {
-        Constraints.checkLength(length, elementName, null);
-    }
-    
-    /**
-     * Checks if given value is a valid length, throws exception otherwise.
-     * 
-     * @param length
      * @param elementName Used in the error message. May be null
      * @param origin      Used in the error message. May be null
      * 
@@ -122,17 +98,6 @@ abstract public class Constraints
     public static boolean isValidPosition(int position)
     {
         return position >= Constraints.MIN_POSITION && position <= Constraints.MAX_POSITION;
-    }
-    
-    /**
-     * Checks if given value is a valid position, throws exception otherwise.
-     * 
-     * @param position
-     * @throws ParseError if given value is not a valid position
-     */
-    public static void checkPosition(int position) throws ParseError
-    {
-        Constraints.checkPosition(position, null);
     }
     
     /**

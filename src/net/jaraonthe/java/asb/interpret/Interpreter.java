@@ -11,6 +11,7 @@ import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.value.NumericValueReference;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
@@ -145,7 +146,7 @@ public class Interpreter
                     ra,
                     this.globalFrame.getNumericValue(ra.aliasedRegister.name)
                 ));
-            } catch (RuntimeError e) {
+            } catch (ConstraintException e) {
                 // Converting exception, as this case should never happen
                 throw new RuntimeException(e);
             }

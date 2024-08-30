@@ -704,7 +704,8 @@ public class Tokenizer
                 multiLine = true;
                 if (!this.advanceLine()) {
                     throw new LexicalError(
-                        "Unexpected end of file, unclosed multi-line comment at " + new Origin(this.file, startPos)
+                        "Unexpected end of file, unclosed multi-line comment at "
+                        + new Origin(this.file, startPos)
                     );
                 }
             }

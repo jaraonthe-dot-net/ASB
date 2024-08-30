@@ -4,7 +4,12 @@ import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Function;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
+import net.jaraonthe.java.asb.exception.UserError;
+import net.jaraonthe.java.asb.interpret.Frame;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
+import net.jaraonthe.java.asb.interpret.value.Value;
 import net.jaraonthe.java.asb.parse.Constraints;
 
 /**
@@ -128,6 +133,47 @@ public class BuiltInFunction extends Function
         }
         
         return this;
+    }
+    
+    /**
+     * Executes {@code frame.getValue(variableName)}; if a
+     * {@link ConstraintException} is thrown, it is transformed to a
+     * RuntimeException (so that it is not marked as a {@link UserError}).
+     * 
+     * @param variableName
+     * @param frame
+     * 
+     * @return
+     * 
+     * @throws RuntimeException
+     */
+    public static Value getValue(String variableName, Frame frame)
+    {
+        try {
+            return frame.getValue(variableName);
+        } catch (ConstraintException e) {
+            throw new RuntimeException("Built-in cannot access variable " + variableName);
+        }
+    }
+    
+    /**
+     * Executes {@code frame.getNumericValue(variableName)}; if a
+     * {@link ConstraintException} is thrown, it is transformed to a
+     * RuntimeException (so that it is not marked as a {@link UserError}).
+     * 
+     * @param variableName
+     * @param frame
+     * 
+     * @return
+     * @throws RuntimeException
+     */
+    public static NumericValue getNumericValue(String variableName, Frame frame)
+    {
+        try {
+            return frame.getNumericValue(variableName);
+        } catch (ConstraintException e) {
+            throw new RuntimeException("Built-in cannot access variable " + variableName);
+        }
     }
     
     

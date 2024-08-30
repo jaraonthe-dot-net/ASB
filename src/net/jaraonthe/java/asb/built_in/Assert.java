@@ -81,8 +81,8 @@ public class Assert extends Compare
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        NumericValue a = context.frame.getNumericValue("a");
-        NumericValue b = context.frame.getNumericValue("b");
+        NumericValue a = BuiltInFunction.getNumericValue("a", context.frame);
+        NumericValue b = BuiltInFunction.getNumericValue("b", context.frame);
         BigInteger aValue = a.read(context);
         BigInteger bValue = b.read(context);
         
@@ -91,7 +91,7 @@ public class Assert extends Compare
         }
         
         if (this.hasMessage) {
-            throw new AssertError(context.frame.getValue("message").toString());
+            throw new AssertError(BuiltInFunction.getValue("message", context.frame).toString());
         }
         throw new AssertError(
             "Assert failed: " + a.getReferencedName() + " " + this.operator.symbols + " " + b.getReferencedName()

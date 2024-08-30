@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -68,12 +69,12 @@ public class ProgramCounter implements Interpretable
     
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
-        NumericValue register = context.frame.getNumericValue("register");
+        NumericValue register = BuiltInFunction.getNumericValue("register", context.frame);
         
         if (register.length != context.ast.getPcLength()) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot use register " + register.getReferencedName() + " with "
                 + this.type.functionName + " as it doesn't have the same length as the program counter"
             );
@@ -101,7 +102,7 @@ public class ProgramCounter implements Interpretable
                 try {
                     newPc = value.intValueExact();
                 } catch (ArithmeticException e) {
-                    throw new RuntimeError(
+                    throw new ConstraintException(
                         "New program counter value exceeds technical limit, is " + value
                     );
                 }

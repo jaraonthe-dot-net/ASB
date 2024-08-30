@@ -3,6 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -162,11 +163,11 @@ public class Arithmetic implements Interpretable
 
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
-        NumericValue src1 = context.frame.getNumericValue("src1");
-        NumericValue src2 = context.frame.getNumericValue("src2");
-        NumericValue dst  = context.frame.getNumericValue("dst");
+        NumericValue src1 = BuiltInFunction.getNumericValue("src1", context.frame);
+        NumericValue src2 = BuiltInFunction.getNumericValue("src2", context.frame);
+        NumericValue dst  = BuiltInFunction.getNumericValue("dst", context.frame);
 
         BigInteger src1Value = src1.read(context);
         BigInteger src2Value = src2.read(context);
@@ -185,7 +186,7 @@ public class Arithmetic implements Interpretable
                 NumericValue.bitLength(srcImmValue) > srcReg.length
                 : srcImm.length != srcReg.length
         ) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Cannot " + this.type.functionName + " two variables "
                 + src1.getReferencedName() + " and " + src2.getReferencedName()
                 + " that do not have the same length"
@@ -197,7 +198,7 @@ public class Arithmetic implements Interpretable
             case DIV:
             case REM:
                 if (srcReg.length != dst.length) {
-                    throw new RuntimeError(
+                    throw new ConstraintException(
                         "Cannot " + this.type.functionName + " into destination variable "
                         + dst.getReferencedName()
                         + " as it does not have the same length as the source variables"
@@ -208,7 +209,7 @@ public class Arithmetic implements Interpretable
             case ADDC:
             case SUBC:
                 if (srcReg.length + 1 != dst.length) {
-                    throw new RuntimeError(
+                    throw new ConstraintException(
                         "Cannot " + this.type.functionName + " into destination variable "
                         + dst.getReferencedName()
                         + " as it does not have the expected length (src length + 1)"
@@ -218,7 +219,7 @@ public class Arithmetic implements Interpretable
                 
             case MUL:
                 if (srcReg.length * 2 != dst.length) {
-                    throw new RuntimeError(
+                    throw new ConstraintException(
                         "Cannot " + this.type.functionName + " into destination variable "
                         + dst.getReferencedName()
                         + " as it does not have the expected length (src length * 2)"
@@ -255,7 +256,7 @@ public class Arithmetic implements Interpretable
                     break;
             }
         } catch (ArithmeticException e) {
-            throw new RuntimeError("Division by 0");
+            throw new ConstraintException("Division by 0");
         }
         if (this.type == Arithmetic.Type.ADD || this.type == Arithmetic.Type.SUB) {
             // Cut off potential carry-out

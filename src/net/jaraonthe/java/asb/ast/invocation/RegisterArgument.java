@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.parse.Constraints;
@@ -349,10 +350,11 @@ public class RegisterArgument extends Argument
      * 
      * @return
      * 
+     * @throws ConstraintException
      * @throws RuntimeError
      * @throws IllegaleStateException if {@link #hasPosition()} is false
      */
-    public int getEffectiveFromPosition(Context context) throws RuntimeError
+    public int getEffectiveFromPosition(Context context) throws ConstraintException, RuntimeError
     {
         if (this.fromPosition != -1) {
             return this.fromPosition;
@@ -362,7 +364,7 @@ public class RegisterArgument extends Argument
         }
         
         throw new IllegalStateException(
-            "Cannot compute effetive fromPosition when not accessing Variable bitwise"
+            "Cannot compute effective fromPosition when not accessing Variable bitwise"
         );
     }
     
@@ -376,10 +378,11 @@ public class RegisterArgument extends Argument
      * 
      * @return
      * 
+     * @throws ConstraintException
      * @throws RuntimeError
      * @throws IllegaleStateException if {@link #hasPosition()} is false
      */
-    public int getEffectiveToPosition(Context context) throws RuntimeError
+    public int getEffectiveToPosition(Context context) throws ConstraintException, RuntimeError
     {
         if (this.toPosition != -1) {
             return this.toPosition;
@@ -402,9 +405,10 @@ public class RegisterArgument extends Argument
      * 
      * @return
      * 
+     * @throws ConstraintException
      * @throws RuntimeError
      */
-    private int register2Position(VariableLike register, Context context) throws RuntimeError
+    private int register2Position(VariableLike register, Context context) throws ConstraintException, RuntimeError
     {
         BigInteger value = context.frame.getNumericValue(register.name).read(context);
         int position;
@@ -418,7 +422,7 @@ public class RegisterArgument extends Argument
             }
             
         } catch (ArithmeticException e) {
-            throw new RuntimeError(
+            throw new ConstraintException(
                 "Value stored in " + register.name
                 + " is used as bitwise access position, but is too "
                 + (value.signum() >= 0 ? "big" : "small") + " (is " + value + ")"

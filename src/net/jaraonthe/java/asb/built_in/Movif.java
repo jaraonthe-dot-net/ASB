@@ -1,6 +1,7 @@
 package net.jaraonthe.java.asb.built_in;
 
 
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
@@ -77,7 +78,7 @@ public class Movif extends Compare
     
     
     @Override
-    public void interpret(Context context) throws RuntimeError
+    public void interpret(Context context) throws ConstraintException, RuntimeError
     {
         if (this.compare(context)) {
             Mov.move(context, this.dst, this.src);

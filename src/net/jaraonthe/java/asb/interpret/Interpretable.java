@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.interpret;
 
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 
 /**
@@ -13,7 +14,11 @@ public interface Interpretable
      * Interprets this entity.
      * 
      * @param context
-     * @throws RuntimeError
+     * 
+     * @throws ConstraintException An error without Origin information (that
+     *                             information should be added somewhere)
+     * @throws RuntimeError        An error that can be directly displayed to
+     *                             the user
      */
-    public void interpret(Context context) throws RuntimeError;
+    public void interpret(Context context) throws ConstraintException, RuntimeError;
 }

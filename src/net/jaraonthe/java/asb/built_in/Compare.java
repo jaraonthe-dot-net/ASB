@@ -96,8 +96,8 @@ abstract public class Compare implements Interpretable
     {
         return this.compare(
             context,
-            context.frame.getNumericValue("a").read(context),
-            context.frame.getNumericValue("b").read(context)
+            BuiltInFunction.getNumericValue("a", context.frame).read(context),
+            BuiltInFunction.getNumericValue("b", context.frame).read(context)
         );
         
     }
@@ -119,8 +119,8 @@ abstract public class Compare implements Interpretable
      */
     protected boolean compare(Context context, BigInteger aValue, BigInteger bValue) throws RuntimeError
     {
-        NumericValue a = context.frame.getNumericValue("a");
-        NumericValue b = context.frame.getNumericValue("b");
+        NumericValue a = BuiltInFunction.getNumericValue("a", context.frame);
+        NumericValue b = BuiltInFunction.getNumericValue("b", context.frame);
         
         int cmp          = 0;
         boolean compared = false;

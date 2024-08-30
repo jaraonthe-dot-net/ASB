@@ -3,7 +3,7 @@ package net.jaraonthe.java.asb.interpret;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.Value;
 
@@ -108,11 +108,12 @@ public class Frame
     /**
      * @param variableName
      * @return Value with the given variableName
-     * @throws RuntimeError if value doesn't exist (neither here nor in the
-     *                      parent frame). This usually means it is a local
-     *                      variable that hasn't been initialized yet.
+     * @throws ConstraintException if value doesn't exist (neither here nor in
+     *                             the parent frame). This usually means it is a
+     *                             local variable that hasn't been initialized
+     *                             yet.
      */
-    public Value getValue(String variableName) throws RuntimeError
+    public Value getValue(String variableName) throws ConstraintException
     {
         Value value = this.values.get(variableName);
         if (value != null) {
@@ -126,7 +127,7 @@ public class Frame
         //       variables may not exist when interpreting. Of course, in case
         //       of a bug in the parser or interpreter this may not be true (and
         //       this a misleading error message).
-        throw new RuntimeError(
+        throw new ConstraintException(
             "Cannot use Local Variable " + variableName
             + " as it hasn't been initialized yet - this is probably due to"
             + "unintended jumps in a command implementation"
@@ -142,11 +143,12 @@ public class Frame
      * @param variableName
      * @return NumericValue with the given variableName, or null if it doesn't
      *         exist (neither here nor in the parent frame)
-     * @throws RuntimeError if value doesn't exist (neither here nor in the
-     *                      parent frame). This usually means it is a local
-     *                      variable that hasn't been initialized yet.
+     * @throws ConstraintException if value doesn't exist (neither here nor in
+     *                             the parent frame). This usually means it is a
+     *                             local variable that hasn't been initialized
+     *                             yet.
      */
-    public NumericValue getNumericValue(String variableName) throws RuntimeError
+    public NumericValue getNumericValue(String variableName) throws ConstraintException
     {
         return (NumericValue) this.getValue(variableName);
     }

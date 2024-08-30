@@ -50,16 +50,15 @@ public class Jump implements Interpretable
     /**
      * Jumps locally.<br>
      * 
-     * Context contains:<br>
+     * Context must contain:<br>
      * - the frame within which to jump<br>
      * - LabelValue called "label" that contains the position to which to jump
      * 
      * @param context
-     * @throws RuntimeError
      */
-    public static void jump(Context context) throws RuntimeError
+    public static void jump(Context context)
     {
-        LabelValue label           = (LabelValue) context.frame.getValue("label");
+        LabelValue label           = (LabelValue) BuiltInFunction.getValue("label", context.frame);
         label.frame.programCounter = label.argument.getLabelPosition();
     }
 }

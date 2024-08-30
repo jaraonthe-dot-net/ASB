@@ -3,7 +3,9 @@ package net.jaraonthe.java.asb.ast.invocation;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Implementation;
 import net.jaraonthe.java.asb.exception.ConstraintException;
-import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.Context;
+import net.jaraonthe.java.asb.parse.Origin;
 
 /**
  * Either an Invocation of a command or some other special action. This is what
@@ -11,8 +13,14 @@ import net.jaraonthe.java.asb.interpret.Interpretable;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public interface Invocation extends Interpretable
+public interface Invocation
 {
+    /**
+     * @return The Origin which represents the source code location of this
+     *         Invocation
+     */
+    public Origin getOrigin();
+    
     /**
      * @return True if this invocation has already been resolved, i.e. this
      *         invocation is ready to be used. Most often this means the command
@@ -52,4 +60,14 @@ public interface Invocation extends Interpretable
      * @throws ConstraintException
      */
     public Invocation resolveLabelNames(AST ast, Implementation implementation) throws ConstraintException;
+
+    
+    /**
+     * Interprets this Invocation.
+     * 
+     * @param context
+     * 
+     * @throws RuntimeError An error that can be directly displayed to the user
+     */
+    public void interpret(Context context) throws RuntimeError;
 }

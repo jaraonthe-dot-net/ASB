@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.ast.variable.VariableLike;
-import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.interpret.Context;
 
 /**
@@ -70,15 +70,15 @@ public class NumericValueStore extends NumericValue
      * @param argument The argument that is used to provide the initial value.
      *                 May be null: Initial value is 0.
      *
-     * @throws RuntimeError
+     * @throws ConstraintException
      */
-    public NumericValueStore(VariableLike variable, ImmediateArgument argument) throws RuntimeError
+    public NumericValueStore(VariableLike variable, ImmediateArgument argument) throws ConstraintException
     {
         this(variable);
         
         if (argument != null) {
             if (argument.getMinLength() > this.length) {
-                throw new RuntimeError(
+                throw new ConstraintException(
                     "Immediate " + argument.immediate + " is too big for variable "
                     + this.getReferencedName()
                 );

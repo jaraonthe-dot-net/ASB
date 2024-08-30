@@ -13,6 +13,7 @@ import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
+import net.jaraonthe.java.asb.parse.Origin;
 
 /**
  * This is the implementation of a command or function, which is made up of
@@ -54,12 +55,15 @@ public class Implementation implements Interpretable, Iterable<Invocation>
      * Adds a local variable. This also adds the required
      * LocalVariableInitialization to this program.
      * 
-     * @param variable of type LOCAL_VARIABLE
+     * @param localVariable    of type LOCAL_VARIABLE
+     * @param definitionOrigin The Origin of the local variable's definition
+     * 
      * @return Fluent interface
+     * 
      * @throws ConstraintException if adding the LocalVariableInitialization
      *                             would exceed maximum allowed program size
      */
-    public Implementation addLocalVariable(Variable localVariable) throws ConstraintException
+    public Implementation addLocalVariable(Variable localVariable, Origin definitionOrigin) throws ConstraintException
     {
         if (this.variables.containsKey(localVariable.name)) {
             throw new IllegalArgumentException(
@@ -68,7 +72,7 @@ public class Implementation implements Interpretable, Iterable<Invocation>
         }
         
         this.variables.put(localVariable.name, localVariable);
-        this.add(new LocalVariableInitialization(localVariable));
+        this.add(new LocalVariableInitialization(localVariable).setOrigin(definitionOrigin));
         
         return this;
     }

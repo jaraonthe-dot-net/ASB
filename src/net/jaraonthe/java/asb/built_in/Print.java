@@ -99,10 +99,10 @@ public class Print implements Interpretable
             case REGISTER:
             case IMMEDIATE:
                 // Always trigger a read on virtual registers and bitwise access
-                System.out.print(context.frame.getNumericValue("parameter").read(context));
+                System.out.print(BuiltInFunction.getNumericValue("parameter", context.frame).read(context));
                 break;
             case STRING:
-                System.out.print(context.frame.getValue("parameter"));
+                System.out.print(BuiltInFunction.getValue("parameter", context.frame));
                 break;
             case NONE:
                 // nothing

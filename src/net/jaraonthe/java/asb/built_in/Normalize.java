@@ -38,7 +38,7 @@ public class Normalize implements Interpretable
     @Override
     public void interpret(Context context) throws RuntimeError
     {
-        NumericValue operand = context.frame.getNumericValue("variable");
+        NumericValue operand = BuiltInFunction.getNumericValue("variable", context.frame);
         if (!(operand.variable instanceof Variable)) {
             // Registers are never negative
             return;
