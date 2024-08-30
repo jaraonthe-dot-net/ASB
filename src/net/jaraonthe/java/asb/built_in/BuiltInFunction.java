@@ -290,16 +290,20 @@ public class BuiltInFunction extends Function
         
         // &print, &println
         for (Print.Type type : Print.Type.values()) {
-            ast.addCommand(Print.create(type, Print.OperandType.REGISTER));
-            ast.addCommand(Print.create(type, Print.OperandType.IMMEDIATE));
-            ast.addCommand(Print.create(type, Print.OperandType.STRING));
+            for (Print.OperandType operandType : Print.OperandType.values()) {
+                if (type == Print.Type.PRINT && operandType == Print.OperandType.NONE) {
+                    continue;
+                }
+                ast.addCommand(Print.create(type, operandType));
+            }
         }
-        ast.addCommand(Print.create(Print.Type.PRINTLN, Print.OperandType.NONE));
         
         // &print_*, &println_*
         for (PrintFormatted.Type type : PrintFormatted.Type.values()) {
             for (PrintFormatted.Format format : PrintFormatted.Format.values()) {
-                ast.addCommand(PrintFormatted.create(type, format));
+                for (PrintFormatted.OperandType operandType : PrintFormatted.OperandType.values()) {
+                    ast.addCommand(PrintFormatted.create(type, format, operandType));
+                }
             }
         }
         
