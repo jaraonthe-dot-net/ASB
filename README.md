@@ -2,6 +2,10 @@ This is the Assembler Sandbox, or ASB for short.
 
 Created by Jakob Rathbauer.
 
+# System Requirements
+
+* Java 21 or higher
+
 # License
 
 This program is free software: you can redistribute it and/or modify

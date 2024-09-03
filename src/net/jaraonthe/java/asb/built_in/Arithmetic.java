@@ -240,7 +240,7 @@ public class Arithmetic implements Interpretable
                     
                 case SUB:
                 case SUBC:
-                    dstValue = src1Value.subtract(src2Value);
+                    dstValue = NumericValueStore.normalizeBigInteger(src1Value.subtract(src2Value), dst.length);
                     break;
                     
                 case MUL:
