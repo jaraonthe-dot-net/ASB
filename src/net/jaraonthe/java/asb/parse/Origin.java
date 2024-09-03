@@ -227,25 +227,6 @@ public class Origin
 	    return text.toString();
 	}
     
-    /**
-     * @return The file content of the lines that this entity points to
-     *         (returning entire lines as opposed to {@link #getContent()}). If
-     *         a multiLine entity, lines are separated with \n.
-     */
-	// TODO Remove if not used anywhere
-    public String getLineContent()
-    {
-        StringBuilder text = new StringBuilder(this.file.lines.get(this.startLine - 1));
-        // TODO In case endCol points to the end-of-line, the newline char
-        //      is NOT included in the result (as opposed to getContent())
-        
-        for (int i = this.startLine; i < this.endLine; i++) { // i is 0-based
-            text.append('\n');
-            text.append(this.file.lines.get(i));
-        }
-        return text.toString();
-    }
-    
     @Override
     public String toString()
     {

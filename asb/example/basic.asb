@@ -1,0 +1,43 @@
+/**
+ * A very basic program with three 8-bit registers and two commands.
+ *
+ * Run: asb basic.asb
+ */
+
+// Define three registers with name and size in bits
+.register a ''8
+.register b ''8
+.register r1 ''8
+
+// Define command "set" which takes one register and one immediate numeric value,
+// both 8 bits big
+.define set /register reg ''8, /immediate val ''8 {
+    // Using built-in function &move
+    &mov reg, val // reg = val
+}
+
+// Define command "inc" which operates on one register that is 8 bits big
+.define inc /register reg ''8 {
+    // Using built-in function &add to implement this command
+    &add reg, reg, 1 // reg = reg + 1
+}
+
+// Define command "sub" with two 8-bit parameters
+.define sub /register res_src1 ''8, /register src2 ''8 {
+    // Using built-in function &sub
+    &sub res_src1, res_src1, src2 // res_src1 = res_src1 - src2
+}
+
+// Initially, all registers have value 0
+inc a
+inc a
+inc a
+inc r1
+set b, 3
+sub b, r1
+
+// Printing results, using built-in functions
+// Alternatively, CLI flag --registers could be used
+&print "a: ";  &println a
+&print "b: ";  &println b
+&print "r1: "; &println r1

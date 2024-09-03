@@ -1,0 +1,94 @@
+/**
+ * Showing one simple and one complex example of Virtual Registers.
+ *
+ * Run: asb virtual-register.asb
+ *
+ */
+
+// Using the RISC-V implementation as basis (feel free to check it out)
+.include "../lib/risc-v/risc-v.asb"
+
+/* SIMPLE VIRTUAL REGISTER */
+
+// The opposite of RISC-V's zero register - a register that always returns all 1s
+.register_virtual not_zero ''32 {
+    .get {
+        // -1 will be interpreted as its two's-complement value (0xFFFFFFFF)
+        &mov out, -1 // return -1
+    }
+    .set {
+        // Ignore
+    }
+}
+
+// A little helper command that just outputs the value of not_zero
+.define print_not_zero {
+    &print "not_zero: "; &println_x not_zero
+}
+
+print_not_zero
+
+&println "adding 13..."
+addi not_zero, not_zero, 13
+
+// ... and nothing changed
+print_not_zero
+&println
+
+
+/* COMPLEX VIRTUAL REGISTER (with its own storage) */
+
+// This register stores 4 32-bit words in a FIFO manner (similar to a queue)
+.register_virtual queue ''32 {
+    // This register has its own internal storage; here it stores 4 32-bit words
+    // 4*32 = 128
+    .store ''128
+    .get {
+        &mov out, store'127:96 // return highest 32 bits of storage
+    }
+    .set {
+        &mov store'127:32, store'95:0 // shift lower 3 words up (overwriting highest word)
+        &mov store'31:0, in           // lowest word = in
+    }
+}
+
+// A little helper command that just outputs the value of queue
+// Note that only the 32-bit value provided by the virtual register is visible,
+// not its internal storage.
+.define print_queue {
+    &print "queue: "; &println queue
+}
+
+// Spontaneous (and totally illegal) addition to the RISC-V instruction set, as
+// using lui & addi on queue would produce really weird behavior.
+.define mov /register dst ''32, /register src ''32 {
+    &mov dst, src
+}
+// And to make things even simpler for us:
+.define set /register dst ''32, /immediate imm ''32 {
+    &mov dst, imm
+}
+
+set queue, 11
+print_queue
+
+set queue, 12
+print_queue
+
+set queue, 13
+print_queue
+
+set queue, 14
+print_queue // Here we finally see the 11 from above...
+
+mov queue, not_zero
+print_queue
+
+mov queue, not_zero
+print_queue
+
+mov queue, not_zero
+print_queue
+
+mov queue, not_zero
+&print "queue: "; &println_x queue // ... and here the first not_zero we put in
