@@ -129,7 +129,7 @@ public class Frame
         //       this a misleading error message).
         throw new ConstraintException(
             "Cannot use Local Variable " + variableName
-            + " as it hasn't been initialized yet - this is probably due to"
+            + " as it hasn't been initialized yet - this is probably due to "
             + "unintended jumps in a command implementation"
         );
     }

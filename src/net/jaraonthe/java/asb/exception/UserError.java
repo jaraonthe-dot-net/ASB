@@ -35,7 +35,7 @@ public class UserError extends Exception
      */
     public void print(Settings settings)
     {
-        if (settings != null && settings.getDevMode()) {
+        if (settings != null && settings.devMode()) {
             // Print all the technical details
             this.printStackTrace();
             return;

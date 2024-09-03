@@ -92,7 +92,7 @@ public final class Print
      */
     private static String getEffectiveWithColor(String text, Print.Color color, boolean bold, Settings settings)
     {
-        if (settings == null || !settings.getWithColor()) {
+        if (settings == null || !settings.withColor()) {
             return text;
         }
         return "\033[" + (bold ? "1;" : "") + color.foregroundCode + "m" + text + "\033[0m";

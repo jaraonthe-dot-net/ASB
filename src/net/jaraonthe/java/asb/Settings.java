@@ -49,6 +49,16 @@ public class Settings
     private boolean trace = false;
     
     /**
+     * True: Print command invocation statistics after interpretation.
+     */
+    private boolean statistics = false;
+    
+    /**
+     * True: Print register values after interpretation.
+     */
+    private boolean registers = false;
+    
+    /**
      * True: Use color in output.
      */
     private boolean withColor = true;
@@ -106,7 +116,7 @@ public class Settings
      * @return True: dev mode enabled, which changes application behavior to be
      *         more verbose. This is an inofficial feature.
      */
-    public boolean getDevMode()
+    public boolean devMode()
     {
         return this.devMode;
     }
@@ -114,15 +124,31 @@ public class Settings
     /**
      * @return True: Log every invocation
      */
-    public boolean getTrace()
+    public boolean trace()
     {
         return this.trace;
     }
     
     /**
+     * @return True: Print command invocation statistics after interpretation
+     */
+    public boolean statistics()
+    {
+        return this.statistics;
+    }
+    
+    /**
+     * @return True: Print register values after interpretation
+     */
+    public boolean registers()
+    {
+        return this.registers;
+    }
+    
+    /**
      * @return True: Use color in output
      */
-    public boolean getWithColor()
+    public boolean withColor()
     {
         return this.withColor;
     }
@@ -155,13 +181,24 @@ public class Settings
                     settings.devMode = true;
                     break;
                     
-                case "-C":
-                case "--no-color":
-                    settings.withColor = false;
-                    break;
                 case "-t":
                 case "--trace":
                     settings.trace = true;
+                    break;
+                    
+                case "-s":
+                case "--statistics":
+                    settings.statistics = true;
+                    break;
+                    
+                case "-r":
+                case "--registers":
+                    settings.registers = true;
+                    break;
+                    
+                case "-C":
+                case "--no-color":
+                    settings.withColor = false;
                     break;
                     
                 case "-h":

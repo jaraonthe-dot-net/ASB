@@ -1,7 +1,11 @@
 package net.jaraonthe.java.asb.interpret;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.regex.Pattern;
 
@@ -46,6 +50,11 @@ public class Interpreter
      */
     private Memory memory = null;
     
+    /**
+     * Statistics for this interpreter run.
+     */
+    private Statistics statistics = new Statistics();
+    
     
     private static final Pattern PRINT_STRING_PATTERN = Pattern.compile(" \"([^\"]|\\\")*\"");
     
@@ -78,79 +87,6 @@ public class Interpreter
             this.memory = new Memory(ast.getMemoryWordLength(), ast.getMemoryAddressLength());
         }
         this.initGlobalFrame();
-    }
-
-    /**
-     * Runs this interpreter.
-     * 
-     * @throws RuntimeError
-     */
-    private void run() throws RuntimeError
-    {
-        Context context = new Context(this.globalFrame, this.memory, this.ast, this.settings);
-        
-        List<Invocation> program = this.ast.getProgram();
-        int programAddressLength = Math.max( // length in hex
-            (int) Math.ceil(
-                Math.log(program.size()) / Math.log(16)
-            ),
-            1
-        );
-        while (true) {
-            int currentProgramCounter = this.globalFrame.programCounter;
-            Invocation invocation;
-            try {
-                invocation = program.get(currentProgramCounter);
-            } catch (IndexOutOfBoundsException e) {
-                break;
-            }
-            // Incrementing pc before execution so that jumps can modify pc
-            // without extra complexity
-            this.globalFrame.programCounter++;
-
-            this.printTrace(invocation, currentProgramCounter, programAddressLength);
-            
-            // This may modify the program Counter
-            invocation.interpret(context);
-        }
-    }
-    
-    /**
-     * Prints the current trace (if so configured).
-     * 
-     * @param invocation
-     * @param currentProgramCounter
-     * @param programAddressLength  How many chars to reserve for the pc value
-     *                              output.
-     */
-    private void printTrace(Invocation invocation, int currentProgramCounter, int programAddressLength)
-    {
-        if (this.settings.getDevMode() || this.settings.getTrace()) {
-            if (this.settings.printOccurred) {
-                System.out.println();
-                this.settings.printOccurred = false;
-            }
-            
-            String text;
-            if (this.settings.getDevMode()) {
-                text = invocation.toString(); // incl. technical details
-            } else {
-                text = invocation.getOrigin().getContent(); // as written in ASB source code
-                // Remove &print & &println string arguments, as they are
-                // redundant information (they are printed on the next line)
-                text = Interpreter.PRINT_STRING_PATTERN.matcher(text).replaceFirst(":");
-            }
-            
-            Print.printlnWithColor(
-                String.format(
-                    "    %" + programAddressLength + "x: %s",
-                    currentProgramCounter,
-                    text
-                ),
-                Print.Color.YELLOW,
-                settings
-            );
-        }
     }
     
     /**
@@ -192,6 +128,223 @@ public class Interpreter
                 // Converting exception, as this case should never happen
                 throw new RuntimeException(e);
             }
+        }
+    }
+    
+    
+    /**
+     * Runs this interpreter.
+     * 
+     * @throws RuntimeError
+     */
+    private void run() throws RuntimeError
+    {
+        Context context = new Context(this.globalFrame, this.memory, this.ast, this.settings);
+        
+        List<Invocation> program = this.ast.getProgram();
+        int programAddressLength = Math.max( // length in hex
+            (int) Math.ceil(
+                Math.log(program.size()) / Math.log(16)
+            ),
+            1
+        );
+        while (true) {
+            int currentProgramCounter = this.globalFrame.programCounter;
+            Invocation invocation;
+            try {
+                invocation = program.get(currentProgramCounter);
+            } catch (IndexOutOfBoundsException e) {
+                break;
+            }
+            // Incrementing pc before execution so that jumps can modify pc
+            // without extra complexity
+            this.globalFrame.programCounter++;
+
+            this.printTrace(invocation, currentProgramCounter, programAddressLength);
+            this.statistics.incrementInvocationsCount(invocation);
+            
+            // This may modify the program Counter
+            invocation.interpret(context);
+        }
+        
+        this.printStatistics();
+        this.printRegisters(context);
+    }
+    
+    
+    /**
+     * Prints the current trace (if so configured).
+     * 
+     * @param invocation
+     * @param currentProgramCounter
+     * @param programAddressLength  How many chars to reserve for the pc value
+     *                              output.
+     */
+    private void printTrace(Invocation invocation, int currentProgramCounter, int programAddressLength)
+    {
+        if (!this.settings.devMode() && !this.settings.trace()) {
+            return;
+        }
+        
+        this.printlnIfRequired();
+        
+        String text;
+        if (this.settings.devMode()) {
+            text = invocation.toString(); // incl. technical details
+        } else {
+            text = invocation.getOrigin().getContent(); // as written in ASB source code
+            // Remove &print & &println string arguments, as they are
+            // redundant information (they are printed on the next line)
+            text = Interpreter.PRINT_STRING_PATTERN.matcher(text).replaceFirst(":");
+        }
+        
+        Print.printlnWithColor(
+            String.format(
+                "    %" + programAddressLength + "x: %s",
+                currentProgramCounter,
+                text
+            ),
+            Print.Color.YELLOW,
+            settings
+        );
+    }
+    
+    /**
+     * Prints statistics (at the end of interpretation).
+     */
+    private void printStatistics()
+    {
+        if (!this.settings.statistics()) {
+            return;
+        }
+        
+        this.printlnIfRequired();
+        System.out.println();
+        Print.printlnBoldWithColor("=== STATISTICS ===", Print.Color.GREEN, this.settings);
+        
+        Map<String, Integer> invocationsCount = this.statistics.getInvocationsCount();
+        // Sorted identities list
+        String[] identities = invocationsCount.keySet().toArray(new String[invocationsCount.size()]);
+        Arrays.sort(identities);
+        
+        // Readable identities
+        String[] readableIdentities = new String[identities.length];
+        int firstColLength = "Command ".length();
+        for (int i = 0; i < identities.length; i++) {
+            readableIdentities[i] = this.ast.getCommand(identities[i]).getReadableIdentity();
+            firstColLength = Math.max(firstColLength, readableIdentities[i].length());
+        }
+        
+        // Table Header
+        Print.printlnWithColor(
+            String.format(
+                "%-" + firstColLength + "s\tExecuted",
+                "Command"
+            ),
+            Print.Color.CYAN,
+            settings
+        );
+        
+        for (int i = 0; i < identities.length; i++) {
+            System.out.format(
+                "%-" + firstColLength + "s\t%d%n",
+                readableIdentities[i],
+                invocationsCount.get(identities[i])
+            );
+        }
+    }
+    
+    /**
+     * Prints register values (at the end of interpretation).
+     * 
+     * @param context
+     * @throws RuntimeError may occur when reading from a {@link VirtualRegister}
+     */
+    private void printRegisters(Context context) throws RuntimeError
+    {
+        if (!this.settings.registers()) {
+            return;
+        }
+        
+        this.printlnIfRequired();
+        System.out.println();
+        Print.printlnBoldWithColor("=== REGISTER VALUES ===", Print.Color.BLUE, this.settings);
+        
+        // Sorted names list
+        List<String> names = new ArrayList<String>();
+        /**
+         * register names => [alias names]
+         */
+        Map<String, List<String>> aliases = new HashMap<>();
+        for (Register register : this.ast.getRegisters()) {
+            if (register instanceof RegisterAlias) {
+                continue;
+            }
+            names.add(register.name);
+            aliases.put(register.name, new ArrayList<>());
+        }
+        if (names.isEmpty()) {
+            return;
+        }
+        names.sort(null);
+        
+        // Aliases
+        for (Register register : this.ast.getRegisters()) {
+            if (!(register instanceof RegisterAlias)) {
+                continue;
+            }
+            RegisterAlias ra = (RegisterAlias) register;
+            aliases.get(ra.aliasedRegister.name).add(ra.name);
+        }
+        /**
+         * register names => displayed name of that register (i.e. incl. alias names)
+         */
+        Map<String, String> displayedNamesMap = HashMap.newHashMap(names.size());
+        int firstColLength = 0;
+        for (String name : names) {
+            List<String> associatedAliases = aliases.get(name);
+            associatedAliases.sort(null);
+
+            String aliasString = "";
+            for (String alias : associatedAliases) {
+                if (aliasString.isEmpty()) {
+                    aliasString = alias;
+                } else {
+                    aliasString += ", " + alias;
+                }
+            }
+            
+            String displayedName = name;
+            if (!aliasString.isEmpty()) {
+                displayedName = name + " (" + aliasString + ")";
+            }
+            displayedNamesMap.put(name, displayedName);
+            firstColLength = Math.max(firstColLength, displayedName.length());
+        }
+        
+        for (String name : names) {
+            try {
+                System.out.format(
+                    "%-" + firstColLength + "s\t%d%n",
+                    displayedNamesMap.get(name),
+                    this.globalFrame.getNumericValue(name).read(context)
+                );
+            } catch (ConstraintException e) {
+                // Converting exception, as this case should never happen
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    /**
+     * Executes a {@code println()} if required (because a {@link
+     * Settings#printOccurred printOccurred}). 
+     */
+    private void printlnIfRequired()
+    {
+        if (this.settings.printOccurred) {
+            System.out.println();
+            this.settings.printOccurred = false;
         }
     }
 }
