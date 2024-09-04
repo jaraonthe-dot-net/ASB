@@ -318,8 +318,11 @@
 /* FLOW CONTROL */
 
 // Helper
-.define &checkLabel /register label''32 {
-    .variable tmp''32; &get_pc tmp
+.define &checkLabel /register label''30 {
+    .variable tmp''30; &get_pc tmp
+    // TODO this does not support memory wrap around - i.e. a label close to
+    //      2^30 and pc close to 0 (or vice versa) can be in proper proximity
+    //      to each other, but this check doesn't allow that
     &jumpif label > tmp, else
     
     &sub tmp, tmp, label
@@ -388,4 +391,45 @@
   end:
 }
 
-// TODO: auipc, jalr, jal
+// Jump and link
+.define jal /register rd''32, /label label {
+    .variable tmp''30; &get_pc tmp
+    
+    // TODO this does not support memory wrap around - i.e. a label close to
+    //      2^30 and pc close to 0 (or vice versa) can be in proper proximity
+    //      to each other, but this check doesn't allow that
+    &jumpif label > tmp, else
+    &sub tmp, tmp, label
+    &assert tmp <= 0x40000, "label address is too low for current pc"
+    &jump end
+  else:
+    &sub tmp, label, tmp
+    &assert tmp <= 0x3FFFF, "label address is too high for current pc"
+  end:
+    
+    &get_pc tmp
+    &add rd'31:2, tmp, 1
+    &mov rd'1:0, 0
+    
+    &set_pc label
+}
+// Jump and link register
+.define jalr /register rd''32, /register rs1''32, /immediate imm''12 {
+    .variable address''32
+    &sign_extend address, imm
+    &add address, address, rs1
+    &mov address'0, 0
+    &assert address'1 == 0, "instruction-address misaligned exception"
+    
+    .variable tmp''30; &get_pc tmp
+    &add rd'31:2, tmp, 1
+    &mov rd'1:0, 0
+    
+    &set_pc address'31:2
+}
+// Add upper immediate to PC
+.define auipc /register rd''32, /immediate upimm''20 {
+    .variable tmp''32; &get_pc tmp'31:2
+    &add tmp'31:12, tmp'31:12, upimm
+    &mov rd, tmp
+}

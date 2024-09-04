@@ -12,7 +12,8 @@
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
 .memory .word ''8 .address ''32
-.pc ''32
+// RISC-V pc has 32 bit, but every instruction is 4 bytes long
+.pc ''30
 
 .include "registers.asb"
 .include "commands.asb"
