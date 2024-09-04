@@ -166,71 +166,91 @@ public class Settings
         Settings settings = new Settings();
         List<String> regularFilePaths = new ArrayList<>();
         
+        boolean expectFile = false;
         for (int i = 0; i < args.length; i++) {
             if (args[i].isBlank()) {
                 // Just to be safe
                 continue;
             }
+            if (expectFile) {
+                // After --include flag
+                settings.filePaths.add(args[i]);
+                expectFile = false;
+                continue;
+            }
+            
             if (args[i].charAt(0) != '-') {
                 regularFilePaths.add(args[i]);
                 continue;
             }
             
-            switch (args[i]) {
-                case "--dev-mode":
-                    settings.devMode = true;
-                    break;
-                    
-                case "-t":
-                case "--trace":
-                    settings.trace = true;
-                    break;
-                    
-                case "-s":
-                case "--statistics":
-                    settings.statistics = true;
-                    break;
-                    
-                case "-r":
-                case "--registers":
-                    settings.registers = true;
-                    break;
-                    
-                case "-C":
-                case "--no-color":
-                    settings.withColor = false;
-                    break;
-                    
-                case "-h":
-                case "--help":
-                    settings.setMode(Settings.Mode.HELP, args[i]);
-                    break;
-                    
-                case "-v":
-                case "--version":
-                    settings.setMode(Settings.Mode.VERSION, args[i]);
-                    break;
-                    
-                case "--about":
-                    settings.setMode(Settings.Mode.ABOUT, args[i]);
-                    break;
-                    
-                case "-i":
-                case "--include":
-                    i++;
-                    if (args[i].charAt(0) == '-') {
-                        throw new UserError(
-                            "Expected file after " + args[i - 1] + " argument. See asb --help"
-                        );
-                    }
-                    settings.filePaths.add(args[i]);
-                    break;
-                    
-                default:
-                    throw new UserError(
-                        "Unknown CLI argument \"" + args[i] + "\". See asb --help"
-                    );
+            String[] argParts;
+            if (args[i].length() >= 2 && args[i].charAt(1) != '-') {
+                // short options - take the arg apart into individual short options
+                argParts = new String[args[i].length() - 1];
+                for (int j = 1; j < args[i].length(); j++) {
+                    argParts[j - 1] = "-" + args[i].charAt(j);
+                }
+            } else {
+                argParts = new String[]{args[i]};
             }
+            
+            for (String argPart : argParts) {
+                switch (argPart) {
+                    case "--dev-mode":
+                        settings.devMode = true;
+                        break;
+                        
+                    case "-t":
+                    case "--trace":
+                        settings.trace = true;
+                        break;
+                        
+                    case "-s":
+                    case "--statistics":
+                        settings.statistics = true;
+                        break;
+                        
+                    case "-r":
+                    case "--registers":
+                        settings.registers = true;
+                        break;
+                        
+                    case "-C":
+                    case "--no-color":
+                        settings.withColor = false;
+                        break;
+                        
+                    case "-h":
+                    case "--help":
+                        settings.setMode(Settings.Mode.HELP, argPart);
+                        break;
+                        
+                    case "-v":
+                    case "--version":
+                        settings.setMode(Settings.Mode.VERSION, argPart);
+                        break;
+                        
+                    case "--about":
+                        settings.setMode(Settings.Mode.ABOUT, argPart);
+                        break;
+                        
+                    case "-i":
+                    case "--include":
+                        expectFile = true;
+                        break;
+                        
+                    default:
+                        throw new UserError(
+                            "Unknown CLI argument \"" + argPart + "\". See asb --help"
+                        );
+                }
+            }
+        }
+        if (expectFile) {
+            throw new UserError(
+                "Expected file after " + args[args.length - 1] + " argument. See asb --help"
+            );
         }
         
         settings.filePaths.addAll(regularFilePaths);
