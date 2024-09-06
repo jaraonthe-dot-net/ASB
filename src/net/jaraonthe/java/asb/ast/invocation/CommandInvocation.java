@@ -234,10 +234,11 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                     continue;
                 }
                 
-                // TODO this error could be due to using registers/vars that don't
-                //      exist - can that be detected somehow, and a more appropriate
-                //      error message be given in that case? For now, we just
-                //      point out this potential root cause in the message.
+                // TODO Consider improving error message, as this error could be
+                //      due to using registers/vars that don't exist - can that
+                //      be detected somehow, and a more appropriate error
+                //      message be given in that case? For now, we just point
+                //      out this potential root cause in the message.
                 throw new ConstraintException(
                     "No command found for Invocation " + this + " - maybe used registers don't exist?"
                 );

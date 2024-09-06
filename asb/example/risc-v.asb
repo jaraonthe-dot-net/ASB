@@ -130,7 +130,7 @@ test_jump
 
 .define test_userland_jump /label label {
     &println_x label
-    .variable v ''32; &add v, label, 5
+    .variable v ''30; &add v, label, 5
     &println_x v
     &add label, label, 1
     &set_pc label

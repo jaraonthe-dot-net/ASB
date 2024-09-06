@@ -12,9 +12,9 @@ import net.jaraonthe.java.asb.interpret.value.NumericValue;
  * The {@code &assert} built-in function.<br>
  * 
  * {@code &assert a == b};<br>
- * {@code &assert a > b};<br>
+ * {@code &assert a >  b};<br>
  * {@code &assert a >= b};<br>
- * {@code &assert a < b};<br>
+ * {@code &assert a <  b};<br>
  * {@code &assert a <= b};<br>
  * {@code &assert a != b};<br>
  * {@code a} and {@code b} are (individually) either /register or /immediate

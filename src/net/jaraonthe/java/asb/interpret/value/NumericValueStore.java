@@ -117,7 +117,7 @@ public class NumericValueStore extends NumericValue
             );
         }
         
-        /* Negative => Make positive, apply bwo's-complement
+        /* Negative => Make positive, apply two's-complement
          *     - Based on: https://stackoverflow.com/a/38931124
          */
         

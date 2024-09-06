@@ -220,8 +220,6 @@ public class Parser
                 this.ast.setMemory(wordLength, addressLength);
                 
                 this.expectClosingBracesIfMultiLine(isMultiLine);
-                // TODO add to docs: After closing braces (of a multi-line
-                //      directive), either newline or ; must follow for separation
                 this.expectStatementSeparator();
                 break;
 
@@ -1301,9 +1299,9 @@ public class Parser
         Token token = this.expect(Token.Type.COMMAND_SYMBOLS, "\"" + expectedSymbols + "\"");
         String consumed = token.content;
         
-        // TODO support command symbols spanning several tokens - but for now it
-        //      is not an issue as this is only used in one place, with an
-        //      expectedSymbols that is one char long.
+        // TODO Consider supporting command symbols spanning several tokens -
+        //      but for now it is not an issue as this is only used in one
+        //      place, with an expectedSymbols that is one char long.
         if (!expectedSymbols.equals(consumed)) {
             throw new ParseError(
                 "Expected \"" + expectedSymbols + "\" symbols, is \"" + consumed + "\" at " + token.origin

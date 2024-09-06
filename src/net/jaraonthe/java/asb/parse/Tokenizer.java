@@ -627,7 +627,7 @@ public class Tokenizer
                     case 't':
                         text.append('\t');
                         break;
-                        // TODO any other codes?
+                        // TODO Consider adding further codes (e.g. unicode)
                     default:
                         text.append(c);
                         break;

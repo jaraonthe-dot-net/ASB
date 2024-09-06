@@ -8,9 +8,9 @@ import net.jaraonthe.java.asb.interpret.Context;
  * The {@code &jumpif} built-in function.<br>
  * 
  * {@code &jumpif a == b, label};<br>
- * {@code &jumpif a > b,  label};<br>
+ * {@code &jumpif a >  b, label};<br>
  * {@code &jumpif a >= b, label};<br>
- * {@code &jumpif a < b,  label};<br>
+ * {@code &jumpif a <  b, label};<br>
  * {@code &jumpif a <= b, label};<br>
  * {@code &jumpif a != b, label};<br>
  * {@code a} and {@code b} are (individually) either /register or /immediate

@@ -107,9 +107,6 @@ public class ProgramCounter implements Interpretable
                     );
                 }
                 
-                // TODO Note in docs: Setting pc to a value that doesn't point
-                //      to an actual command invocation, the program halts
-                //      (same for jump on a local level)
                 context.frame.getRootParentFrame().programCounter = newPc;
                 break;
         }

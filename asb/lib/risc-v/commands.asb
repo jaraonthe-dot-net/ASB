@@ -162,7 +162,7 @@
 }
 // Multiply high signed signed
 .define mulh /register rd''32, /register rs1''32, /register rs2''32 {
-    // sign-extend to double length before multiplying
+    // Sign-extend to double length before multiplying
     // (see https://en.wikipedia.org/wiki/Two%27s_complement#Multiplication)
     .variable ext1''64; &sign_extend ext1, rs1
     .variable ext2''64; &sign_extend ext2, rs2

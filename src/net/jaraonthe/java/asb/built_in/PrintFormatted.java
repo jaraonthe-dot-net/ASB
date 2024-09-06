@@ -164,7 +164,7 @@ public class PrintFormatted implements Interpretable
         
         switch (this.format) {
             case SIGNED:
-                if (!value.testBit(length - 1)) {
+                if (!value.testBit(length - 1) || value.signum() < 0) {
                     System.out.print(value);
                     break;
                 }

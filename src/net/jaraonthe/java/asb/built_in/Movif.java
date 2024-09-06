@@ -9,9 +9,9 @@ import net.jaraonthe.java.asb.interpret.Context;
  * The {@code &movif} built-in function.<br>
  * 
  * {@code &movif a == b, dst, src};<br>
- * {@code &movif a > b,  dst, src};<br>
+ * {@code &movif a >  b, dst, src};<br>
  * {@code &movif a >= b, dst, src};<br>
- * {@code &movif a < b,  dst, src};<br>
+ * {@code &movif a <  b, dst, src};<br>
  * {@code &movif a <= b, dst, src};<br>
  * {@code &movif a != b, dst, src};<br>
  * <br>

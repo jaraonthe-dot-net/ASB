@@ -27,7 +27,7 @@ import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
  * {@code &subc dstRegister, src1Imm,      src2Register};<br>
  * <br>
  * {@code &mul dstRegister, src1Register, src2Imm};<br>
- * {@code &mul dstRegister, src1Register, src2Imm};<br>
+ * {@code &mul dstRegister, src1Register, src2Register};<br>
  * <br>
  * {@code &div dstRegister, src1Register, src2Imm};<br>
  * {@code &div dstRegister, src1Register, src2Register};<br>
