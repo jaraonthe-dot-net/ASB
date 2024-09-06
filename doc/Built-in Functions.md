@@ -1,7 +1,9 @@
 # Built-in Functions
 Built-in Functions are commands that are shipped with ASB. They are used to implement your custom commands.
 
-Functions can only be used within command implementations, with the exception of [[#Special Functions]] `&assert` and `&print*`, which you can use anywhere.
+Functions can only be used within command implementations, with the exception of [Special Functions](#special-functions) `&assert` and `&print*`, which you can use anywhere.
+
+---
 
 ## Moving Data
 ### `&mov`
@@ -46,7 +48,7 @@ Where `srcAddress`, `dstAddress`, `srcRegister`, and `dstRegister` are registers
 
 Where `a` and `b` are registers or local variables, and up to one can be an immediate.
 
-Where `dst` and `src` are parameters as accepted by [[#`&mov`|&mov]], i.e. they can be `@address` (`address` being a register or local variable of which the value is used as a memory address) or a register or local variable. `src` may additionally be an immediate.
+Where `dst` and `src` are parameters as accepted by [`&mov`](#mov), i.e. they can be `@address` (`address` being a register or local variable of which the value is used as a memory address) or a register or local variable. `src` may additionally be an immediate.
 
 `&movif` compares `a` and `b` according to the given operator and if the comparison is true carries out a `&mov` from `src` to `dst`.
 
@@ -153,6 +155,8 @@ An example where `&normalize` is required:
 
 The `len` parameter is used to configure the length of a local variable. `&assert` is able to handle negative immediates as you would expect (i.e. as two's-complement) and thus allow e.g. `-50` (aka `462` in two's complement (9 bits length)) only for the local variable initialisation to fail because lengths must not be negative. `&normalize` solves this conundrum.
 
+---
+
 ## Arithmetic Operations
 ### `&add`
 
@@ -169,7 +173,7 @@ All parameters must have the same length. If the third parameter is an immediate
 
 ### `&addc`
 
-Similar to [[#`&add`|&add]], but provides the carry-out bit.
+Similar to [`&add`](#add), but provides the carry-out bit.
 
 ```
 &addc dstRegister, src1Register, src2Imm
@@ -297,7 +301,7 @@ Where `src1Register`, `src2Register`, and `dstRegister` are registers or local v
 
 All parameters must have the same length. If one of the source parameters is an immediate, that immediate must fit into the length of the other parameters.
 
-Note that (in accordance with [[`&div`|&div]]) `&rem` assumes that the source values are positive integers. If you want to work with values that may be negative, you need to work around that. The following example works with absolute values, making the remainder negative if the dividend is negative; this goes hand-in-hand with the `&div` example above (which rounds towards zero):
+Note that (in accordance with [`&div`](#div)) `&rem` assumes that the source values are positive integers. If you want to work with values that may be negative, you need to work around that. The following example works with absolute values, making the remainder negative if the dividend is negative; this goes hand-in-hand with the `&div` example above (which rounds towards zero):
 
 ```
 .define &abs /register dst''32, /register src''32 {
@@ -325,6 +329,8 @@ Note that (in accordance with [[`&div`|&div]]) `&rem` assumes that the source va
   end:
 }
 ```
+
+---
 
 ## Logical Operations
 ### `&and`
@@ -379,6 +385,8 @@ Where `srcRegister` and `dstRegister` are registers or local variables, and `src
 
 All parameters must have the same length. If the last parameter is an immediate, that immediate must fit into the length of the first parameter.
 
+---
+
 ## Manipulating the Program Counter
 The program counter tracks which instruction in the user program is currently being executed. With the functions below the program counter can be manipulated and thus jumps be implemented.
 
@@ -391,7 +399,7 @@ The program counter tracks which instruction in the user program is currently be
 
 Where `dstRegister` is a register or local variable.
 
-`&get_program_counter` writes the current value of the program counter to `dstRegister`. The latter's length must be the same as the configured program counter length (see [[#`&get_program_counter_length` (`&get_pc_length`)|&get_program_counter_length]]).
+`&get_program_counter` writes the current value of the program counter to `dstRegister`. The latter's length must be the same as the configured program counter length (see [`&get_program_counter_length`](#get_program_counter_length-aka-get_pc_length)).
 
 Note that the program counter counts every instruction (in the user program) as an increment of 1. A label's value is calculated in the same way.
 
@@ -404,7 +412,7 @@ Note that the program counter counts every instruction (in the user program) as 
 
 Where `srcRegister` is a register or local variable.
 
-`&src_program_counter` overwrites the program counter with the value from `srcRegister`. The latter's length must be the same as the configured program counter length (see [[#`&get_program_counter_length` (`&get_pc_length`)|&get_program_counter_length]]).
+`&src_program_counter` overwrites the program counter with the value from `srcRegister`. The latter's length must be the same as the configured program counter length (see [`&get_program_counter_length`](#get_program_counter_length-aka-get_pc_length)).
 
 This is the way in which to implement jumps. A `/label` parameter's value can be directly used with this function (but not a label name, though):
 
@@ -423,8 +431,10 @@ If the program counter is set to a value that doesn't point to an instruction (b
 
 Note that the program counter counts every instruction (in the user program) as an increment of 1. A label's value is calculated in the same way.
 
+---
+
 ## Program Flow within Implementation
-While controlling the program flow of the user program is done via [[#Manipulating the Program Counter]], in order to jump around within a custom command's implementation, the following functions can be used.
+While controlling the program flow of the user program is done via [Manipulating the Program Counter](#manipulating-the-program-counter), in order to jump around within a custom command's implementation, the following functions can be used.
 
 Note that these can NOT be used to jump within the user program.
 
@@ -455,6 +465,8 @@ Where `label` is a local label name.
 
 `&jumpif` compares `a` and `b` according to the given operator and if the comparison is true executes a jump to the given `label`, so that the instruction following the label definition is executed next. Otherwise the program flow continues normally.
 
+---
+
 ## System Info
 ### `&get_memory_word_length`
 
@@ -481,7 +493,7 @@ Where `dstRegister` is a register or local variable.
 
 The memory address length defines how many bits are used to address memory, and thus how many memory cells there are.
 
-### `&get_program_counter_length` (`&get_pc_length`)
+### `&get_program_counter_length` (aka `&get_pc_length`)
 
 ```
 &get_program_counter_length dstRegister
@@ -491,6 +503,8 @@ The memory address length defines how many bits are used to address memory, and 
 Where `dstRegister` is a register or local variable.
 
 `&get_program_counter` writes the configured length of the program counter to `dstRegister`. `dstRegister` must be big enough to fit that value.
+
+---
 
 ## Special Functions
 These are the only built-in functions that can be invoked in the user language as well.
@@ -519,7 +533,7 @@ Where `register` and `addressReg` are registers or local variables, `immediate` 
 
 `&println` behaves the same, but additionally prints a Newline character after the output. `&println` can also be used without a parameter, in which case only a Newline character is printed.
 
-Note that immediates may be given as a negative number, in which case they will also be printed as such. The same applies to parameter's which have an immediate as value (which may have been passed along via several invocations). See [[#`&normalize`|&normalize]] for more information about this phenomenon.
+Note that immediates may be given as a negative number, in which case they will also be printed as such. The same applies to parameter's which have an immediate as value (which may have been passed along via several invocations). See [`&normalize`](#normalize) for more information about this phenomenon.
 
 ### `&print_*`, `&println_*`
 

@@ -10,6 +10,8 @@ The ASB Language is where custom commands and system properties are defined and 
 
 Both meta and user language are mixed within ASB language source code files. Basically, once a custom command is defined, it can be used.
 
+---
+
 ## Basic Format
 An ASB program consists of one or more source files, which have the file ending `.asb`. The expected encoding is 8-bit **ASCII**. The behavior of codepoints outside of ASCII (e.g. ISO 8859, UTF-8) is undefined.
 ### Whitespace
@@ -42,6 +44,8 @@ In any of the formats additional `_` characters may be used to visually subdivid
 >[!TODO]
 >Note things that apply to both meta and user language. E.g.: `\` escape char, freely available symbols, etc.
 
+---
+
 ## Meta language syntax
 - All meta language operations are done via **ASB directives** which start with a `.` followed by a keyword.
 - Some directives have **sub-directives**, which also start with a keyword prefixed with a `.`. These sub-directives can either be given on the same line as the directive they belong to, or the directive is extended to multiple lines by encasing all its sub-directives in in one pair of curly braces (`{}`).
@@ -57,6 +61,8 @@ In any of the formats additional `_` characters may be used to visually subdivid
 
 - Line comments start with `#` or `//` (they end **right before** the next New Line).
 - Multi-line comments start with `/*` and end with `*/`. If the start and end markers are not on the same line the comment is treated like a single New Line (so that different statements are separated as intended).
+
+---
 
 ## Types
 Command and function parameters have a type. They are prefixed with a `/` (in the command or function definition).
@@ -75,22 +81,9 @@ Every type except `/label` is followed by a length definition, which is `''` fol
 > - Describe register groups here?
 > - Should /string be a type? Or is this a special parameter type only usable with specific built-in functions, i.e. in userland you cannot use this type?
 
+---
+
 ## Defining custom commands
 >[!TODO]
 
-### Built-in functions
->[!TODO]
->List and explain.
->- getpc aka get_program_counter
->- setpc aka set_program_counter
->- I have a list somewhere
-
-### Bitwise access
-> [!TODO]
-
-## User language syntax
->[!TODO]
-
-## Loading other files
-> [!TODO]
 
