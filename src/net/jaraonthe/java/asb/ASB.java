@@ -70,6 +70,11 @@ public class ASB
         + "along with this program.  If not, see <http://www.gnu.org/licenses/>.";
     
 	/**
+	 * Exit Codes:<br>
+	 * - 0: Normal<br>
+	 * - 1: Error due to user input occurred<br>
+	 * - 2: Internal exception occurred
+	 * 
 	 * @param args See the {@link #HELP_TEXT}
 	 */
 	public static void main(String[] args)
@@ -79,6 +84,7 @@ public class ASB
 	        settings = Settings.fromArgs(args);
 	    } catch (UserError e) {
 	        e.print(null);
+	        System.exit(1);
 	        return;
 	    }
 	    
@@ -106,9 +112,11 @@ public class ASB
             	    
         	    } catch (UserError e) {
         	        e.print(settings);
+        	        System.exit(1);
         	        return;
         	    } catch (Exception e) {
                     e.printStackTrace();
+                    System.exit(2);
                     return;
         	    }
     	    break;

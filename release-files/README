@@ -1,0 +1,2 @@
+This directory contains static files that are included in a release build (see
+../build-release.sh).
