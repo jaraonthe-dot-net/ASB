@@ -20,6 +20,9 @@ import net.jaraonthe.java.asb.interpret.value.NumericValue;
  * {@code &print_x register};<br>
  * {@code &print_x @addressReg};<br>
  * {@code &print_x @addressImm};<br>
+ * {@code &print_o register};<br>
+ * {@code &print_o @addressReg};<br>
+ * {@code &print_o @addressImm};<br>
  * {@code &print_b register};<br>
  * {@code &print_b @addressReg};<br>
  * {@code &print_b @addressImm};<br>
@@ -29,6 +32,9 @@ import net.jaraonthe.java.asb.interpret.value.NumericValue;
  * {@code &println_x register};<br>
  * {@code &println_x @addressReg};<br>
  * {@code &println_x @addressImm};<br>
+ * {@code &println_o register};<br>
+ * {@code &println_o @addressReg};<br>
+ * {@code &println_o @addressImm};<br>
  * {@code &println_b register};<br>
  * {@code &println_b @addressReg};<br>
  * {@code &println_b @addressImm};<br>
@@ -57,6 +63,7 @@ public class PrintFormatted implements Interpretable
     {
         SIGNED("s"),
         HEX   ("x"),
+        OCTAL ("o"),
         BINARY("b");
         
         public final String functionNamePostfix;
@@ -176,6 +183,10 @@ public class PrintFormatted implements Interpretable
                     value.toString(16),
                     Math.ceilDiv(length, 4)
                 ));
+                break;
+                
+            case OCTAL:
+                System.out.print("0" + value.toString(8));
                 break;
                 
             case BINARY:

@@ -548,6 +548,10 @@ Note that immediates may be given as a negative number, in which case they will 
 &print_x @addressReg
 &print_x @addressImm
 
+&print_o register       // octal
+&print_o @addressReg
+&print_o @addressImm
+
 &print_b register       // binary
 &print_b @addressReg
 &print_b @addressImm
@@ -560,6 +564,10 @@ Note that immediates may be given as a negative number, in which case they will 
 &println_x @addressReg
 &println_x @addressImm
 
+&println_o register
+&println_o @addressReg
+&println_o @addressImm
+
 &println_b register
 &println_b @addressReg
 &println_b @addressImm
@@ -571,6 +579,7 @@ These functions print the given numeric value in a specific format. In case of p
 
 - `*_s` interpretes the given value as two's-complement number, printing it as a decimal number with prepended minus sign if it is negative.
 - `*_x` prints the given value as a hexadecimal number, prepended with "0x".
+- `*_o` prints the given value as an octal number, prepended with "0".
 - `*_b` prints the given value as a binary number, prepended with "0b".
 
 `&println_*` additionally prints a Newline character after the output.
