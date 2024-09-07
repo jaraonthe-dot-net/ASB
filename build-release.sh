@@ -8,6 +8,7 @@
 # - javac 21 (or later)
 # - rsync
 # - zip
+# - pandoc
 
 MAIN_SRC_FILE="src/net/jaraonthe/java/asb/ASB.java"
 
@@ -56,8 +57,6 @@ chmod 775 "$OUT_DIR/asb" || exit 1
 # Windows
 cp "release-files/asb.bat" "$OUT_DIR/asb.bat" || exit 1
 
-# TODO compile doc markdown into html?
-
 echo "Adding supporting files"
 $OUT_DIR/asb --version > $OUT_DIR/VERSION || exit 1
 cp "CHANGELOG" "$OUT_DIR/CHANGELOG" || exit 1
@@ -66,6 +65,24 @@ cp "LICENSE.txt" "$OUT_DIR/LICENSE.txt" || exit 1
 rsync -a --exclude=".*" "doc" "$OUT_DIR" || exit 1
 rsync -a --exclude=".*" "asb/example" "$OUT_DIR" || exit 1
 rsync -a --exclude=".*" "asb/lib" "$OUT_DIR" || exit 1
+
+echo "Creating HTML docs"
+# README.md
+pandoc -f markdown -t html -s -H "release-files/doc_head.html" "$OUT_DIR/README.md" -o "$OUT_DIR/README.html" || exit 1
+# replace .md links with .html; replace [!NOTE]s with an html class; remove /asb/ folder level (same below)
+sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/"asb\//"/g' "$OUT_DIR/README.html" || exit 1
+# doc/*
+for f in $OUT_DIR/doc/*.md; do
+    pandoc -f markdown -t html -s --toc -H "release-files/doc_head.html" "$f" -o "${f%.md}.html" || exit 1
+    sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/\.\.\/asb\//\.\.\//g' "${f%.md}.html" || exit 1
+done
+# Re-do doc/index.md with specific settings
+pandoc -f markdown -t html -s -H "release-files/doc_head.html" --metadata pagetitle="ASB documentation" \
+    "$OUT_DIR/doc/index.md" -o "$OUT_DIR/doc/index.html" || exit 1
+sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/\.\.\/asb\//\.\.\//g' "$OUT_DIR/doc/index.html" || exit 1
+
+mkdir "$OUT_DIR/doc/src" || exit 1
+mv $OUT_DIR/doc/*.md "$OUT_DIR/doc/src" || exit 1
 
 echo "Creating zip file"
 cd "build"

@@ -1,3 +1,5 @@
+To [Index](index.md)
+
 # ASB Language
 The ASB Language is where custom commands and system properties are defined and then used as desired.
 
@@ -14,12 +16,14 @@ Both meta and user language are mixed within ASB language source code files. Bas
 
 ## Basic Format
 An ASB program consists of one or more source files, which have the file ending `.asb`. The expected encoding is 8-bit **ASCII**. The behavior of codepoints outside of ASCII (e.g. ISO 8859, UTF-8) is undefined.
+
 ### Whitespace
 Whitespace is meaningful in the following ways:
 - Statements end at the end of a line. A new line is marked by the Line Feed or Newline character (Codepoint `0x0A`).
     - Additionally, the `;` character has the same effect as a Newline.
 - The behavior for Carriage Return (Codepoint `0x0D`) and Vertical Tab (Codepoint `0x0B`) characters is undefined.
 - Any continuous amount of Space (Codepoint `0x20`) and Horizontal Tab (Codepoint `0x09`) characters are interpreted as one separator between two atoms. Such a separator is optional in all cases where the atom separation can be determined by different means (e.g. a `%` atom followed by a name atom).
+
 > [!NOTE]
 > It follows that any indentation (be it with Spaces or Tabs) has no meaning.
 
@@ -30,6 +34,7 @@ In any of the formats additional `_` characters may be used to visually subdivid
 
 - **Decimal** format: Any of the decimal digits, but the first digit must not be `0`. May be prefixed with `-`, which makes it a negative number in Two's complement encoding.
   Regex: `-?[1-9][_0-9]*`
+  
 > [!NOTE]
 > Some places do not allow a negative number to be used, e.g. when giving a length or bit position.
   
@@ -52,10 +57,12 @@ In any of the formats additional `_` characters may be used to visually subdivid
     - The `}` closing brace must be followed by a Newline or `;` character (to properly separate it from the next item).
 - Some directives or sub-directives contain an **implementation body** which is also encased in curly braces and can span multiple lines as well.
 - **Functions** are prefixed with a `&`. They can only be called inside implementation bodies.
+
 > [!NOTE]
 > ASB comes with pre-defined, built-in functions, but the user can also add their own (the same restriction regarding invocation applies).
 
 - Parameter types are prefixed with a `/`. Register and variable lengths are given in amount of bits, prefixed with `''`. Individual bits of registers or variables are accessed by giving a single bits number or a range of bits where two bit numbers are separated by `:`, in both cases prefixed with a single `'`.
+
 > [!NOTE]
 > It is not possible to access individual bits within the user language in this way - if such a mechanism is desired, it must be implemented with custom commands.
 

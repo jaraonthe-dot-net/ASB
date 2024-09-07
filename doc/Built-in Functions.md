@@ -1,3 +1,5 @@
+To [Index](index.md)
+
 # Built-in Functions
 Built-in Functions are commands that are shipped with ASB. They are used to implement your custom commands.
 

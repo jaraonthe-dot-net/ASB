@@ -1,3 +1,5 @@
+To [Index](index.md)
+
 # Defining System Properties
 The architecture emulated by ASB comprises the following:
 
@@ -52,6 +54,7 @@ To define program counter size use the `.program_counter` or the alternative `.p
 ```
 .program_counter ''<length>
 ```
+
 Replace `<length>` with the amount of bits in the program counter.
 
 The length of the program counter restricts the size of the user program; a program with more commands (in its source code) than the (unsigned) value of the program counter can enumerate will lead to an error. Furthermore, for technical reasons, even if the program counter would allow more, the amount of commands cannot exceed $2^{31} - 1$.

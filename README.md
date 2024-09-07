@@ -2,6 +2,8 @@ This is the Assembler Sandbox, or ASB for short.
 
 Created by Jakob Rathbauer.
 
+See the [documentation](doc/index.md). Check out the [examples](asb/example/hello-world.asb).
+
 # System Requirements
 
 * Java 21 or higher
