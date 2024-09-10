@@ -59,6 +59,11 @@ public class Settings
     private boolean registers = false;
     
     /**
+     * True: Print memory values after interpretation.
+     */
+    private boolean memory = false;
+    
+    /**
      * True: Use color in output.
      */
     private boolean withColor = true;
@@ -146,6 +151,14 @@ public class Settings
     }
     
     /**
+     * @return True: Print memory values after interpretation
+     */
+    public boolean memory()
+    {
+        return this.memory;
+    }
+    
+    /**
      * @return True: Use color in output
      */
     public boolean withColor()
@@ -214,6 +227,11 @@ public class Settings
                     case "-r":
                     case "--registers":
                         settings.registers = true;
+                        break;
+                        
+                    case "-m":
+                    case "--memory":
+                        settings.memory = true;
                         break;
                         
                     case "-C":

@@ -1,10 +1,11 @@
 package net.jaraonthe.java.asb.interpret;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 
 /**
@@ -56,9 +57,8 @@ public class Memory
      * 
      * @param address
      * @return
-     * @throws RuntimeError
      */
-    public BigInteger read(BigInteger address) throws RuntimeError
+    public BigInteger read(BigInteger address)
     {
         address = this.checkAddress(address);
         
@@ -88,6 +88,18 @@ public class Memory
         
         this.words.put(address, word);
     }
+    
+    /**
+     * Returns a Set containing all memory addresses that are in use, i.e. they
+     * have been written to at least once.
+     * 
+     * @return
+     */
+    public Set<BigInteger> getAddressesInUse()
+    {
+        return Collections.unmodifiableSet(this.words.keySet());
+    }
+    
     
     /**
      * Checks that given address is valid, throws error otherwise

@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.interpret;
 
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
+import net.jaraonthe.java.asb.interpret.value.NumericValue;
 import net.jaraonthe.java.asb.interpret.value.NumericValueReference;
 import net.jaraonthe.java.asb.interpret.value.NumericValueStore;
 import net.jaraonthe.java.asb.interpret.value.VirtualNumericValue;
@@ -169,6 +171,7 @@ public class Interpreter
         
         this.printStatistics();
         this.printRegisters(context);
+        this.printMemory();
     }
     
     
@@ -324,15 +327,52 @@ public class Interpreter
         
         for (String name : names) {
             try {
+                NumericValue value = this.globalFrame.getNumericValue(name);
+                BigInteger content = value.read(context);
                 System.out.format(
-                    "%-" + firstColLength + "s\t%d%n",
+                    "%-" + firstColLength + "s\t%d\t(0x%0" + Math.ceilDiv(value.length, 4) + "x)%n",
                     displayedNamesMap.get(name),
-                    this.globalFrame.getNumericValue(name).read(context)
+                    content,
+                    content
                 );
             } catch (ConstraintException e) {
                 // Converting exception, as this case should never happen
                 throw new RuntimeException(e);
             }
+        }
+    }
+    
+    /**
+     * Prints memory values (at the end of interpretation). This displays only
+     * those memory cells that have a value not equal to 0.
+     */
+    private void printMemory()
+    {
+        if (!this.settings.memory()) {
+            return;
+        }
+        
+        this.printlnIfRequired();
+        System.out.println();
+        Print.printlnBoldWithColor("=== MEMORY VALUES ===", Print.Color.MAGENTA, this.settings);
+        
+        List<BigInteger> addresses = new ArrayList<>(this.memory.getAddressesInUse());
+        addresses.sort(null);
+        
+        int addressLengthHex = Math.ceilDiv(this.ast.getMemoryAddressLength(), 4);
+        int wordLengthHex    = Math.ceilDiv(this.ast.getMemoryWordLength(), 4);
+        
+        for (BigInteger address : addresses) {
+            BigInteger value = this.memory.read(address);
+            if (value.equals(BigInteger.ZERO)) {
+                continue;
+            }
+            System.out.format(
+                "0x%0" + addressLengthHex + "x\t%d\t(0x%0" + wordLengthHex + "x)%n",
+                address,
+                value,
+                value
+            );
         }
     }
     
