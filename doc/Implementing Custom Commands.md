@@ -124,7 +124,7 @@ Note that in the command definition the following command symbols have to be esc
 /{}
 ```
 
-## Command Identity
+## Command identity
 A command's identity is made up of its name, parameters (their types, lengths, groups), and command symbols; and the order in which parameters and command symbols are given. If any of these components differs, then the command has a different identity.
 
 There may be multiple commands **with the same name**, but **no more than one command with the same identity**. ASB uses the command identity to determine which command to invoke.
@@ -208,6 +208,8 @@ Within an implementation all commands as well as all functions (incl. [built-in 
 > [!NOTE]
 > The `&` prefix in a function's name must be included too in the invocation of that function.
 
+Any register used must already exist before the implementation; but the implementation may invoke commands and functions that are defined later in the ASB program.
+
 ### Local variables
 Local variables are scoped within the implementation that they are declared in. This makes them different from registers, which are globally scoped. If a command or function with a local variable invokes itself (recursion) then for each invocation there is an independent instance of the local variable only available within that instance of executed implementation.
 
@@ -228,6 +230,14 @@ Example:
     &mov dynamic, -1
 }
 ```
+
+Local variables, just like any other variable, must exist before it can be used. I.e. a local variable's definition must occur in the implementation code before any reference to this variable.
+
+If a local variable has the same name as a (global) register, then that name refers to the local variable after its definition. Vice-versa, before the local variable's definition that name refers to the register.
+
+A local variable is instantiated once the location of its definition is reached during execution of the implementation. When [jumping within the implementation](#flow-control), this may happen more than once, or never. The compiler does not take potential flow control into account; it simply assumes a local variable exists after its definition. If a jump leads to the definition being skipped you may run into a runtime error.
+
+On the other side, reaching a local variable definition multiple times is not a problem; upon the first time the variable is instantiated and all further times are simply ignored.
 
 ### Bitwise access
 Within implementations registers, parameters, or local variables can be accessed **bitwise**. That means that instead of reading or writing to the entire variable the operation at hand is done with only a portion of that variable.
