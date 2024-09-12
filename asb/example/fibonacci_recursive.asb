@@ -1,0 +1,79 @@
+/**
+ * A Fibonacci Implementation that does the calculation recursively.
+ *
+ * Run: asb virtual-register.asb --statistics
+ *
+ * The execution statistics (--statistics) show that this is a very inefficient
+ * implementation. Compare with fibonacci_iterative.asb
+ */
+
+// Using the RISC-V implementation (feel free to check it out)
+.include "../lib/risc-v/risc-v.asb"
+
+j program
+
+// FUNCTION fibonacci(n):
+//     a0: argument n for which to calculate Fibonacci number. n >= 0
+//     Return value (a0): Fibonacci number for n
+fibonacci:
+    addi t0, zero, 2
+    bge a0, t0, fib_1 // if n == 0 or n == 1 => return
+    ret
+  fib_1:
+    addi a0, a0, -1 // n-1
+    
+    // fibonacci(n-1)
+    addi sp, sp, -16 // Reserve stack space
+    sw ra, 12(sp)    // Store return address on stack
+    sw a0, 8 (sp)
+    jal fibonacci // Actual function call
+    sw a0, 4(sp)
+    
+    // fibonacci(n-2)
+    lw a0, 8(sp)    // n-1
+    addi a0, a0, -1 // n-1
+    jal fibonacci
+    lw t0, 4(sp)    // result of fibonacci(n-1)
+    lw ra, 12(sp)   // Restore return address from Stack
+    addi sp, sp, 16 // Relinquish stack space
+    
+    add a0, a0, t0 // result = fibonacci(n-2) + fibonacci(n-1)
+    ret
+
+
+program:
+// n = 1
+li a0, 1
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0
+
+// n = 2
+li a0, 2
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0
+
+// n = 5
+li a0, 5
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0
+
+// n = 8
+li a0, 8
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0
+
+// n = 12
+li a0, 12
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0
+
+// n = 18
+li a0, 18
+&print "fibonacci("; &print_s a0; &print ") = ";
+jal fibonacci
+&println_s a0

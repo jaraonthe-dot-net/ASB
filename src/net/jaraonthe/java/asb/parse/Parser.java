@@ -244,15 +244,15 @@ public class Parser
             case ".reg_alias":
                 this.parseRegister(Parser.RegisterType.ALIAS, directive.origin);
                 break;
-            
-            case ".register_virtual":
-            case ".register_virt":
-            case ".reg_virtual":
-            case ".reg_virt":
+
             case ".virtual_register":
             case ".virtual_reg":
             case ".virt_register":
             case ".virt_reg":
+            case ".register_virtual":
+            case ".register_virt":
+            case ".reg_virtual":
+            case ".reg_virt":
                 this.parseRegister(Parser.RegisterType.VIRTUAL, directive.origin);
                 break;
             
@@ -270,7 +270,7 @@ public class Parser
     
     /**
      * Used for {@link #parseRegister()}. Decides whether .register,
-     * .register_alias, or a .register_virtual directive is being parsed.
+     * .register_alias, or a .virtual_register directive is being parsed.
      */
     private enum RegisterType
     {

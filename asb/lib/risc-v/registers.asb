@@ -1,7 +1,7 @@
 /**
  * RISC-V registers
  */
-.register_virtual x0 ''32 { // Constant value 0
+.virtual_register x0 ''32 { // Constant value 0
     .get { &mov out, 0;}
     .set {}
 }

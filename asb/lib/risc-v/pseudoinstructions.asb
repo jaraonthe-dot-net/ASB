@@ -1,0 +1,112 @@
+/**
+ * RISC-V pseudoinstructions. These use other RISC-V commands under the hood
+ * (you may consider them to be syntactic sugar).
+ */
+
+// No operation
+.define nop {
+    addi x0, x0, 0
+}
+
+// Load 12-bit immediate
+.define li /register rd''32, /immediate imm''12 {
+    &addi rd, zero, imm
+}
+// Load 32-bit immediate
+.define li /register rd''32, /immediate imm''32 {
+    &lui rd, imm'31:12
+    &addi rd, rd, imm'11:0
+}
+// Move
+.define mv /register rd''32, /register rs1''32 {
+    addi rd, rs1, 0
+}
+
+// Not (one's-complement)
+.define not /register rd''32, /register rs1''32 {
+    xori rd, rs1, -1
+}
+// Negate (two's-complement)
+.define neg /register rd''32, /register rs1''32 {
+    sub rd, x0, rs1
+}
+
+// Set if = 0
+.define seqz /register rd''32, /register rs1''32 {
+    sltiu rd, rs1, 1
+}
+// Set if != 0
+.define snez /register rd''32, /register rs1''32 {
+    sltu rd, x0, rs1
+}
+// Set if < 0
+.define sltz /register rd''32, /register rs1''32 {
+    slt rd, rs1, x0
+}
+// Set if > 0
+.define sgtz /register rd''32, /register rs1''32 {
+    slt rd, x0, rs1
+}
+
+// Branch if = 0
+.define beqz /register rs1''32, /label label {
+    &beq rs1, x0, label
+}
+// Branch if != 0
+.define bnez /register rs1''32, /label label {
+    &bne rs1, x0, label
+}
+// Branch if <= 0
+.define blez /register rs1''32, /label label {
+    &bge x0, rs1, label
+}
+// Branch if >= 0
+.define bgez /register rs1''32, /label label {
+    &bge rs1, x0, label
+}
+// Branch if < 0
+.define bltz /register rs1''32, /label label {
+    &blt rs1, x0, label
+}
+// Branch if > 0
+.define bgtz /register rs1''32, /label label {
+    &blt x0, rs1, label
+}
+
+// Branch if <=
+.define ble /register rs1''32, /register rs2''32, /label label {
+    &bge rs2, rs1, label
+}
+// Branch if >
+.define bgt /register rs1''32, /register rs2''32, /label label {
+    &blt rs2, rs1, label
+}
+// Branch if <= (unsigned)
+.define bleu /register rs1''32, /register rs2''32, /label label {
+    &bgeu rs2, rs1, label
+}
+// Branch if > (unsigned)
+.define bgtu /register rs1''32, /register rs2''32, /label label {
+    &bltu rs2, rs1, label
+}
+
+// Jump
+.define j /label label {
+    &jal x0, label
+}
+// Jump and link (ra = PC + 4)
+.define jal /label label {
+    &jal ra, label
+}
+// Jump register
+.define jr /register rs1''32 {
+    jalr x0, rs1, 0
+}
+// Jump and link register (ra = PC + 4)
+.define jalr /register rs1''32 {
+    jalr ra, rs1, 0
+}
+// Return from function (PC = ra)
+.define ret {
+    jalr x0, ra, 0
+}

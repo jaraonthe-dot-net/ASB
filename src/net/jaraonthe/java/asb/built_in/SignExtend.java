@@ -85,7 +85,8 @@ public class SignExtend implements Interpretable
         }
 
         // Leading high bit bytes
-        for (int i = extended.length - srcContentBytes - 1; i >= 1; i--) {
+        // (using content.length because src' byte array may be shorter than srcContentBytes)
+        for (int i = extended.length - content.length - 1; i >= 1; i--) {
             extended[i] = (byte)-1;
         }
         

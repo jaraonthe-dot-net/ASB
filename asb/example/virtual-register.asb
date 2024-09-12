@@ -2,16 +2,15 @@
  * Showing one simple and one complex example of Virtual Registers.
  *
  * Run: asb virtual-register.asb
- *
  */
 
-// Using the RISC-V implementation as basis (feel free to check it out)
+// Using the RISC-V implementation as base (feel free to check it out)
 .include "../lib/risc-v/risc-v.asb"
 
 /* SIMPLE VIRTUAL REGISTER */
 
 // The opposite of RISC-V's zero register - a register that always returns all 1s
-.register_virtual not_zero ''32 {
+.virtual_register not_zero ''32 {
     .get {
         // -1 will be interpreted as its two's-complement value (0xFFFFFFFF)
         &mov out, -1 // return -1
@@ -39,7 +38,7 @@ print_not_zero
 /* COMPLEX VIRTUAL REGISTER (with its own storage) */
 
 // This register stores 4 32-bit words in a FIFO manner (similar to a queue)
-.register_virtual queue ''32 {
+.virtual_register queue ''32 {
     // This register has its own internal storage; here it stores 4 32-bit words
     // 4*32 = 128
     .store ''128

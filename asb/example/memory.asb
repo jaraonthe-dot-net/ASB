@@ -1,0 +1,49 @@
+/**
+ * Implementing parts of a simple stack machine using memory.
+ *
+ * Run: asb virtual-register.asb --memory
+ */
+.memory .word ''16 .address ''16
+
+// Stack pointer (no other register required)
+.register sp ''16
+
+// Pushes given immediate to stop of stack
+.define push /immediate value ''16 {
+    // Stack grows downwards, i.e. from high memory address towards low memory address
+    &sub sp, sp, 1
+    &mov @sp, value // @: use sp as memory address
+    
+    &print_x sp; &print ": "; &println value
+}
+
+// Adds the top 2 values on stack together (removing them from stack) and
+// puts result back onto stack
+.define add {
+    .variable a ''16; &mov a, @sp
+    &add sp, sp, 1 // Stack shrinks by one
+    .variable b ''16; &mov b, @sp
+    
+    .variable result ''16
+    &add result, a, b
+    &mov @sp, result
+    
+    &print_x sp; &print ": "; &print a; &print " + "; &print b; &print " = "; &println result
+}
+
+// Swaps the top 2 values on stack with each other
+.define swap {
+    .variable tmp ''16; &mov tmp, @sp
+    .variable sp1 ''16; &add sp1, sp, 1 // sp1 is address of second top-most value on stack
+    
+    &mov @sp, @sp1
+    &mov @sp1, tmp
+    
+    &print_x sp; &print ": "; &print @sp; &print " <=> "; &print_x sp1; &print ": "; &println @sp1
+}
+
+push 5
+push 13
+add
+push 4
+swap

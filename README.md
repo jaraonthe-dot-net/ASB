@@ -28,7 +28,7 @@ Then read into these example files to see what they are doing, and start experim
 
 # Build from Source
 
-Alternatively to using the provided release, you can build ASB from source yourself. The codebase is completely written in Java, the `main()` method can be found in `net.jaraonthe.java.asb.ASB`.
+Alternatively to using the provided release, you can build ASB from [source](https://github.com/jaraonthe-dot-net/ASB/) yourself. The codebase is completely written in Java, the `main()` method can be found in `net.jaraonthe.java.asb.ASB`.
 
 # About
 
