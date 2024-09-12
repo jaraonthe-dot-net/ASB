@@ -95,6 +95,8 @@ test_immediate_indirection -9
 test_memory 113
 lw t0, 12(zero)
 &println_x t0
+sw t0, 12(zero)
+sb zero, 15(zero)
 
 &println "SYSTEM INFO"
 .define test_system_info /immediate length ''maxu14 {

@@ -245,7 +245,6 @@ public class Parser
                 this.parseRegister(Parser.RegisterType.ALIAS, directive.origin);
                 break;
             
-            // TODO add all variants to docs
             case ".register_virtual":
             case ".register_virt":
             case ".reg_virtual":
@@ -317,7 +316,7 @@ public class Parser
             
         } else {
             // .register <name> ''<length>
-            // .register_virtual <name> ''<length> (...)
+            // .virtual_register <name> ''<length> (...)
             int length = this.expectLength("register " + name);
             
             if (type == Parser.RegisterType.REGULAR) {
@@ -336,7 +335,7 @@ public class Parser
             this.expectStatementSeparator();
         } else {
             
-            // .register_virtual (...) ...sub-directives
+            // .virtual_register (...) ...sub-directives
             VirtualRegister vr = (VirtualRegister)register;
             Token t;
             ArrayList<Variable> parameters;
@@ -368,8 +367,6 @@ public class Parser
                         parameters = new ArrayList<>(1);
                         parameters.add(new Variable(Variable.Type.REGISTER, "out", register.getLength()));
                         if (vr.hasStore()) {
-                            // TODO Note in docs that .store has to come before
-                            //      the .get and/or .set that use it!
                             parameters.add(new Variable(Variable.Type.REGISTER, "store", vr.getStoreLength()));
                         }
                         vr.setGetterImplementation(this.parseImplementation(parameters));

@@ -56,7 +56,7 @@ public class ASB
     public static final String ABOUT_TEXT =
         "Assembler Sandbox " + ASB.VERSION + "\n"
         + "\n"
-        + "Created by Jakob Rathbauer <jakob@jaraonthe.net>\n"
+        + "Created by Jakob Rathbauer <jakob@jaraonthe.net> in Summer of 2024.\n"
         + "\n"
         + "License (GPL v3):\n"
         + "\n"

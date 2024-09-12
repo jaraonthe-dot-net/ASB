@@ -68,18 +68,32 @@ rsync -a --exclude=".*" "asb/lib" "$OUT_DIR" || exit 1
 
 echo "Creating HTML docs"
 # README.md
+sed -i -e 's/asb\///g' "$OUT_DIR/README.md" || exit 1
 pandoc -f markdown -t html -s -H "release-files/doc_head.html" "$OUT_DIR/README.md" -o "$OUT_DIR/README.html" || exit 1
 # replace .md links with .html; replace [!NOTE]s with an html class; remove /asb/ folder level (same below)
-sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/"asb\//"/g' "$OUT_DIR/README.html" || exit 1
+sed -i \
+    -e 's/\.md">/\.html">/g' \
+    -e 's/\.md#/\.html#"/g' \
+    -e 's/<p>\[!NOTE\]/<p class="box">/g' \
+    "$OUT_DIR/README.html" || exit 1
 # doc/*
 for f in $OUT_DIR/doc/*.md; do
+    sed -i -e 's/\.\.\/asb\//\.\.\//g' "$f" || exit 1
     pandoc -f markdown -t html -s --toc -H "release-files/doc_head.html" "$f" -o "${f%.md}.html" || exit 1
-    sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/\.\.\/asb\//\.\.\//g' "${f%.md}.html" || exit 1
+    sed -i \
+    -e 's/\.md">/\.html">/g' \
+    -e 's/\.md#/\.html#/g' \
+    -e 's/<p>\[!NOTE\]/<p class="box">/g' \
+    "${f%.md}.html" || exit 1
 done
 # Re-do doc/index.md with specific settings
 pandoc -f markdown -t html -s -H "release-files/doc_head.html" --metadata pagetitle="ASB documentation" \
     "$OUT_DIR/doc/index.md" -o "$OUT_DIR/doc/index.html" || exit 1
-sed -i -e 's/\.md">/\.html">/g' -e 's/<p>\[!NOTE\]/<p class="box">/g' -e 's/\.\.\/asb\//\.\.\//g' "$OUT_DIR/doc/index.html" || exit 1
+sed -i \
+    -e 's/\.md">/\.html">/g' \
+    -e 's/\.md#/\.html#/g' \
+    -e 's/<p>\[!NOTE\]/<p class="box">/g' \
+    "$OUT_DIR/doc/index.html" || exit 1
 
 mkdir "$OUT_DIR/doc/src" || exit 1
 mv $OUT_DIR/doc/*.md "$OUT_DIR/doc/src" || exit 1

@@ -3,7 +3,7 @@ To [Index](index.md)
 # Built-in Functions
 Built-in Functions are commands that are shipped with ASB. They are used to implement your custom commands.
 
-Functions can only be used within command implementations, with the exception of [Special Functions](#special-functions) `&assert` and `&print*`, which you can use anywhere.
+Functions can only be used within command implementations, with the exception of [special functions](#special-functions) `&assert` and `&print*`, which you can use anywhere.
 
 ---
 
@@ -436,7 +436,7 @@ Note that the program counter counts every instruction (in the user program) as 
 ---
 
 ## Program Flow within Implementation
-While controlling the program flow of the user program is done via [Manipulating the Program Counter](#manipulating-the-program-counter), in order to jump around within a custom command's implementation, the following functions can be used.
+While controlling the program flow of the user program is done via [manipulating the program counter](#manipulating-the-program-counter), in order to jump around within a custom command's implementation, the following functions can be used.
 
 Note that these can NOT be used to jump within the user program.
 

@@ -1,12 +1,38 @@
 This is the Assembler Sandbox, or ASB for short.
 
-Created by Jakob Rathbauer.
+ASB allows the user to experiment with machine instruction sets in a flexible manner. Machine commands can quickly be implemented and used within the same file. These custom machine commands make up the specific Assembler (or "user language") that the user experiments with. ASB may also be useful as a (limited) machine emulator.
+
+For now, ASB comes with a basic [RISC-V implementation](asb/lib/risc-v/risc-v.asb), which you are free to modify and extend as you wish.
+
+The ASB-specific source code comes in files with `.asb` extension.
 
 See the [documentation](doc/index.md). Check out the [examples](asb/example/hello-world.asb).
+
+# Quick Start
+
+Execute the ASB binary with one of the files in the `asb/example/` folder. E.g.:
+
+```
+asb asb/example/hello-world.asb
+
+asb asb/example/basic.asb
+```
+
+You may want to use the cli flags `--trace`, `--statistics`, `--registers`, `--memory` (or any combination of them). Each of them provides additional information about the effects of the program run.
+
+Then read into these example files to see what they are doing, and start experimenting.
 
 # System Requirements
 
 * Java 21 or higher
+
+# Build from Source
+
+Alternatively to using the provided release, you can build ASB from source yourself. The codebase is completely written in Java, the `main()` method can be found in `net.jaraonthe.java.asb.ASB`.
+
+# About
+
+Created by Jakob Rathbauer in Summer of 2024.
 
 # License
 
