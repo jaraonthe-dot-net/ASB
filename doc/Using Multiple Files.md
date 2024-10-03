@@ -15,5 +15,7 @@ You have the following options:
 
 ```
 // From ../asb/example/virtual-register.asb:
- "../lib/risc-v/risc-v.asb" // Loads the RISC-V implementation
+.include "../lib/risc-v/risc-v.asb" // Loads the RISC-V implementation
 ```
+
+- Alternatively you can use `.include_once` which behaves the same as `.include` except that a file that has already been parsed will not be included again. This usually makes sense when loading a file that contains instruction set definitions (which cannot be executed more than once).

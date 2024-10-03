@@ -15,6 +15,6 @@
 // RISC-V pc has 32 bit, but every instruction is 4 bytes long
 .pc ''30
 
-.include "registers.asb"
-.include "commands.asb"
-.include "pseudoinstructions.asb"
+.include_once "registers.asb"
+.include_once "commands.asb"
+.include_once "pseudoinstructions.asb"

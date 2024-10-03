@@ -5,7 +5,7 @@
  */
 
 // Using the RISC-V implementation as base (feel free to check it out)
-.include "../lib/risc-v/risc-v.asb"
+.include_once "../lib/risc-v/risc-v.asb"
 
 /* SIMPLE VIRTUAL REGISTER */
 

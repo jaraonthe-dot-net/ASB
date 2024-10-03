@@ -213,7 +213,7 @@ Any register used must already exist before the implementation; but the implemen
 ### Local variables
 Local variables are scoped within the implementation that they are declared in. This makes them different from registers, which are globally scoped. If a command or function with a local variable invokes itself (recursion) then for each invocation there is an independent instance of the local variable only available within that instance of executed implementation.
 
-To define a local variable us the `.variable` or `.var` directive followed by the variable name and [length definition](ASB%20Language.md#length-definition).
+To define a local variable use the `.variable` or `.var` directive followed by the variable name and [length definition](ASB%20Language.md#length-definition).
 
 The length definition may use the `max` and `maxu` definition and may also use a register or variable instead of a fixed number; in this case that variable's value sets the local variable's length.
 

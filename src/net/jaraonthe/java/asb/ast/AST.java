@@ -1,5 +1,6 @@
 package net.jaraonthe.java.asb.ast;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +63,12 @@ public class AST
      * Label name => program position the label points to
      */
     private Map<String, Integer> labels = HashMap.newHashMap(8);
+    
+    /**
+     * A list of all parsed files (in the order they were parsed). If a file was
+     * parsed more than once, it appears here more than once.
+     */
+    private List<Path> parsedFilePaths = new ArrayList<>();
     
     
     public AST()
@@ -349,5 +356,43 @@ public class AST
             return -1;
         }
         return position.intValue();
+    }
+    
+    
+    /**
+     * Adds a file to the list of parsed files.
+     * 
+     * This should only be called by the Parser, when it starts parsing the
+     * file in question.
+     * 
+     * The same file (i.e. a Path pointing to the same file) can be added more
+     * than once.
+     * 
+     * @param filePath
+     * @return Fluent interface
+     */
+    public AST addParsedFilePath(Path filePath)
+    {
+        this.parsedFilePaths.add(filePath);
+        return this;
+    }
+    
+    /**
+     * @return A list of all parsed files (in the order they were parsed). If a
+     *         file was parsed more than once, it appears here more than once.
+     */
+    public List<Path> getParsedFilePaths()
+    {
+        return Collections.unmodifiableList(this.parsedFilePaths);
+    }
+    
+    /**
+     * @param filePath
+     * @return True if the referenced file has already been parsed (or,
+     *         technically, is currently being parsed).
+     */
+    public boolean alreadyParsedFilePath(Path filePath)
+    {
+        return this.parsedFilePaths.contains(filePath);
     }
 }

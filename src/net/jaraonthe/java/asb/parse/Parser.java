@@ -100,7 +100,7 @@ public class Parser
     protected Parser(SourceFile file, AST ast)
     {
         this.tokenizer = new Tokenizer(file);
-        this.ast = ast;
+        this.ast       = ast;
     }
     
     /**
@@ -111,6 +111,7 @@ public class Parser
      */
     private void run() throws LexicalError, ParseError
     {
+        this.ast.addParsedFilePath(this.tokenizer.file.filePath);
         Token t;
         while ((t = this.tokenizer.next()) != null) {
             switch (t.type) {
@@ -166,7 +167,11 @@ public class Parser
         this.tokenizer.setMode(Tokenizer.Mode.META);
         
         Token t;
+        boolean isIncludeOnce = false;
         switch (directive.content) {
+            case ".include_once":
+                isIncludeOnce = true;
+                // Fall-through
             case ".include":
                 t = this.expect(Token.Type.STRING, "file path");
                 this.expectStatementSeparator();
@@ -175,6 +180,14 @@ public class Parser
                 Path filePath = this.tokenizer.file.filePath.getParent().resolve(t.content);
                 SourceFile file;
                 try {
+                    if (isIncludeOnce) {
+                        filePath = SourceFile.normalizeFilePath(filePath);
+                        if (this.ast.alreadyParsedFilePath(filePath)) {
+                            // .include_once already parsed file
+                            break;
+                        }
+                    }
+                    
                     file = new SourceFile(filePath);
                 } catch (IOException e) {
                     throw new ParseError(

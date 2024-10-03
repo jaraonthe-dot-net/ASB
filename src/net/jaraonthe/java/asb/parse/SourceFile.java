@@ -41,8 +41,21 @@ public class SourceFile
      */
     public SourceFile(Path filePath) throws IOException
     {
-        this.filePath = filePath.toRealPath();
+        this.filePath = SourceFile.normalizeFilePath(filePath);
         this.lines    = Collections.unmodifiableList(Files.readAllLines(this.filePath));
+    }
+    
+    /**
+     * Normalizes the given Path in the same way the SourceFile constructor
+     * would. This can be applied to the same path multiple times without issue.
+     * 
+     * @param filePath
+     * @return
+     * @throws IOException
+     */
+    public static Path normalizeFilePath(Path filePath) throws IOException
+    {
+        return filePath.toRealPath();
     }
     
     
