@@ -30,6 +30,8 @@ Then read into these example files to see what they are doing, and start experim
 
 Alternatively to using the provided release, you can build ASB from [source](https://github.com/jaraonthe-dot-net/ASB/) yourself. The codebase is completely written in Java, the `main()` method can be found in `net.jaraonthe.java.asb.ASB`.
 
+(Alternatively, you can execute `build-release.sh` (on Linux) which will build the `.class` files and a `.jar` file in the `/build` folder.)
+
 # About
 
 Created by Jakob Rathbauer in Summer of 2024.
