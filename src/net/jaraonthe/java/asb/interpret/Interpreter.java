@@ -166,7 +166,15 @@ public class Interpreter
             this.statistics.incrementInvocationsCount(invocation);
             
             // This may modify the program Counter
-            invocation.interpret(context);
+            try {
+                invocation.interpret(context);
+            } catch (StackOverflowError e) {
+                throw new RuntimeError(
+                    "Infinite recursion triggered by "
+                    + (this.settings.devMode() ? invocation : invocation.getOrigin().getContent())
+                    + " at " + invocation.getOrigin()
+                );
+            }
         }
         
         this.printStatistics();
