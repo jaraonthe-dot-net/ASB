@@ -244,7 +244,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 );
             }
             break;
-        } while(tryAgain-- > 0);
+        } while (tryAgain-- > 0);
         
         if (viableCommands.size() > 1) {
             // select best command

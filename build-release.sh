@@ -65,6 +65,7 @@ cp "LICENSE.txt" "$OUT_DIR/LICENSE.txt" || exit 1
 rsync -a --exclude=".*" "doc" "$OUT_DIR" || exit 1
 rsync -a --exclude=".*" "asb/example" "$OUT_DIR" || exit 1
 rsync -a --exclude=".*" "asb/lib" "$OUT_DIR" || exit 1
+rsync -a --exclude=".*" "misc" "$OUT_DIR" || exit 1
 
 echo "Creating HTML docs"
 # README.md

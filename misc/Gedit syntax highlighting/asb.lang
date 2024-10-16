@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ Syntax Highlighting file for Assembler Sandbox source code files (.asb).
+
+ Author: Jakob Rathbauer <jakob.rathbauer@jaraonthe.net>
+
+ Based on the java.lang file, which has the following note:
+
+   This file is part of GtkSourceView
+
+   Author: Gustavo Giráldez <gustavo.giraldez@gmx.net>
+   Copyright (C) 2003 Gustavo Giráldez <gustavo.giraldez@gmx.net>
+   Copyright (C) 2006 Jeff Walden <jwalden@mit.edu>
+
+   GtkSourceView is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   GtkSourceView is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with this library; if not, see <http://www.gnu.org/licenses/>.
+
+-->
+<language id="asb" name="Assembler Sandbox (ASB)" version="2.0" _section="Source">
+  <metadata>
+    <property name="globs">*.asb</property>
+    <property name="line-comment-start">//</property>
+    <!--<property name="line-comment-start">#</property>-->
+    <property name="block-comment-start">/*</property>
+    <property name="block-comment-end">*/</property>
+  </metadata>
+
+  <styles>
+    <style id="comment"           name="Comment"           map-to="def:comment"/>
+    <style id="escaped-character" name="Escaped Character" map-to="def:special-char"/>
+    <style id="string"            name="String"            map-to="def:string"/>
+    <style id="directive"         name="Directive"         map-to="def:preprocessor"/>
+    <style id="built-in"          name="Built-in Function" map-to="def:function"/>
+    <style id="address"           name="Address"           map-to="def:link-symbol"/>
+    <style id="datatype"          name="Datatype"          map-to="def:type"/>
+    <style id="operator"          name="Operator"          map-to="def:operator"/>
+    <style id="number"            name="Number"            map-to="def:decimal"/>
+  </styles>
+
+  <definitions>
+
+    <define-regex id="escaped-character" extended="true">
+      \\[\\\"nrt]
+    </define-regex>
+
+    <context id="string" style-ref="string" end-at-line-end="false">
+      <start>"</start>
+      <end>"</end>
+      <include>
+        <context id="escaped-character" style-ref="escaped-character">
+          <match>\%{escaped-character}</match>
+        </context>
+      </include>
+    </context>
+
+    <context id="directive" style-ref="directive">
+      <match extended="true">
+        \.[A-Za-z_]+
+      </match>
+    </context>
+    
+    <context id="built-in" style-ref="built-in">
+      <match extended="true">
+        &amp;[A-Za-z_0-9]+
+      </match>
+    </context>
+    
+    <!-- This is opinionated and may not fit every user language well -->
+    <context id="address" style-ref="address">
+      <match extended="true">
+        @[A-Za-z_0-9]+
+      </match>
+    </context>
+
+    <context id="datatype" style-ref="datatype">
+      <match extended="true">
+        \/[A-Za-z]+
+      </match>
+    </context>
+    
+    <context id="operator" style-ref="operator">
+      <match extended="true">
+        ([:;@\-!$%&amp;()*+,\/&lt;=&gt;?@\[\]^`{\|}~]|''maxu?|')
+      </match>
+    </context>
+
+    <context id="numeric" style-ref="number">
+      <match extended="true">
+        \b(-?[1-9][_0-9]*|0(x|X)_?[0-9A-Fa-f][_0-9A-Fa-f]*|0(b|B)_?[01][_01]*|0[_0-7]*)\b
+      </match>
+    </context>
+
+    <context id="asb" class="no-spell-check">
+      <include>
+        <context ref="def:c-like-comment" style-ref="comment"/>
+        <context ref="def:c-like-comment-multiline" style-ref="comment"/>
+        <context ref="def:c-like-close-comment-outside-comment"/>
+        <context ref="string"/>
+        <context ref="directive"/>
+        <context ref="built-in"/>
+        <context ref="address"/>
+        <context ref="datatype"/>
+        <context ref="operator"/>
+        <context ref="numeric"/>
+      </include>
+    </context>
+
+  </definitions>
+</language>
