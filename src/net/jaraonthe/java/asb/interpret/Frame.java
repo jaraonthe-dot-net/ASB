@@ -27,6 +27,10 @@ public class Frame
     
     /**
      * Points to the Invocation that is NEXT to be executed in this scope.
+     * 
+     * May be negative. If this doesn't point to a valid Invocation because it
+     * is either negative or too big, then execution of the current scope shall
+     * be halted.
      */
     public int programCounter = 0;
 

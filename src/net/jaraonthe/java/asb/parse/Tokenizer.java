@@ -628,6 +628,13 @@ public class Tokenizer
                         text.append('\t');
                         break;
                         // TODO Consider adding further codes (e.g. unicode)
+                        //      - don't forget that so far ASB source code only
+                        //      supports ASCII as per the documentation
+                        //      (everything else is undefined), so would e.g.
+                        //      UTF-8 characters be allowed in a string literal
+                        //      directly? What if not? I'd say the whole topic
+                        //      should be considered in entirety before adding
+                        //      anything.
                     default:
                         text.append(c);
                         break;

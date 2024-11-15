@@ -15,7 +15,7 @@ MAIN_SRC_FILE="src/net/jaraonthe/java/asb/ASB.java"
 cd "$(dirname "$0")"
 
 # Check Prerequisites
-RESULT=$(javac --version | grep -Pc "javac [2-9][1-9]")
+RESULT=$(javac --version | grep -Pc "javac (2[1-9]|[3-9][0-9]|[1-9][0-9][0-9]+)")
 if [[ $RESULT == "0" ]]; then
     echo "Unsupported javac version, should be 21 or higher, is:"
     javac --version

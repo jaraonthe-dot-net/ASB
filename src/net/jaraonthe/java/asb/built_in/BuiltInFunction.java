@@ -28,6 +28,7 @@ import net.jaraonthe.java.asb.parse.Constraints;
 public class BuiltInFunction extends Function
 {
     private final boolean isUserlandInvokable;
+    private final boolean useCallerFrame;
     
     /**
      * @param name                The name of this function (i.e. the "&..."
@@ -38,14 +39,39 @@ public class BuiltInFunction extends Function
      */
     public BuiltInFunction(String name, boolean isUserlandInvokable)
     {
+        this(name, isUserlandInvokable, false);
+    }
+    
+    /**
+     * @param name                The name of this function (i.e. the "&..."
+     *                            word at the front)
+     * @param isUserlandInvokable True if this function can be invoked within
+     *                            userland. False: Can only be invoked within
+     *                            an implementation.
+     * @param useCallerFrame      True if no new frame shall be created for this
+     *                            function, instead it will use the caller's
+     *                            frame as its own. This also means that
+     *                            function arguments are not prepared for this
+     *                            function.<br>
+     *                            Default false.
+     */
+    public BuiltInFunction(String name, boolean isUserlandInvokable, boolean useCallerFrame)
+    {
         super(name);
         this.isUserlandInvokable = isUserlandInvokable;
+        this.useCallerFrame      = useCallerFrame;
     }
 
     @Override
     public boolean isUserlandInvokable()
     {
         return this.isUserlandInvokable;
+    }
+    
+    @Override
+    public boolean useCallerFrame()
+    {
+        return this.useCallerFrame;
     }
     
     
@@ -234,6 +260,9 @@ public class BuiltInFunction extends Function
             ast.addCommand(ProgramCounter.create(type));
         }
         
+        // &halt
+        ast.addCommand(Halt.create());
+        
         // &jump
         ast.addCommand(Jump.create());
         
@@ -306,6 +335,9 @@ public class BuiltInFunction extends Function
                 }
             }
         }
+        
+        // &return
+        ast.addCommand(Return.create());
         
         // &sign_extend
         ast.addCommand(SignExtend.create());

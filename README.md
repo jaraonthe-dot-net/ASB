@@ -8,6 +8,8 @@ The ASB-specific source code comes in files with `.asb` extension.
 
 See the [documentation](doc/index.md). Check out the [examples](asb/example/hello-world.asb).
 
+Syntax highlighting configuration can be found in the [misc/](misc/README.txt) folder.
+
 # Quick Start
 
 Execute the ASB binary with one of the files in the `asb/example/` folder. E.g.:

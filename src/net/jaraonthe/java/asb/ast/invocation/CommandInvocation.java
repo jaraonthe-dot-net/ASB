@@ -549,6 +549,21 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
     @Override
     public void interpret(Context context) throws RuntimeError
     {
+        Context commandContext = this.createCommandContext(context);
+        
+        try {
+            this.invokedCommand.getInterpretable().interpret(commandContext);
+        } catch (ConstraintException e) {
+            throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
+        }
+    }
+    
+    private Context createCommandContext(Context context) throws RuntimeError
+    {
+        if (this.invokedCommand.useCallerFrame()) {
+            return context;
+        }
+        
         // The frame for the command's interpretable must be constructed here,
         // as it has to be populated with the argument values
         Frame newFrame = new Frame(context.frame.getRootParentFrame());
@@ -567,10 +582,6 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
             i++;
         }
         
-        try {
-            this.invokedCommand.getInterpretable().interpret(context.withFrame(newFrame));
-        } catch (ConstraintException e) {
-            throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
-        }
+        return context.withFrame(newFrame);
     }
 }

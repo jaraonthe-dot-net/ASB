@@ -429,9 +429,11 @@ end:
 
 As a `/label` parameter behaves the same way as a local variable, it is also possible to modify its value before overwriting the program counter with it (or storing it in a register, e.g. to implement a function call).
 
-If the program counter is set to a value that doesn't point to an instruction (because it is bigger than the user program is long) execution halts.
+If the program counter is set to a value that doesn't point to an instruction (because it is bigger than the user program is long) execution halts (see also: [`&halt`](#halt)).
 
 Note that the program counter counts every instruction (in the user program) as an increment of 1. A label's value is calculated in the same way.
+
+Note that after setting the program counter, and until the next instruction in the userland program is executed, the value returned by `&get_program_counter` is undefined (i.e. it will still provide a value, but it may not be the one you expect).
 
 ---
 
@@ -466,6 +468,35 @@ Where `a` and `b` are registers or local variables, and up to one can be an imme
 Where `label` is a local label name.
 
 `&jumpif` compares `a` and `b` according to the given operator and if the comparison is true executes a jump to the given `label`, so that the instruction following the label definition is executed next. Otherwise the program flow continues normally.
+
+### `&return`
+
+```
+&return
+```
+
+This stops the execution of the current implementation and returns to the caller.
+
+Alternatively, you can `&jump` to a label at the end of the implementation. I.e.:
+
+```
+.define myCmd {
+    // ...
+    &return
+    // ... this is not executed
+}
+```
+
+is effectively equivalent to:
+
+```
+.define myCmd {
+    // ...
+    &jump end
+    // ... this is executed
+  end:
+}
+```
 
 ---
 
@@ -607,3 +638,17 @@ Where `a` and `b` are registers or local variables, and up to one can be an imme
 `&assert` compares `a` and `b` according to the given operator and if the comparison is true the program continues normally; but if the comparison fails the program halts with an error.
 
 Optionally, a custom error `message` can be given which will be displayed in case the comparison fails.
+
+### `&halt`
+
+```
+&halt
+```
+
+This effectively halts the userland program.
+
+`&halt` is equivalent to calling [`&set_program_counter`](#set_program_counter-aka-set_pc) with a value that is greater than or equal to the length of the userland program.
+
+If invoked directly in the userland program, then after this command execution halts.
+
+If invoked within a command implementation, then execution continues until the interpreter returns to the userland program, at which point execution halts. If, however, the program counter is manipulated before that point (via `&set_program_counter`), then that new program counter value overrides the `&halt` instruction.

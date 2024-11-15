@@ -199,4 +199,16 @@ public class Command extends CommandLike
     {
         return true;
     }
+    
+    /**
+     * @return True if no new frame shall be created for this command, instead
+     *         it will use the caller's frame as its own. This also means that
+     *         command arguments are not prepared for this command, as that
+     *         would negatively affect the caller's frame.
+     *         This is only useful for some special built-in functions.
+     */
+    public boolean useCallerFrame()
+    {
+        return false;
+    }
 }
