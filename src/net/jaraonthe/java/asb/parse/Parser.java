@@ -245,6 +245,13 @@ public class Parser
                         "Cannot configure program counter after first command at" + directive.origin
                     );
                 }
+                // TODO Issue: Even though no command invocation has been
+                //      encountered yet, the pc length may already have been
+                //      used for a /label parameter in a command .define! I.e.
+                //      that commands label param length is incorrect! Not sure
+                //      what that will cause, but it's not good.
+                //      Let's prevent changing of pc after the first /label
+                //      parameter has been defined.
                 this.ast.setPcLength(this.expectLength(directive.content));
                 
                 this.expectStatementSeparator();

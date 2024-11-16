@@ -31,7 +31,7 @@ public class Jump implements Interpretable
     }
     
     /**
-     * Adds a LABEL parameter called "label" to the given function
+     * Adds a local LABEL parameter called "label" to the given function.
      * 
      * @param function
      */
