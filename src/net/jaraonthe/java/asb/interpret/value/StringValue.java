@@ -1,7 +1,7 @@
 package net.jaraonthe.java.asb.interpret.value;
 
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 
 /**
  * The value of a string parameter.
@@ -16,12 +16,12 @@ public class StringValue extends Value
     public final String value;
     
     /**
-     * @param variable the Variable which this Value is assigned to
+     * @param parameter the Parameter which this Value is assigned to
      * @param argument the argument that is used to fill this parameter
      */
-    public StringValue(Variable variable, StringArgument argument)
+    public StringValue(Parameter parameter, StringArgument argument)
     {
-        super(variable);
+        super(parameter);
         this.value = argument.string;
     }
     

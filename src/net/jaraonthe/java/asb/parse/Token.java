@@ -238,7 +238,7 @@ public class Token
      * This should be used for all immediate values.<br>
      * 
      * Note: This creates a negative BigInteger if the given number starts with
-     * '-'. For immediates this is fine, but for subsequent storing in registers
+     * '-'. For immediates this is fine, but for subsequent storing in variables
      * (in interpretation stage) such negative values should be transformed.
      * 
      * @param token a NUMBER token

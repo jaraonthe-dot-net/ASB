@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.ast;
 
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.invocation.CommandInvocation;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 
 /**
  * Stuff that both {@link Command} and {@link CommandInvocation} have in common.
@@ -46,7 +46,7 @@ abstract public class CommandLike
      * @param type Here we only care about the parameter or argument type (as
      *             details are ignored).
      */
-    protected void addParameterToResolvingSignature(Variable.Type type)
+    protected void addParameterToResolvingSignature(Parameter.Type type)
     {
         this.resolvingSignature += type.signatureMarker;
     }

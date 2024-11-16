@@ -2,8 +2,8 @@ package net.jaraonthe.java.asb.ast.invocation;
 
 import java.math.BigInteger;
 
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -15,23 +15,23 @@ import net.jaraonthe.java.asb.parse.Constraints;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-public class RegisterArgument extends Argument
+public class VariableArgument extends Argument
 {
     /**
      * The register or parameter or local variable this refers to
      */
-    public final VariableLike register;
+    public final Variable variable;
     
     /**
      * Start position of bitwise access.<br>
-     * -1 if bitwise access is not used or {@link #fromPositionRegister} is
+     * -1 if bitwise access is not used or {@link #fromPositionVariable} is
      * used instead to dynamically supply this value.
      */
     public final int fromPosition;
 
     /**
      * End position of bitwise access.<br>
-     * -1 if bitwise access is not used or {@link #toPositionRegister} is
+     * -1 if bitwise access is not used or {@link #toPositionVariable} is
      * used instead to dynamically supply this value.
      */
     public final int toPosition;
@@ -41,128 +41,126 @@ public class RegisterArgument extends Argument
      * Null if bitwise access is not used or {@link #fromPosition} is
      * used as value instead.
      */
-    public final VariableLike fromPositionRegister;
+    public final Variable fromPositionVariable;
 
     /**
      * Variable used as end position of bitwise access.<br>
      * Null if bitwise access is not used or {@link #toPosition} is
      * used as value instead.
      */
-    public final VariableLike toPositionRegister;
+    public final Variable toPositionVariable;
     
 
     /**
-     * @param register The register or parameter or local variable this argument
+     * @param variable The register or parameter or local variable this argument
      *                 refers to
      */
-    public RegisterArgument(VariableLike register)
+    public VariableArgument(Variable variable)
     {
-        this(register, -1, -1, null, null);
+        this(variable, -1, -1, null, null);
     }
 
     /**
-     * @param register The register or parameter or local variable this argument
+     * @param variable The register or parameter or local variable this argument
      *                 refers to
      * @param position The single bit position that is being accessed
      */
-    public RegisterArgument(VariableLike register, int position)
+    public VariableArgument(Variable variable, int position)
     {
-        this(register, position, position, null, null);
+        this(variable, position, position, null, null);
     }
 
     /**
-     * @param register     The register or parameter or local variable this
+     * @param variable     The register or parameter or local variable this
      *                     argument refers to
      * @param fromPosition The start of the position range that is being accessed
      * @param toPosition   The end of the position range that is being accessed
      */
-    public RegisterArgument(VariableLike register, int fromPosition, int toPosition)
+    public VariableArgument(Variable variable, int fromPosition, int toPosition)
     {
-        this(register, fromPosition, toPosition, null, null);
+        this(variable, fromPosition, toPosition, null, null);
     }
 
     /**
-     * @param register The register or parameter or local variable this argument
+     * @param variable The register or parameter or local variable this argument
      *                 refers to
      * @param position The variable which's value will be used as the single bit
      *                 position that is being accessed
      */
-    public RegisterArgument(VariableLike register, VariableLike position)
+    public VariableArgument(Variable variable, Variable position)
     {
-        this(register, -1, -1, position, position);
+        this(variable, -1, -1, position, position);
     }
 
     /**
-     * @param register     The register or parameter or local variable this
+     * @param variable     The register or parameter or local variable this
      *                     argument refers to
-     * @param register
      * @param fromPosition The variable which's value will be used as the start
      *                     of the position range that is being accessed
      * @param toPosition   The variable which's value will be used as the end
      *                     of the position range that is being accessed
      */
-    public RegisterArgument(VariableLike register, VariableLike fromPosition, VariableLike toPosition)
+    public VariableArgument(Variable variable, Variable fromPosition, Variable toPosition)
     {
-        this(register, -1, -1, fromPosition, toPosition);
+        this(variable, -1, -1, fromPosition, toPosition);
     }
 
     /**
-     * @param register     The register or parameter or local variable this
+     * @param variable     The register or parameter or local variable this
      *                     argument refers to
      * @param fromPosition The start of the position range that is being accessed
      * @param toPosition   The variable which's value will be used as the end
      *                     of the position range that is being accessed
      */
-    public RegisterArgument(VariableLike register, int fromPosition, VariableLike toPosition)
+    public VariableArgument(Variable variable, int fromPosition, Variable toPosition)
     {
-        this(register, fromPosition, -1, null, toPosition);
+        this(variable, fromPosition, -1, null, toPosition);
     }
 
     /**
-     * @param register     The register or parameter or local variable this
+     * @param variable     The register or parameter or local variable this
      *                     argument refers to
-     * @param register
      * @param fromPosition The variable which's value will be used as the start
      *                     of the position range that is being accessed
      * @param toPosition   The end of the position range that is being accessed
      */
-    public RegisterArgument(VariableLike register, VariableLike fromPosition, int toPosition)
+    public VariableArgument(Variable variable, Variable fromPosition, int toPosition)
     {
-        this(register, -1, toPosition, fromPosition, null);
+        this(variable, -1, toPosition, fromPosition, null);
     }
     
     
     /**
-     * @param register
+     * @param variable
      * @param fromPosition
      * @param toPosition
-     * @param fromPositionRegister
-     * @param toPositionRegister
+     * @param fromPositionVariable
+     * @param toPositionVariable
      */
-    private RegisterArgument(
-        VariableLike register,
+    private VariableArgument(
+        Variable variable,
         int fromPosition,
         int toPosition,
-        VariableLike fromPositionRegister,
-        VariableLike toPositionRegister
+        Variable fromPositionVariable,
+        Variable toPositionVariable
     ) {
-        this.register             = register;
+        this.variable             = variable;
         this.fromPosition         = fromPosition;
         this.toPosition           = toPosition;
-        this.fromPositionRegister = fromPositionRegister;
-        this.toPositionRegister   = toPositionRegister;
+        this.fromPositionVariable = fromPositionVariable;
+        this.toPositionVariable   = toPositionVariable;
 
         // Check arguments for consistency
-        if (this.hasPosition() == (toPosition == -1 && toPositionRegister == null)) {
+        if (this.hasPosition() == (toPosition == -1 && toPositionVariable == null)) {
             throw new IllegalArgumentException(
                 "Inconsistent position settings. Probably used -1 or null somewhere"
             );
         }
         
         if (this.hasPosition()) {
-            if (!register.isNumeric()) {
+            if (!variable.isNumeric()) {
                 throw new IllegalArgumentException(
-                    "Cannot use bitwise access on non-numeric variable " + register.name
+                    "Cannot use bitwise access on non-numeric variable " + variable.name
                 );
             }
             
@@ -170,18 +168,18 @@ public class RegisterArgument extends Argument
             if (fromPosition != -1) {
                 if (!Constraints.isValidPosition(fromPosition)) {
                     throw new IllegalArgumentException(
-                        "Invalid argument " + register.name + " start position. Given value: " + fromPosition
+                        "Invalid argument " + variable.name + " start position. Given value: " + fromPosition
                     );
                 }
-                if (register.maxLength > 0 && fromPosition >= register.maxLength) {
+                if (variable.maxLength > 0 && fromPosition >= variable.maxLength) {
                     throw new IllegalArgumentException(
-                        "Argument " + register.name + " start position is not within parameter length. Given value: " + fromPosition
+                        "Argument " + variable.name + " start position is not within parameter length. Given value: " + fromPosition
                     );
                 }
                 
-            } else if (!fromPositionRegister.isNumeric()) {
+            } else if (!fromPositionVariable.isNumeric()) {
                 throw new IllegalArgumentException(
-                    "Cannot use non-numeric variable " + fromPositionRegister.name
+                    "Cannot use non-numeric variable " + fromPositionVariable.name
                     + " as bitwise access position"
                 );
             }
@@ -190,18 +188,18 @@ public class RegisterArgument extends Argument
             if (toPosition != -1) {
                 if (!Constraints.isValidPosition(toPosition)) {
                     throw new IllegalArgumentException(
-                        "Invalid argument " + register.name + " end position. Given value: " + toPosition
+                        "Invalid argument " + variable.name + " end position. Given value: " + toPosition
                     );
                 }
-                if (register.maxLength > 0 && toPosition >= register.maxLength) {
+                if (variable.maxLength > 0 && toPosition >= variable.maxLength) {
                     throw new IllegalArgumentException(
-                        "Argument " + register.name + " end position is not within parameter length. Given value: " + toPosition
+                        "Argument " + variable.name + " end position is not within parameter length. Given value: " + toPosition
                     );
                 }
                 
-            } else if (!toPositionRegister.isNumeric()) {
+            } else if (!toPositionVariable.isNumeric()) {
                 throw new IllegalArgumentException(
-                    "Cannot use non-numeric variable " + toPositionRegister.name
+                    "Cannot use non-numeric variable " + toPositionVariable.name
                     + " as bitwise access position"
                 );
             }
@@ -215,7 +213,7 @@ public class RegisterArgument extends Argument
      */
     public boolean hasPosition()
     {
-        return this.fromPosition != -1 || this.fromPositionRegister != null;
+        return this.fromPosition != -1 || this.fromPositionVariable != null;
     }
     
     /**
@@ -225,13 +223,13 @@ public class RegisterArgument extends Argument
      */
     public boolean hasDynamicPosition()
     {
-        return this.fromPositionRegister != null || this.toPositionRegister != null;
+        return this.fromPositionVariable != null || this.toPositionVariable != null;
     }
     
     /**
      * @return The minimum length this argument may represent. Returns
      *         {@link Constraints.MIN_LENGTH MIN_LENGTH} if dynamic length
-     *         or register-based bitwise access is used. If the referenced
+     *         or variable-based bitwise access is used. If the referenced
      *         Variable is non-numeric the return value is undefined.
      */
     public int getMinLength()
@@ -243,17 +241,17 @@ public class RegisterArgument extends Argument
             return Math.abs(this.fromPosition - this.toPosition) + 1;
         }
         
-        if (this.register.minLength == 0) {
+        if (this.variable.minLength == 0) {
             // dynamic length
             return Constraints.MIN_LENGTH;
         }
-        return this.register.minLength;
+        return this.variable.minLength;
     }
     
     /**
      * @return The maximum length this argument may represent. May returns
      *         {@link Constraints.MAX_LENGTH MAX_LENGTH} if dynamic length
-     *         or register-based bitwise access is used. If the referenced
+     *         or variable-based bitwise access is used. If the referenced
      *         Variable is non-numeric the return value is undefined.
      */
     public int getMaxLength()
@@ -262,12 +260,12 @@ public class RegisterArgument extends Argument
             if (this.hasDynamicPosition()) {
                 // assume both to and from are dynamic
                 int position = 0;
-                if (this.fromPositionRegister != null) {
-                    if (this.toPositionRegister == null) {
+                if (this.fromPositionVariable != null) {
+                    if (this.toPositionVariable == null) {
                         // from is dynamic, to is fixed
                         position = this.toPosition;
                     }
-                } else if (this.toPositionRegister == null) {
+                } else if (this.toPositionVariable == null) {
                     // to is dynamic, from is fixed
                     position = this.fromPosition;
                 }
@@ -284,15 +282,15 @@ public class RegisterArgument extends Argument
      * and the other is dynamic.
      * 
      * Even in such a situation a maximum length can be calculated because the
-     * maximum length of the reference register limits what is possible.
+     * maximum length of the reference variable limits what is possible.
      * 
      * @param position
      * @return
      */
     private int calculateMaxLength(int position)
     {
-        int length = this.register.maxLength;
-        if (this.register.maxLength < 1) {
+        int length = this.variable.maxLength;
+        if (this.variable.maxLength < 1) {
             length = Constraints.MAX_LENGTH;
         }
         if (position < length / 2) {
@@ -304,46 +302,46 @@ public class RegisterArgument extends Argument
     }
 
     @Override
-    public Variable.Type getVariableType()
+    public Parameter.Type getParameterType()
     {
-        return Variable.Type.REGISTER;
+        return Parameter.Type.REGISTER;
     }
     
     @Override
     public String toString()
     {
         if (!this.hasPosition()) {
-            return this.register.name;
+            return this.variable.name;
         }
         
         String position = "";
         if (this.fromPosition != -1) {
             position += this.fromPosition;
             
-            if (this.toPositionRegister != null) {
-                position += ":" + this.toPositionRegister.name;
+            if (this.toPositionVariable != null) {
+                position += ":" + this.toPositionVariable.name;
             } else if (this.toPosition != this.fromPosition) {
                 position += ":" + this.toPosition;
             }
             
         } else {
-            position += this.fromPositionRegister.name;
+            position += this.fromPositionVariable.name;
             
             if (this.toPosition != -1) {
                 position += ":" + this.toPosition;
-            } else if (this.toPositionRegister != this.fromPositionRegister) {
-                position += ":" + this.toPositionRegister.name;
+            } else if (this.toPositionVariable != this.fromPositionVariable) {
+                position += ":" + this.toPositionVariable.name;
             }
         }
         
-        return this.register.name + "'" + position;
+        return this.variable.name + "'" + position;
     }
 
     
     /**
      * Calculates the effective start position of bitwise access.
      * 
-     * This also resolves dynamic position (via position register) using the
+     * This also resolves dynamic position (via position variable) using the
      * given interpretation context.
      * 
      * @param context
@@ -359,8 +357,8 @@ public class RegisterArgument extends Argument
         if (this.fromPosition != -1) {
             return this.fromPosition;
         }
-        if (this.fromPositionRegister != null) {
-            return this.register2Position(this.fromPositionRegister, context);
+        if (this.fromPositionVariable != null) {
+            return this.variable2Position(this.fromPositionVariable, context);
         }
         
         throw new IllegalStateException(
@@ -371,7 +369,7 @@ public class RegisterArgument extends Argument
     /**
      * Calculates the effective end position of bitwise access.
      * 
-     * This also resolves dynamic position (via position register) using the
+     * This also resolves dynamic position (via position variable) using the
      * given interpretation context.
      * 
      * @param context
@@ -387,8 +385,8 @@ public class RegisterArgument extends Argument
         if (this.toPosition != -1) {
             return this.toPosition;
         }
-        if (this.toPositionRegister != null) {
-            return this.register2Position(this.toPositionRegister, context);
+        if (this.toPositionVariable != null) {
+            return this.variable2Position(this.toPositionVariable, context);
         }
         
         throw new IllegalStateException(
@@ -398,9 +396,9 @@ public class RegisterArgument extends Argument
     
     
     /**
-     * Ascertains a position value from the given position register.
+     * Ascertains a position value from the given position variable.
      * 
-     * @param register Either {@link #fromPositionRegister} or {@link #toPositionRegister}
+     * @param variable Either {@link #fromPositionVariable} or {@link #toPositionVariable}
      * @param context
      * 
      * @return
@@ -408,22 +406,22 @@ public class RegisterArgument extends Argument
      * @throws ConstraintException
      * @throws RuntimeError
      */
-    private int register2Position(VariableLike register, Context context) throws ConstraintException, RuntimeError
+    private int variable2Position(Variable variable, Context context) throws ConstraintException, RuntimeError
     {
-        BigInteger value = context.frame.getNumericValue(register.name).read(context);
+        BigInteger value = context.frame.getNumericValue(variable.name).read(context);
         int position;
         try {
             position = value.intValueExact();
             if (
                 !Constraints.isValidPosition(position)
-                || context.frame.getNumericValue(this.register.name).length <= position
+                || context.frame.getNumericValue(this.variable.name).length <= position
             ) {
                 throw new ArithmeticException("dummy");
             }
             
         } catch (ArithmeticException e) {
             throw new ConstraintException(
-                "Value stored in " + register.name
+                "Value stored in " + variable.name
                 + " is used as bitwise access position, but is too "
                 + (value.signum() >= 0 ? "big" : "small") + " (is " + value + ")"
             );

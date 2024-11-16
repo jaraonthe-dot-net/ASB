@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.interpret.value;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
@@ -23,7 +23,7 @@ abstract public class NumericValue extends Value
      * @param variable the Variable which this Value is assigned to
      * @param length   the effective length of this value
      */
-    protected NumericValue(VariableLike variable, int length)
+    protected NumericValue(Variable variable, int length)
     {
         super(variable);
         

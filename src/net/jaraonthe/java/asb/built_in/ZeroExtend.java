@@ -1,6 +1,6 @@
 package net.jaraonthe.java.asb.built_in;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -26,9 +26,9 @@ public class ZeroExtend implements Interpretable
         BuiltInFunction function = new BuiltInFunction("&zero_extend", false);
         
         // &zero_extend dstRegister, srcRegister
-        function.addParameterByType(Variable.Type.REGISTER, "dst");
+        function.addParameterByType(Parameter.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
-        function.addParameterByType(Variable.Type.REGISTER, "src");
+        function.addParameterByType(Parameter.Type.REGISTER, "src");
         
         function.setInterpretable(new ZeroExtend());
         return function;

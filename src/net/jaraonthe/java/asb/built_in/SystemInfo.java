@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -65,7 +65,7 @@ public class SystemInfo implements Interpretable
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
-        function.addParameterByType(Variable.Type.REGISTER, "dst");
+        function.addParameterByType(Parameter.Type.REGISTER, "dst");
         
         function.setInterpretable(new SystemInfo(type));
         return function;

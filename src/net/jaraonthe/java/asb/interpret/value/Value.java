@@ -6,10 +6,10 @@ import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.invocation.Argument;
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.LabelArgument;
-import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
+import net.jaraonthe.java.asb.ast.invocation.VariableArgument;
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -25,12 +25,12 @@ abstract public class Value
     /**
      * The Variable which this Value is assigned to.
      */
-    public final VariableLike variable;
+    public final Variable variable;
 
     /**
      * @param variable The Variable which this Value is assigned to
      */
-    public Value(VariableLike variable)
+    public Value(Variable variable)
     {
         this.variable = variable;
     }
@@ -54,23 +54,23 @@ abstract public class Value
      */
     public static Value fromArgument(
         Argument argument,
-        Variable parameter,
+        Parameter parameter,
         Context context
     ) throws ConstraintException, RuntimeError {
-        switch (argument.getVariableType()) {
+        switch (argument.getParameterType()) {
             case REGISTER:
-                RegisterArgument ra = (RegisterArgument) argument;
-                if (ra.hasPosition()) {
+                VariableArgument va = (VariableArgument) argument;
+                if (va.hasPosition()) {
                     return new BitwiseNumericValue(
                         parameter,
-                        context.frame.getNumericValue(ra.register.name),
-                        ra.getEffectiveFromPosition(context),
-                        ra.getEffectiveToPosition(context)
+                        context.frame.getNumericValue(va.variable.name),
+                        va.getEffectiveFromPosition(context),
+                        va.getEffectiveToPosition(context)
                     );
                 }
                 return new NumericValueReference(
                     parameter,
-                    context.frame.getNumericValue(ra.register.name)
+                    context.frame.getNumericValue(va.variable.name)
                 );
                 
             case IMMEDIATE:

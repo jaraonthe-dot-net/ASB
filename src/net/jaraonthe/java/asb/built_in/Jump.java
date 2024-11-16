@@ -1,6 +1,6 @@
 package net.jaraonthe.java.asb.built_in;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -37,7 +37,7 @@ public class Jump implements Interpretable
      */
     public static void addLabelParameter(BuiltInFunction function)
     {
-        function.addParameterByType(Variable.Type.LABEL, "label");
+        function.addParameterByType(Parameter.Type.LABEL, "label");
     }
     
     

@@ -364,6 +364,11 @@ public class Interpreter
         System.out.println();
         Print.printlnBoldWithColor("=== MEMORY VALUES ===", Print.Color.MAGENTA, this.settings);
         
+        if (this.memory == null) {
+            System.out.println("(no memory configured)");
+            return;
+        }
+        
         List<BigInteger> addresses = new ArrayList<>(this.memory.getAddressesInUse());
         addresses.sort(null);
         

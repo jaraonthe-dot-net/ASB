@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -27,7 +27,7 @@ import net.jaraonthe.java.asb.interpret.value.NumericValue;
  * {@code &println};<br>
  * <br>
  * {@code @addressReg} and {@code @addressImm} are used to print a memory cell
- * at the address given in a register or immediate.
+ * at the address given in a variable or immediate.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -48,19 +48,19 @@ public class Print implements Interpretable
     
     public enum OperandType
     {
-        IMMEDIATE         (Variable.Type.IMMEDIATE, false),
-        REGISTER          (Variable.Type.REGISTER,  false),
-        ADDRESS_IMMEDIATE (Variable.Type.IMMEDIATE, true),
-        ADDRESS_REGISTER  (Variable.Type.REGISTER,  true),
-        STRING            (Variable.Type.STRING,    false),
-        NONE              (null,                    false);
+        IMMEDIATE         (Parameter.Type.IMMEDIATE, false),
+        REGISTER          (Parameter.Type.REGISTER,  false),
+        ADDRESS_IMMEDIATE (Parameter.Type.IMMEDIATE, true),
+        ADDRESS_REGISTER  (Parameter.Type.REGISTER,  true),
+        STRING            (Parameter.Type.STRING,    false),
+        NONE              (null,                     false);
         
-        public final Variable.Type variableType;
+        public final Parameter.Type parameterType;
         public final boolean isAddress;
         
-        private OperandType(Variable.Type type, boolean isAddress)
+        private OperandType(Parameter.Type type, boolean isAddress)
         {
-            this.variableType = type;
+            this.parameterType = type;
             this.isAddress = isAddress;
         }
     }
@@ -102,7 +102,7 @@ public class Print implements Interpretable
             if (operand.isAddress) {
                 function.addCommandSymbols("@");
             }
-            function.addParameterByType(operand.variableType, "parameter");
+            function.addParameterByType(operand.parameterType, "parameter");
         }
         
         function.setInterpretable(new Print(type, operand));

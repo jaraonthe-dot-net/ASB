@@ -16,12 +16,14 @@ import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.invocation.LabelArgument;
 import net.jaraonthe.java.asb.ast.invocation.RawArgument;
-import net.jaraonthe.java.asb.ast.invocation.RegisterArgument;
 import net.jaraonthe.java.asb.ast.invocation.StringArgument;
+import net.jaraonthe.java.asb.ast.invocation.VariableArgument;
+import net.jaraonthe.java.asb.ast.variable.LocalVariable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Register;
 import net.jaraonthe.java.asb.ast.variable.RegisterAlias;
+import net.jaraonthe.java.asb.ast.variable.RegisterLike;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
 import net.jaraonthe.java.asb.built_in.BuiltInFunction;
 import net.jaraonthe.java.asb.exception.ConstraintException;
@@ -351,7 +353,7 @@ public class Parser
             // .virtual_register (...) ...sub-directives
             VirtualRegister vr = (VirtualRegister)register;
             Token t;
-            ArrayList<Variable> parameters;
+            ArrayList<Parameter> parameters;
             while(Token.getType(t = this.tokenizer.peek()) == Token.Type.DIRECTIVE) {
                 switch (t.content) {
                     case ".group":
@@ -378,9 +380,9 @@ public class Parser
                         this.tokenizer.next();
                         this.expect(Token.Type.OPENING_BRACES, "opening braces (for .get implementation)");
                         parameters = new ArrayList<>(1);
-                        parameters.add(new Variable(Variable.Type.REGISTER, "out", register.getLength()));
+                        parameters.add(new Parameter(Parameter.Type.REGISTER, "out", register.getLength()));
                         if (vr.hasStore()) {
-                            parameters.add(new Variable(Variable.Type.REGISTER, "store", vr.getStoreLength()));
+                            parameters.add(new Parameter(Parameter.Type.REGISTER, "store", vr.getStoreLength()));
                         }
                         vr.setGetterImplementation(this.parseImplementation(parameters));
                         break;
@@ -394,9 +396,9 @@ public class Parser
                         this.tokenizer.next();
                         this.expect(Token.Type.OPENING_BRACES, "opening braces (for .set implementation)");
                         parameters = new ArrayList<>(1);
-                        parameters.add(new Variable(Variable.Type.REGISTER, "in", register.getLength()));
+                        parameters.add(new Parameter(Parameter.Type.REGISTER, "in", register.getLength()));
                         if (vr.hasStore()) {
-                            parameters.add(new Variable(Variable.Type.REGISTER, "store", vr.getStoreLength()));
+                            parameters.add(new Parameter(Parameter.Type.REGISTER, "store", vr.getStoreLength()));
                         }
                         vr.setSetterImplementation(this.parseImplementation(parameters));
                         break;
@@ -429,18 +431,18 @@ public class Parser
     }
     
     /**
-     * Parses groups sub-directives for a register definition.<br>
+     * Parses groups sub-directives for a register or local variable definition.<br>
      * 
      * Does a tentative parse, stopping as soon as anything other than a .group
      * sub-directive is encountered.
      * 
-     * @param register    The register being worked on
-     * @param isMultiLine True if directive is using a multi-line block.
+     * @param registerLike The register or local variable being worked on
+     * @param isMultiLine  True if directive is using a multi-line block
      * 
      * @throws LexicalError
      * @throws ParseError
      */
-    private void parseGroups(Register register, boolean isMultiLine) throws LexicalError, ParseError
+    private void parseGroups(RegisterLike register, boolean isMultiLine) throws LexicalError, ParseError
     {
         Token t;
         while (Token.getType(t = this.tokenizer.peek()) == Token.Type.DIRECTIVE) {
@@ -450,8 +452,9 @@ public class Parser
                     String name = this.expectName();
                     if (register.hasGroup(name)) {
                         throw new ParseError(
-                            "Cannot declare group " + name + " more than once for register "
-                            + register.name + " at " + t.origin
+                            "Cannot declare group " + name + " more than once for "
+                            + (register instanceof Register ? "register" : "local variable")
+                            +" " + register.name + " at " + t.origin
                         );
                     }
                     register.addGroup(name);
@@ -488,21 +491,21 @@ public class Parser
                     
                 case DATATYPE:
                     // Parameter
-                    Variable.Type type = Variable.Type.fromString(t.content);
+                    Parameter.Type type = Parameter.Type.fromString(t.content);
                     if (type == null) {
                         throw new ParseError("Unknown parameter type \"" + t.content + "\" at " + t.origin);
                     }
                     String name = this.expectName();
-                    Variable parameter;
+                    Parameter parameter;
                     if (type.hasLength()) {
                         int[] length;
-                        if (type == Variable.Type.LABEL) {
+                        if (type == Parameter.Type.LABEL) {
                             // Use pc length for label types
                             length = new int[]{this.ast.getPcLength(), this.ast.getPcLength()};
                         } else {
                             length = this.expectLengthRange("Parameter " + t.content);
                         }
-                        if (type.length != Variable.Type.Length.RANGE && length[0] != length[1]) {
+                        if (type.length != Parameter.Type.Length.RANGE && length[0] != length[1]) {
                             throw new ParseError(
                                 "Cannot use length range for " + type
                                 + " type parameter " + name + " at " + t.origin
@@ -515,9 +518,9 @@ public class Parser
                             );
                         }
                         
-                        parameter = new Variable(type, name, length[0], length[1]);
+                        parameter = new Parameter(type, name, length[0], length[1]);
                     } else {
-                        parameter = new Variable(type, name);
+                        parameter = new Parameter(type, name);
                     }
                     if (type.supportsGroup && this.peekedIsType(Token.Type.DIRECTIVE)) {
                         t = this.tokenizer.next();
@@ -568,7 +571,7 @@ public class Parser
      * @throws LexicalError
      * @throws ParseError
      */
-    private Implementation parseImplementation(List<Variable> parameters) throws LexicalError, ParseError
+    private Implementation parseImplementation(List<Parameter> parameters) throws LexicalError, ParseError
     {
         Implementation implementation = new Implementation(parameters);
         Tokenizer.Mode surroundingMode = this.tokenizer.getMode();
@@ -590,45 +593,43 @@ public class Parser
                                         + " more than once at " + t.origin
                                     );
                                 }
+                                LocalVariable variable;
                                 
-                                // Custom length parsing (to support length register)
+                                // Custom length parsing (to support length variable)
                                 this.expect(Token.Type.BIT_LENGTH, "'' (to give bit length)");
                                 this.tokenizer.setMode(Tokenizer.Mode.LENGTH);
-                                
                                 if (this.peekedIsType(Token.Type.NAME)) {
                                     // '' varName
-                                    VariableLike lengthRegister = this.expectNumericVariableLike(
+                                    Variable lengthVariable = this.expectNumericVariable(
                                         implementation,
                                         "length"
                                     );
-                                    
-                                    implementation.addLocalVariable(
-                                        new Variable(
-                                            Variable.Type.LOCAL_VARIABLE,
-                                            name,
-                                            lengthRegister
-                                        ),
-                                        // Here (and below) we don't use the full Origin (from
-                                        // .variable until end of length definition), but only
-                                        // the origin of the .variable directive Token.
-                                        // For what we inted to do with this data this should be
-                                        // okay.
-                                        t.origin
+                                    variable = new LocalVariable(
+                                        name,
+                                        lengthVariable
                                     );
                                     
                                 } else {
-                                    implementation.addLocalVariable(
-                                        new Variable(
-                                            Variable.Type.LOCAL_VARIABLE,
-                                            name,
-                                            this.parseAdvancedLengthFormat("Local variable")
-                                        ),
-                                        t.origin
+                                    variable = new LocalVariable(
+                                        name,
+                                        this.parseAdvancedLengthFormat("Local variable")
                                     );
                                 }
-                                
                                 this.tokenizer.setMode(surroundingMode);
+                                
+                                boolean isMultiLine = this.consumeOpeningBraces();
+                                this.parseGroups(variable, isMultiLine);
+                                
+                                this.expectClosingBracesIfMultiLine(isMultiLine);
                                 this.expectStatementSeparator();
+                                
+                                // Here we don't use the full Origin (from
+                                // .variable until end of length definition),
+                                // but only
+                                // the origin of the .variable directive Token.
+                                // For what we intend to do with this data this
+                                // should be okay.
+                                implementation.addLocalVariable(variable, t.origin);
                                 break;
                             default:
                                 throw new ParseError(
@@ -721,24 +722,24 @@ public class Parser
                             );
                         }
                         
-                        VariableLike register = this.resolveVariableLike(
+                        Variable variable = this.resolveVariable(
                             t.content,
                             implementation,
                             t.origin,
                             true
                         );
-                        if (!register.isNumeric()) {
+                        if (!variable.isNumeric()) {
                             throw new ParseError(
-                                "Parameter " + register.name
+                                "Parameter " + variable.name
                                 + " cannot be accessed bitwise (it is not a numeric value) at " + t.origin
                             );
                         }
                         
                         this.tokenizer.setMode(Tokenizer.Mode.POSITION);
-                        RegisterArgument argument;
+                        VariableArgument argument;
                         if (this.peekedIsType(Token.Type.NAME)) {
                             // ' varName ...
-                            VariableLike fromPositionRegister = this.expectNumericVariableLike(
+                            Variable fromPositionVariable = this.expectNumericVariable(
                                 implementation,
                                 "position"
                             );
@@ -748,23 +749,23 @@ public class Parser
                                 
                                 if (this.peekedIsType(Token.Type.NAME)) {
                                     // ' varName : varName
-                                    VariableLike toPositionRegister = this.expectNumericVariableLike(
+                                    Variable toPositionVariable = this.expectNumericVariable(
                                         implementation,
                                         "position"
                                     );
-                                    argument = new RegisterArgument(register, fromPositionRegister, toPositionRegister);
+                                    argument = new VariableArgument(variable, fromPositionVariable, toPositionVariable);
                                 } else {
                                     // ' varName : number
                                     int toPosition = this.number2PositionInt(this.expect(
                                         Token.Type.NUMBER,
                                         "a number (as end of bitwise access range)"
                                     ));
-                                    Constraints.checkPositionWithinRegister(toPosition, register, t.origin);
-                                    argument = new RegisterArgument(register, fromPositionRegister, toPosition);
+                                    Constraints.checkPositionWithinVariable(toPosition, variable, t.origin);
+                                    argument = new VariableArgument(variable, fromPositionVariable, toPosition);
                                 }
                             } else {
                                 // ' varName
-                                argument = new RegisterArgument(register, fromPositionRegister);
+                                argument = new VariableArgument(variable, fromPositionVariable);
                             }
                         } else {
                             // ' number ...
@@ -772,30 +773,30 @@ public class Parser
                                 Token.Type.NUMBER,
                                 "a number (as beginning of bitwise access range)"
                             ));
-                            Constraints.checkPositionWithinRegister(fromPosition, register, t.origin);
+                            Constraints.checkPositionWithinVariable(fromPosition, variable, t.origin);
                             
                             if (this.peekedIsType(Token.Type.POSITION_RANGE)) {
                                 this.tokenizer.next();
                                 
                                 if (this.peekedIsType(Token.Type.NAME)) {
                                     // ' number : varName
-                                    VariableLike toPositionRegister = this.expectNumericVariableLike(
+                                    Variable toPositionVariable = this.expectNumericVariable(
                                         implementation,
                                         "position"
                                     );
-                                    argument = new RegisterArgument(register, fromPosition, toPositionRegister);
+                                    argument = new VariableArgument(variable, fromPosition, toPositionVariable);
                                 } else {
                                     // ' number : number
                                     int toPosition = this.number2PositionInt(this.expect(
                                         Token.Type.NUMBER,
                                         "a number (as end of bitwise access range)"
                                     ));
-                                    Constraints.checkPositionWithinRegister(toPosition, register, t.origin);
-                                    argument = new RegisterArgument(register, fromPosition, toPosition);
+                                    Constraints.checkPositionWithinVariable(toPosition, variable, t.origin);
+                                    argument = new VariableArgument(variable, fromPosition, toPosition);
                                 }
                             } else {
                                 // ' varName
-                                argument = new RegisterArgument(register, fromPosition);
+                                argument = new VariableArgument(variable, fromPosition);
                             }
                         }
                         this.tokenizer.setMode(surroundingMode);
@@ -804,15 +805,15 @@ public class Parser
                         break;
                     }
                     
-                    VariableLike potentialRegister = this.resolveVariableLike(
+                    Variable potentialVariable = this.resolveVariable(
                         t.content,
                         implementation,
                         t.origin,
                         false
                     );
-                    if (potentialRegister != null && potentialRegister.isNumeric()) {
+                    if (potentialVariable != null && potentialVariable.isNumeric()) {
                         // May be a variable or label (depending on effective command)
-                        invocation.addArgument(new RawArgument(t.content, potentialRegister));
+                        invocation.addArgument(new RawArgument(t.content, potentialVariable));
                         break;
                     }
                     
@@ -986,8 +987,8 @@ public class Parser
      * 
      * I.e. the type of the resolved Variable must be numeric.
      * 
-     * @see #expectVariableLike()
-     * @see #resolveVariableLike()
+     * @see #expectVariable()
+     * @see #resolveVariable()
      * 
      * @param implementation The implementation we're currently within. Null if
      *                       within userland code.
@@ -1000,12 +1001,12 @@ public class Parser
      *                      name cannot be resolved to an existing numeric
      *                      Variable or Register.
      */
-    private VariableLike expectNumericVariableLike(
+    private Variable expectNumericVariable(
         Implementation implementation,
         String purpose
     ) throws LexicalError, ParseError {
         Origin origin = Token.getOrigin(this.tokenizer.peek());
-        VariableLike variable = this.expectVariableLike(implementation);
+        Variable variable = this.expectVariable(implementation);
         
         if (!variable.isNumeric()) {
             throw new ParseError(
@@ -1020,7 +1021,7 @@ public class Parser
     /**
      * Expects a NAME and resolves it to a Register, Parameter, or Local Variable.
      * 
-     * @see #resolveVariableLike()
+     * @see #resolveVariable()
      * 
      * @param implementation The implementation we're currently within. Null if
      *                       within userland code.
@@ -1032,12 +1033,12 @@ public class Parser
      *                      name cannot be resolved to an existing Variable or
      *                      Register.
      */
-    private VariableLike expectVariableLike(Implementation implementation) throws LexicalError, ParseError
+    private Variable expectVariable(Implementation implementation) throws LexicalError, ParseError
     {
         Origin origin = Token.getOrigin(this.tokenizer.peek());
         String name = this.expectName();
         
-        return this.resolveVariableLike(name, implementation, origin, true);
+        return this.resolveVariable(name, implementation, origin, true);
     }
     
     /**
@@ -1057,7 +1058,7 @@ public class Parser
      * 
      * @throws ParseError see throwError
      */
-    private VariableLike resolveVariableLike(
+    private Variable resolveVariable(
         String name,
         Implementation implementation,
         Origin origin,
@@ -1241,7 +1242,7 @@ public class Parser
      * Transforms a NUMBER Token to a fitting length integer.
      * 
      * I.e. this figures how many length bits a variable (or register) would
-     * need to have to accomodate the given number.
+     * need to have to accommodate the given number.
      * 
      * @param token       A NUMBER Token with a positive number
      * @param unsigned    False: Length is chosen to accomodate negative numbers

@@ -1,7 +1,7 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
 
 /**
  * A raw invocation argument. This refers to either a Variable or a Label by
@@ -26,24 +26,24 @@ public class RawArgument extends Argument
      * command may happen later; this way only Registers and Variables that
      * exist at the location of usage are taken into account.
      */
-    public final VariableLike potentialRegister;
+    public final Variable potentialVariable;
 
     /**
      * @param name
-     * @param potentialRegister Must not be null
+     * @param potentialVariable Must not be null
      */
-    public RawArgument(String name, VariableLike potentialRegister)
+    public RawArgument(String name, Variable potentialVariable)
     {
         this.name              = name;
-        this.potentialRegister = potentialRegister;
+        this.potentialVariable = potentialVariable;
     }
 
     @Override
-    public Variable.Type getVariableType()
+    public Parameter.Type getParameterType()
     {
         // This should be fine as signatureMarker is the same for both REGISTER
         // and LABEL
-        return Variable.Type.REGISTER;
+        return Parameter.Type.REGISTER;
     }
     
     @Override

@@ -258,7 +258,7 @@ public class Tokenizer
                 }
             }
             
-            // EXPRESSION types
+            // LENGTH types
             if (this.mode == Tokenizer.Mode.LENGTH) {
                 switch (c) {
                     case '>':

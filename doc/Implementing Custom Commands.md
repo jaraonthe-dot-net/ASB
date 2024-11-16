@@ -60,10 +60,7 @@ Note that the `/register` aka `/variable` type can take a [length range](ASB%20L
 /register <name> <length> .group <groupName>
 ```
 
-A parameter can have **up to one** group. If a group has been assigned, then only [registers that belong to that group](Defining%20Registers.md#register-groups) can be used as argument for that parameter.
-
-> [!NOTE]
-> As [local variables](#local-variables) cannot have a group assigned, it is impossible to invoke a command using a parameter group with a local variable as argument.
+A parameter can have **up to one** group. If a group has been assigned, then only [registers or local variables that belong to that group](Defining%20Registers.md#register-groups) can be used as argument for that parameter.
 
 Example:
 
@@ -77,7 +74,7 @@ Example:
 
 cmd gg1    // Works
 cmd gg2    // Works
-cmd gg32   // Doesnt work - wrong length!
+cmd gg32   // Doesn't work - wrong length!
 cmd not_gg // Doesn't work
 ```
 
@@ -161,7 +158,7 @@ Resolving invocation to invoked command procedure:
  - Immediate Argument => IMMEDIATE; if no command fits => LABEL
    (this ignores any tie-breaker order, the IMMEDIATE is always
    preferred if possible)
- - Register Argument (with bitwise access)        => REGISTER
+ - Variable Argument (with bitwise access)        => REGISTER
  - Label Argument (which cannot be anything else) => LABEL
  - Name Argument                                  => REGISTER or LABEL
  - StringArgument                                 => STRING
@@ -170,10 +167,10 @@ Resolving invocation to invoked command procedure:
  - IMMEDIATE: immediate length <= parameter length
  - REGISTER:
    variable referenced in argument must exist; referenced variable
-   must be numeric; if parameter has group, register used in argument
+   must be numeric; if parameter has group, variable used in argument
    must have same group; argument's length range must overlap with
    parameter's length range (consider dynamic length -
-   Register Argument has a complex calculation for its length range
+   Variable Argument has a complex calculation for its length range
    that is used here)
  
  Tie-breakers are applied left to right to parameters; first parameter
@@ -183,16 +180,16 @@ Resolving invocation to invoked command procedure:
    => select command with parameter with smaller length
       (Rationale: It's probably more efficient to use this command
       than one that can handle longer immediates)
- - Register Argument:
+ - Variable Argument:
    => prefer group over non-group param;
    => if both have group: Prefer the one of which the group comes
-      first in the register's group list;
+      first in the variable's group list;
    => as we have dynamic length we don't know which command to pick
       and we move on to the next argument (this may lead to an error
       being triggered)
  - Name Argument:
    => prefer REGISTER over LABEL;
-   => if REGISTER: apply tie-breakers for Register Argument
+   => if REGISTER: apply tie-breakers for Variable Argument
 ```
 
 > [!NOTE]
@@ -213,7 +210,7 @@ Any register used must already exist before the implementation; but the implemen
 ### Local variables
 Local variables are scoped within the implementation that they are declared in. This makes them different from registers, which are globally scoped. If a command or function with a local variable invokes itself (recursion) then for each invocation there is an independent instance of the local variable only available within that instance of executed implementation.
 
-To define a local variable use the `.variable` or `.var` directive followed by the variable name and [length definition](ASB%20Language.md#length-definition).
+To define a local variable use the `.variable` or `.var` directive followed by the variable name and [length definition](ASB%20Language.md#length-definition). Optionally, [one or more groups can also be given](Defining%20Registers.md#register-groups).
 
 The length definition may use the `max` and `maxu` definition and may also use a register or variable instead of a fixed number; in this case that variable's value sets the local variable's length.
 

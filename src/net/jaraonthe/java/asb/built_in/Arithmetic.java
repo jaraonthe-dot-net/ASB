@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -101,7 +101,7 @@ public class Arithmetic implements Interpretable
             );
         }
 
-        function.addParameterByType(Variable.Type.REGISTER, "dst");
+        function.addParameterByType(Parameter.Type.REGISTER, "dst");
         
         function.addCommandSymbols(",");
         switch (operands) {
@@ -109,12 +109,12 @@ public class Arithmetic implements Interpretable
             case REG_REG_REG:
                 // &add dstRegister, src1Register, src2Imm
                 // &add dstRegister, src1Register, src2Register
-                function.addParameterByType(Variable.Type.REGISTER, "src1");
+                function.addParameterByType(Parameter.Type.REGISTER, "src1");
                 break;
                 
             case REG_IMM_REG:
                 // &sub dstRegister, src1Imm, src2Register
-                function.addParameterByType(Variable.Type.IMMEDIATE, "src1");
+                function.addParameterByType(Parameter.Type.IMMEDIATE, "src1");
                 break;
         }
         
@@ -122,14 +122,14 @@ public class Arithmetic implements Interpretable
         switch (operands) {
             case REG_REG_IMM:
                 // &add dstRegister, src1Register, src2Imm
-                function.addParameterByType(Variable.Type.IMMEDIATE, "src2");
+                function.addParameterByType(Parameter.Type.IMMEDIATE, "src2");
                 break;
                 
             case REG_REG_REG:
             case REG_IMM_REG:
                 // &add dstRegister, src1Register, src2Register
                 // &sub dstRegister, src1Imm, src2Register
-                function.addParameterByType(Variable.Type.REGISTER, "src2");
+                function.addParameterByType(Parameter.Type.REGISTER, "src2");
                 break;
         }
         
@@ -174,7 +174,7 @@ public class Arithmetic implements Interpretable
 
         // Check lengths
         NumericValue srcReg    = src1;
-        NumericValue srcImm    = src2; // which of course may also be a register
+        NumericValue srcImm    = src2; // which of course may also be a variable
         BigInteger srcImmValue = src2Value;
         if (this.operands == Arithmetic.Operands.REG_IMM_REG) {
             srcReg      = src2;

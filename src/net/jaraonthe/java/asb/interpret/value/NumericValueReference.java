@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.interpret.value;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 
@@ -23,7 +23,7 @@ public class NumericValueReference extends NumericValue
      * @param variable   The Variable which this Value is assigned to
      * @param referenced The value this refers to
      */
-    public NumericValueReference(VariableLike variable, NumericValue referenced)
+    public NumericValueReference(Variable variable, NumericValue referenced)
     {
         super(variable, referenced.length);
         this.referenced = referenced.getReferenced();

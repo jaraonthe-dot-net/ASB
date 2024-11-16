@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -40,7 +40,7 @@ import net.jaraonthe.java.asb.interpret.value.NumericValue;
  * {@code &println_b @addressImm};<br>
  * <br>
  * {@code @addressReg} and {@code @addressImm} are used to print a memory cell
- * at the address given in a register or immediate.
+ * at the address given in a variable or immediate.
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
@@ -125,9 +125,9 @@ public class PrintFormatted implements Interpretable
             function.addCommandSymbols("@");
         }
         if (operandType == PrintFormatted.OperandType.ADDRESS_IMMEDIATE) {
-            function.addParameterByType(Variable.Type.IMMEDIATE, "parameter");
+            function.addParameterByType(Parameter.Type.IMMEDIATE, "parameter");
         } else {
-            function.addParameterByType(Variable.Type.REGISTER, "parameter");
+            function.addParameterByType(Parameter.Type.REGISTER, "parameter");
         }
         
         function.setInterpretable(new PrintFormatted(type, format, operandType));

@@ -2,7 +2,8 @@ package net.jaraonthe.java.asb.interpret.value;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.LocalVariable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.VirtualRegister;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -46,8 +47,7 @@ public class VirtualNumericValue extends NumericValue
         
         if (register.hasStore()) {
             // Modeling store as a (persistent) local variable
-            this.store = new NumericValueStore(new Variable(
-                Variable.Type.LOCAL_VARIABLE,
+            this.store = new NumericValueStore(new LocalVariable(
                 "store",
                 register.getStoreLength()
             ));
@@ -60,8 +60,8 @@ public class VirtualNumericValue extends NumericValue
     public BigInteger read(Context context) throws RuntimeError
     {
         Frame newFrame = new Frame(context.frame.getRootParentFrame());
-        NumericValueStore out = new NumericValueStore(new Variable(
-            Variable.Type.REGISTER,
+        NumericValueStore out = new NumericValueStore(new Parameter(
+            Parameter.Type.REGISTER,
             "out",
             this.register.getLength()
         ));
@@ -82,8 +82,8 @@ public class VirtualNumericValue extends NumericValue
         this.checkValueLength(value);
         
         Frame newFrame = new Frame(context.frame.getRootParentFrame());
-        NumericValueStore in = new NumericValueStore(new Variable(
-            Variable.Type.REGISTER,
+        NumericValueStore in = new NumericValueStore(new Parameter(
+            Parameter.Type.REGISTER,
             "in",
             this.register.getLength()
         ));

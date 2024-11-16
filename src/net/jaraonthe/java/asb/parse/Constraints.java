@@ -1,6 +1,6 @@
 package net.jaraonthe.java.asb.parse;
 
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ParseError;
 
 /**
@@ -138,25 +138,25 @@ abstract public class Constraints
      * Checks if given position fits within the given variable's length, throws
      * exception otherwise.<br>
      * 
-     * Note: If register is a local variable using a dynamic length this will
+     * Note: If variable is a local variable using a dynamic length this will
      * not throw an exception.
      * 
      * @param position
-     * @param register
+     * @param variable
      * @param origin   May be null
      * 
-     * @throws ParseError if given position is too big for register
+     * @throws ParseError if given position is too big for variable
      */
-    public static void checkPositionWithinRegister(int position, VariableLike register, Origin origin) throws ParseError
+    public static void checkPositionWithinVariable(int position, Variable variable, Origin origin) throws ParseError
     {
-        if (register.maxLength < 1) {
+        if (variable.maxLength < 1) {
             return;
         }
         
-        if (position >= register.maxLength) {
+        if (position >= variable.maxLength) {
             throw new ParseError(
                 "Position " + position + " is too big for Variable "
-                + register.toString() + (origin != null ? " at " + origin : "")
+                + variable.toString() + (origin != null ? " at " + origin : "")
             );
         }
     }

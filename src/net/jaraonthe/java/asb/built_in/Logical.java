@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -65,9 +65,9 @@ public class Logical implements Interpretable
     {
         BuiltInFunction function = new BuiltInFunction(type.functionName, false);
 
-        function.addParameterByType(Variable.Type.REGISTER, "dst");
+        function.addParameterByType(Parameter.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
-        function.addParameterByType(Variable.Type.REGISTER, "src1");
+        function.addParameterByType(Parameter.Type.REGISTER, "src1");
         function.addCommandSymbols(",");
         function.addParameterByType(src2Type, "src2");
         

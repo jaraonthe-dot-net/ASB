@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.interpret.value;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
+import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.parse.Constraints;
@@ -37,7 +37,7 @@ public class BitwiseNumericValue extends NumericValue
      * @param fromPosition Start position of bitwise access
      * @param toPosition   End position of bitwise access
      */
-    public BitwiseNumericValue(VariableLike variable, NumericValue accessed, int fromPosition, int toPosition)
+    public BitwiseNumericValue(Variable variable, NumericValue accessed, int fromPosition, int toPosition)
     {
         super(variable, Math.abs(fromPosition - toPosition) + 1);
         this.accessed     = accessed;

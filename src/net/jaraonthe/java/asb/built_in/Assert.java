@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.AssertError;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -70,7 +70,7 @@ public class Assert extends Compare
         
         if (hasMessage) {
             function.addCommandSymbols(",");
-            function.addParameter(new Variable(Variable.Type.STRING, "message"));
+            function.addParameter(new Parameter(Parameter.Type.STRING, "message"));
         }
         
         function.setInterpretable(new Assert(operator, a, b, hasMessage));

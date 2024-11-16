@@ -115,7 +115,7 @@ Example:
 Which effectively provides the stored value in reverse order (of bits) (using [bitwise access](Implementing%20Custom%20Commands.md#bitwise-access)). Visibly, this is a register called `reverse` with a length of 16 bits.
 
 ## Register Groups
-One or more groups can be assigned to any register described above.
+One or more groups can be assigned to any register described above, and to [local variables](Implementing%20Custom%20Commands.md#local-variables) too (below, "register" refers to local variables as well).
 
 A group is identified by its name - every register that has the same group name assigned is considered to be part of the same group; a register can be part of several groups.
 

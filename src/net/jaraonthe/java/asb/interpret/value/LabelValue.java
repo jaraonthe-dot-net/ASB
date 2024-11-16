@@ -1,7 +1,7 @@
 package net.jaraonthe.java.asb.interpret.value;
 
 import net.jaraonthe.java.asb.ast.invocation.LabelArgument;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.interpret.Frame;
 
 /**
@@ -25,14 +25,14 @@ public class LabelValue extends Value
     public final Frame frame;
     
     /**
-     * @param variable the Variable which this Value is assigned to
-     * @param argument the argument that is used to fill this parameter
-     * @param frame    The frame to which this label applies. I.e. any program
-     *                 counter changes (e.g. from &jump) shall affect this frame.
+     * @param parameter the Parameter which this Value is assigned to
+     * @param argument  the argument that is used to fill this parameter
+     * @param frame     The frame to which this label applies. I.e. any program
+     *                  counter changes (e.g. from &jump) shall affect this frame.
      */
-    public LabelValue(Variable variable, LabelArgument argument, Frame frame)
+    public LabelValue(Parameter parameter, LabelArgument argument, Frame frame)
     {
-        super(variable);
+        super(parameter);
         this.argument = argument;
         this.frame    = frame;
     }

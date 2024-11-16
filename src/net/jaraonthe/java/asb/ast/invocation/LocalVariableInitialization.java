@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Implementation;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.LocalVariable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -25,7 +25,7 @@ import net.jaraonthe.java.asb.parse.Origin;
  */
 public class LocalVariableInitialization implements Invocation
 {
-    public final Variable localVariable;
+    public final LocalVariable localVariable;
     
     private Origin origin;
     
@@ -33,12 +33,8 @@ public class LocalVariableInitialization implements Invocation
     /**
      * @param localVariable
      */
-    public LocalVariableInitialization(Variable localVariable)
+    public LocalVariableInitialization(LocalVariable localVariable)
     {
-        if (localVariable.type != Variable.Type.LOCAL_VARIABLE) {
-            throw new IllegalArgumentException("localVariable is not of type LOCAL_VARIABLE");
-        }
-        
         this.localVariable = localVariable;
     }
     
@@ -100,7 +96,7 @@ public class LocalVariableInitialization implements Invocation
                 // dynamic length
                 BigInteger value;
                 try {
-                    value = context.frame.getNumericValue(this.localVariable.lengthRegister.name)
+                    value = context.frame.getNumericValue(this.localVariable.lengthVariable.name)
                         .read(context);
                 } catch (ConstraintException e) {
                     throw new RuntimeError(e.getMessage() + " at " + this.getOrigin());
@@ -113,7 +109,7 @@ public class LocalVariableInitialization implements Invocation
                     
                 } catch (ArithmeticException e) {
                     throw new RuntimeError(
-                        "Value stored in " + this.localVariable.lengthRegister.name
+                        "Value stored in " + this.localVariable.lengthVariable.name
                         + " is used as a local variable's length, but is too "
                         + (value.signum() > 0 ? "big" : "small") + " (is " + value + ") at "
                         + this.getOrigin()

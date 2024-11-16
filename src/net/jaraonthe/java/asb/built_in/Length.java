@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -28,9 +28,9 @@ public class Length implements Interpretable
         BuiltInFunction function = new BuiltInFunction("&length", false);
         
         // &length dstLength, srcRegister
-        function.addParameterByType(Variable.Type.REGISTER, "dst");
+        function.addParameterByType(Parameter.Type.REGISTER, "dst");
         function.addCommandSymbols(",");
-        function.addParameterByType(Variable.Type.REGISTER, "src");
+        function.addParameterByType(Parameter.Type.REGISTER, "src");
         
         function.setInterpretable(new Length());
         return function;

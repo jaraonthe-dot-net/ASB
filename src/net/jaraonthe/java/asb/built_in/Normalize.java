@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
 import net.jaraonthe.java.asb.interpret.Interpretable;
@@ -28,7 +28,7 @@ public class Normalize implements Interpretable
         BuiltInFunction function = new BuiltInFunction("&normalize", false);
         
         // &normalize register
-        function.addParameterByType(Variable.Type.REGISTER, "variable");
+        function.addParameterByType(Parameter.Type.REGISTER, "variable");
         
         function.setInterpretable(new Normalize());
         return function;
@@ -39,8 +39,8 @@ public class Normalize implements Interpretable
     public void interpret(Context context) throws RuntimeError
     {
         NumericValue operand = BuiltInFunction.getNumericValue("variable", context.frame);
-        if (!(operand.variable instanceof Variable)) {
-            // Registers are never negative
+        if (!(operand.variable instanceof Parameter)) {
+            // Registers and LocalVariables are never negative
             return;
         }
         

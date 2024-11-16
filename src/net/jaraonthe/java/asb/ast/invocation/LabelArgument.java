@@ -1,6 +1,6 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 
 /**
  * An invocation argument that contains a literal label name.
@@ -68,9 +68,9 @@ public class LabelArgument extends Argument
     }
 
     @Override
-    public Variable.Type getVariableType()
+    public Parameter.Type getParameterType()
     {
-        return Variable.Type.LABEL;
+        return Parameter.Type.LABEL;
     }
     
     @Override

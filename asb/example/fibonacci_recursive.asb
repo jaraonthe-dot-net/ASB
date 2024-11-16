@@ -31,7 +31,7 @@ fibonacci:
     
     // fibonacci(n-2)
     lw a0, 8(sp)    // n-1
-    addi a0, a0, -1 // n-1
+    addi a0, a0, -1 // n-2
     jal fibonacci
     lw t0, 4(sp)    // result of fibonacci(n-1)
     lw ra, 12(sp)   // Restore return address from Stack

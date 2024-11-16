@@ -8,6 +8,8 @@ import java.util.Map;
 
 import net.jaraonthe.java.asb.ast.invocation.Invocation;
 import net.jaraonthe.java.asb.ast.invocation.LocalVariableInitialization;
+import net.jaraonthe.java.asb.ast.variable.LocalVariable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Variable;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
@@ -28,6 +30,9 @@ public class Implementation implements Interpretable, Iterable<Invocation>
 {
     /**
      * Local variables and command parameters, accessed via their name.
+     * 
+     * Note: The Variable type would allow other types as well, but the setters
+     * restrict this as expected.
      */
     private Map<String, Variable> variables = HashMap.newHashMap(4);
     
@@ -42,10 +47,10 @@ public class Implementation implements Interpretable, Iterable<Invocation>
     /**
      * @param parameters The parameters of the containing command. May be null
      */
-    public Implementation(List<Variable> parameters)
+    public Implementation(List<Parameter> parameters)
     {
         if (parameters != null) {
-            for (Variable p: parameters) {
+            for (Parameter p: parameters) {
                 this.variables.put(p.name, p);
             }
         }
@@ -55,7 +60,7 @@ public class Implementation implements Interpretable, Iterable<Invocation>
      * Adds a local variable. This also adds the required
      * LocalVariableInitialization to this program.
      * 
-     * @param localVariable    of type LOCAL_VARIABLE
+     * @param localVariable
      * @param definitionOrigin The Origin of the local variable's definition
      * 
      * @return Fluent interface
@@ -63,7 +68,7 @@ public class Implementation implements Interpretable, Iterable<Invocation>
      * @throws ConstraintException if adding the LocalVariableInitialization
      *                             would exceed maximum allowed program size
      */
-    public Implementation addLocalVariable(Variable localVariable, Origin definitionOrigin) throws ConstraintException
+    public Implementation addLocalVariable(LocalVariable localVariable, Origin definitionOrigin) throws ConstraintException
     {
         if (this.variables.containsKey(localVariable.name)) {
             throw new IllegalArgumentException(

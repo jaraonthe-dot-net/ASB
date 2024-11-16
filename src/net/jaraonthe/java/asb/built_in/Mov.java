@@ -2,7 +2,7 @@ package net.jaraonthe.java.asb.built_in;
 
 import java.math.BigInteger;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -91,13 +91,13 @@ public class Mov implements Interpretable
     {
         switch (type) {
         case IMMEDIATE:
-            function.addParameterByType(Variable.Type.IMMEDIATE, name);
+            function.addParameterByType(Parameter.Type.IMMEDIATE, name);
             break;
         case ADDRESS:
             function.addCommandSymbols("@");
             // Fall-through
         case REGISTER:
-            function.addParameterByType(Variable.Type.REGISTER, name);
+            function.addParameterByType(Parameter.Type.REGISTER, name);
             break;
         }
     }

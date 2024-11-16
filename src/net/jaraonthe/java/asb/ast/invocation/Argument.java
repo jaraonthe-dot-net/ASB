@@ -1,6 +1,6 @@
 package net.jaraonthe.java.asb.ast.invocation;
 
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 
 /**
  * An argument used in an invocation (after invocation has been resolved).
@@ -10,7 +10,7 @@ import net.jaraonthe.java.asb.ast.variable.Variable;
 abstract public class Argument
 {
     /**
-     * @return The Variable type corresponding to this argument.
+     * @return The Parameter type corresponding to this argument.
      */
-    abstract public Variable.Type getVariableType();
+    abstract public Parameter.Type getParameterType();
 }

@@ -3,8 +3,8 @@ package net.jaraonthe.java.asb.interpret.value;
 import java.math.BigInteger;
 
 import net.jaraonthe.java.asb.ast.invocation.ImmediateArgument;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.ast.variable.Variable;
-import net.jaraonthe.java.asb.ast.variable.VariableLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.interpret.Context;
 
@@ -33,7 +33,7 @@ public class NumericValueStore extends NumericValue
      * @param variable The Variable which this Value is assigned to. Must have
      *                 a non-dynamic exact length.
      */
-    public NumericValueStore(VariableLike variable)
+    public NumericValueStore(Variable variable)
     {
         this(variable, variable.maxLength);
         
@@ -53,12 +53,12 @@ public class NumericValueStore extends NumericValue
      * @param variable        The Variable which this Value is assigned to
      * @param effectiveLength The length to use for this Value.
      */
-    public NumericValueStore(VariableLike variable, int effectiveLength)
+    public NumericValueStore(Variable variable, int effectiveLength)
     {
         super(variable, effectiveLength);
         
-        this.isImmediate = variable instanceof Variable
-            && ((Variable)variable).type == Variable.Type.IMMEDIATE;
+        this.isImmediate = variable instanceof Parameter
+            && ((Parameter)variable).type == Parameter.Type.IMMEDIATE;
     }
     
     /**
@@ -72,7 +72,7 @@ public class NumericValueStore extends NumericValue
      *
      * @throws ConstraintException
      */
-    public NumericValueStore(VariableLike variable, ImmediateArgument argument) throws ConstraintException
+    public NumericValueStore(Variable variable, ImmediateArgument argument) throws ConstraintException
     {
         this(variable);
         

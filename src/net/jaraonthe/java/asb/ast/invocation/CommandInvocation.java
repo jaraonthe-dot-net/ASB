@@ -11,8 +11,8 @@ import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.CommandLike;
 import net.jaraonthe.java.asb.ast.command.Command;
 import net.jaraonthe.java.asb.ast.command.Implementation;
-import net.jaraonthe.java.asb.ast.variable.Register;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
+import net.jaraonthe.java.asb.ast.variable.RegisterLike;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.RuntimeError;
 import net.jaraonthe.java.asb.interpret.Context;
@@ -126,7 +126,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
         this.readableSignature += argument;
         this.readableSignature += " ";
         
-        this.addParameterToResolvingSignature(argument.getVariableType());
+        this.addParameterToResolvingSignature(argument.getParameterType());
         this.arguments.add(argument);
     }
     
@@ -160,7 +160,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
          * - ImmediateArgument => IMMEDIATE; if no command fits => LABEL
          *   (this ignores any tie-breaker order, the IMMEDIATE is always
          *   preferred if possible)
-         * - RegisterArgument  => REGISTER
+         * - VariableArgument  => REGISTER
          * - LabelArgument     => LABEL
          * - RawArgument       => REGISTER, LABEL
          * - StringArgument    => STRING
@@ -169,10 +169,10 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
          * - IMMEDIATE: immediate length <= parameter length
          * - REGISTER:
          *   variable referenced in argument must exist; referenced variable
-         *   must be numeric; if parameter has group, register used in argument
+         *   must be numeric; if parameter has group, variable used in argument
          *   must have same group; argument's length range must overlap with
          *   parameter's length range (consider dynamic length -
-         *   RegisterArgument has a complex calculation for its length range
+         *   VariableArgument has a complex calculation for its length range
          *   that is used here)
          * 
          * Tie-breakers are applied left to right to parameters; first parameter
@@ -182,10 +182,10 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
          *   => select command with param with smaller length
          *      (Rationale: It's probably more efficient to use this command
          *      than one that can handle longer immediates)
-         * - RegisterArgument:
+         * - VariableArgument:
          *   => prefer group over non-group param;
          *   => if both have group: Prefer the one of which the group comes
-         *      first in the register's group list;
+         *      first in the variable's group list;
          *   => as we have dynamic length we don't know which command to pick
          *      and we move on to the next argument (this may lead to an error
          *      being triggered)
@@ -195,7 +195,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
          *      work your way around this limitation when implementing commands)
          * - RawArgument:
          *   => prefer REGISTER over LABEL;
-         *   => if REGISTER: apply tie-breakers for RegisterArgument
+         *   => if REGISTER: apply tie-breakers for VariableArgument
          *   
          */
         
@@ -208,7 +208,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
         String resolvingClass = this.getResolvingClass();
         List<Command> viableCommands;
         int tryAgain = 0;
-        if (resolvingClass.contains(String.valueOf(Variable.Type.IMMEDIATE.signatureMarker))) {
+        if (resolvingClass.contains(String.valueOf(Parameter.Type.IMMEDIATE.signatureMarker))) {
             tryAgain = 1;
         }
         do {
@@ -228,8 +228,8 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 if (tryAgain > 0) {
                     // command with immediate parameter not found, let's try again with label
                     resolvingClass = resolvingClass.replace(
-                        Variable.Type.IMMEDIATE.signatureMarker,
-                        Variable.Type.LABEL.signatureMarker
+                        Parameter.Type.IMMEDIATE.signatureMarker,
+                        Parameter.Type.LABEL.signatureMarker
                     );
                     continue;
                 }
@@ -240,7 +240,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 //      message be given in that case? For now, we just point
                 //      out this potential root cause in the message.
                 throw new ConstraintException(
-                    "No command found for Invocation " + this + " - maybe used registers don't exist?"
+                    "No command found for Invocation " + this + " - maybe used variables don't exist?"
                 );
             }
             break;
@@ -286,9 +286,9 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
      */
     private boolean isCommandViable(Command command, AST ast, Implementation implementation)
     {
-        Iterator<Variable> iter = command.getParameters().iterator();
+        Iterator<Parameter> iter = command.getParameters().iterator();
         for (Argument argument : this.arguments) {
-            Variable parameter = iter.next();
+            Parameter parameter = iter.next();
             
             if (argument instanceof RawArgument) {
             // INV: register/var/label
@@ -296,25 +296,25 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 switch (parameter.type) {
                     case REGISTER:
                     // CMD: register/var
-                        if (!ra.potentialRegister.isNumeric()) {
+                        if (!ra.potentialVariable.isNumeric()) {
                             // Just to be safe
                             return false;
                         }
                         
                         if (
                             parameter.hasGroup()
-                            && !ra.potentialRegister.hasGroup(parameter.getGroup())
+                            && !ra.potentialVariable.hasGroup(parameter.getGroup())
                         ) {
                             // group doesn't fit
                             return false;
                         }
                         if (
-                            ra.potentialRegister.minLength > 0 // don't check dynamic length (length == 0)
+                            ra.potentialVariable.minLength > 0 // don't check dynamic length (length == 0)
                             && (
                                 // at least one possible length has to fit
                                 // (rest is checked dynamically at runtime)
-                                ra.potentialRegister.maxLength < parameter.minLength
-                                || ra.potentialRegister.minLength > parameter.maxLength
+                                ra.potentialVariable.maxLength < parameter.minLength
+                                || ra.potentialVariable.minLength > parameter.maxLength
                             )
                         ) {
                             return false;
@@ -329,20 +329,20 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                         return false;
                 }
                 
-            } else if (argument instanceof RegisterArgument) {
+            } else if (argument instanceof VariableArgument) {
             // INV: register/var '...
-                if (parameter.type != Variable.Type.REGISTER) {
+                if (parameter.type != Parameter.Type.REGISTER) {
                     return false;
                 }
                 // CMD: register/var
                 
-                RegisterArgument ra = (RegisterArgument) argument;
+                VariableArgument va = (VariableArgument) argument;
                 // referenced variable is already known
                 // - and we assume it is a numeric variable (otherwise this
                 //   would be a RawArgument)
                 if (
                     parameter.hasGroup()
-                    && !ra.register.hasGroup(parameter.getGroup())
+                    && !va.variable.hasGroup(parameter.getGroup())
                 ) {
                     // group doesn't fit
                     return false;
@@ -350,19 +350,19 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 if (
                     // at least one possible length has to fit
                     // (rest is checked dynamically at runtime)
-                    ra.getMaxLength() < parameter.minLength
-                    || ra.getMinLength() > parameter.maxLength
+                    va.getMaxLength() < parameter.minLength
+                    || va.getMinLength() > parameter.maxLength
                 ) {
                     return false;
                 }
                 
             } else if (argument instanceof ImmediateArgument) {
             // INV: immediate/label
-                if (parameter.type == Variable.Type.LABEL) {
+                if (parameter.type == Parameter.Type.LABEL) {
                     // That's fine
                     break;
                 }
-                if (parameter.type != Variable.Type.IMMEDIATE) {
+                if (parameter.type != Parameter.Type.IMMEDIATE) {
                     return false;
                 }
                 ImmediateArgument ia = (ImmediateArgument) argument;
@@ -372,12 +372,12 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
             
             } else if (argument instanceof LabelArgument) {
             // INV: label
-                if (parameter.type != Variable.Type.LABEL) {
+                if (parameter.type != Parameter.Type.LABEL) {
                     return false;
                 }
             } else if (argument instanceof StringArgument) {
             // INV: string
-                if (parameter.type != Variable.Type.STRING) {
+                if (parameter.type != Parameter.Type.STRING) {
                     return false;
                 }
             }
@@ -390,18 +390,18 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
     public int compare(Command a, Command b)
     {
         // Applying tie-breakers (see note in resolve())
-        Iterator<Variable> iterA = a.getParameters().iterator();
-        Iterator<Variable> iterB = b.getParameters().iterator();
+        Iterator<Parameter> iterA = a.getParameters().iterator();
+        Iterator<Parameter> iterB = b.getParameters().iterator();
         for (Argument argument : this.arguments) {
-            Variable paramA = iterA.next();
-            Variable paramB = iterB.next();
+            Parameter paramA = iterA.next();
+            Parameter paramB = iterB.next();
             
             if (argument instanceof LabelArgument || argument instanceof StringArgument) {
                 continue;
             }
             
             if (argument instanceof ImmediateArgument) {
-                if (paramA.type == Variable.Type.LABEL) {
+                if (paramA.type == Parameter.Type.LABEL) {
                     // both candidates are expected to have the same type
                     continue;
                 }
@@ -418,9 +418,9 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
             if (argument instanceof RawArgument) {
                 if (paramA.type != paramB.type) {
                     // prefer REGISTER over LABEL
-                    return paramA.type == Variable.Type.REGISTER ? -1 : 1;
+                    return paramA.type == Parameter.Type.REGISTER ? -1 : 1;
                 }
-                if (paramA.type == Variable.Type.LABEL) {
+                if (paramA.type == Parameter.Type.LABEL) {
                     // both candidates have same type
                     continue;
                 }
@@ -438,11 +438,11 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
             }
 
             // prefer first listed group
-            Register referencedRegister;
+            RegisterLike referencedRegister;
             if (argument instanceof RawArgument) {
-                referencedRegister = (Register) ((RawArgument)argument).potentialRegister;
+                referencedRegister = (RegisterLike) ((RawArgument)argument).potentialVariable;
             } else {
-                referencedRegister = (Register) ((RegisterArgument)argument).register;
+                referencedRegister = (RegisterLike) ((VariableArgument)argument).variable;
             }
             int posA = referencedRegister.getGroupPosition(paramA.getGroup());
             int posB = referencedRegister.getGroupPosition(paramB.getGroup());
@@ -468,9 +468,9 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
     @SuppressWarnings("incomplete-switch")
     private void conformArgs(AST ast, Implementation implementation)
     {
-        Iterator<Variable> iter = this.invokedCommand.getParameters().iterator();
+        Iterator<Parameter> iter = this.invokedCommand.getParameters().iterator();
         for (Argument argument : this.arguments) {
-            Variable parameter = iter.next();
+            Parameter parameter = iter.next();
             
             if (argument instanceof RawArgument) {
             // INV: register/var/label
@@ -480,7 +480,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                     case REGISTER:
                         this.arguments.set(
                             index,
-                            new RegisterArgument(ra.potentialRegister)
+                            new VariableArgument(ra.potentialVariable)
                         );
                         break;
                         
@@ -490,7 +490,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                 }
             } else if (
                 argument instanceof ImmediateArgument
-                && parameter.type == Variable.Type.LABEL
+                && parameter.type == Parameter.Type.LABEL
             ) {
                 ImmediateArgument ia = (ImmediateArgument) argument;
                 int index = this.arguments.indexOf(ia);

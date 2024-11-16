@@ -3,7 +3,7 @@ package net.jaraonthe.java.asb.built_in;
 import net.jaraonthe.java.asb.ast.AST;
 import net.jaraonthe.java.asb.ast.command.Function;
 import net.jaraonthe.java.asb.ast.command.Implementation;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.exception.ConstraintException;
 import net.jaraonthe.java.asb.exception.UserError;
 import net.jaraonthe.java.asb.interpret.Frame;
@@ -86,12 +86,12 @@ public class BuiltInFunction extends Function
      */
     public enum OperandType
     {
-        IMMEDIATE (Variable.Type.IMMEDIATE),
-        REGISTER  (Variable.Type.REGISTER);
+        IMMEDIATE (Parameter.Type.IMMEDIATE),
+        REGISTER  (Parameter.Type.REGISTER);
         
-        public final Variable.Type variableType;
+        public final Parameter.Type variableType;
         
-        private OperandType(Variable.Type type)
+        private OperandType(Parameter.Type type)
         {
             this.variableType = type;
         }
@@ -117,20 +117,20 @@ public class BuiltInFunction extends Function
      * 
      * @return Fluent interface
      */
-    public BuiltInFunction addParameterByType(Variable.Type type, String name)
+    public BuiltInFunction addParameterByType(Parameter.Type type, String name)
     {
         switch (type) {
         case IMMEDIATE:
-            this.addParameter(new Variable(
-                Variable.Type.IMMEDIATE,
+            this.addParameter(new Parameter(
+                Parameter.Type.IMMEDIATE,
                 name,
                 Constraints.MAX_LENGTH
             ));
             break;
             
         case REGISTER:
-            this.addParameter(new Variable(
-                Variable.Type.REGISTER,
+            this.addParameter(new Parameter(
+                Parameter.Type.REGISTER,
                 name,
                 Constraints.MIN_LENGTH,
                 Constraints.MAX_LENGTH
@@ -139,17 +139,17 @@ public class BuiltInFunction extends Function
             
         case LABEL:
             // i.e. a local label
-            this.addParameter(new Variable(
-                Variable.Type.LABEL,
+            this.addParameter(new Parameter(
+                Parameter.Type.LABEL,
                 name,
-                Variable.LOCAL_LABEL_LENGTH,
+                Parameter.LOCAL_LABEL_LENGTH,
                 true
             ));
             break;
             
         case STRING:
-            this.addParameter(new Variable(
-                Variable.Type.STRING,
+            this.addParameter(new Parameter(
+                Parameter.Type.STRING,
                 name
             ));
             break;

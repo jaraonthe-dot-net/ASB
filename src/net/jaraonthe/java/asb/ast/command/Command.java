@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.jaraonthe.java.asb.ast.CommandLike;
-import net.jaraonthe.java.asb.ast.variable.Variable;
+import net.jaraonthe.java.asb.ast.variable.Parameter;
 import net.jaraonthe.java.asb.interpret.Interpretable;
 
 /**
@@ -30,7 +30,7 @@ public class Command extends CommandLike
     /**
      * Command parameters, in the order in which they appear in the signature.
      */
-    private List<Variable> parameters = new ArrayList<>(3);
+    private List<Parameter> parameters = new ArrayList<>(3);
     
     private Interpretable interpretable = null;
     
@@ -83,7 +83,7 @@ public class Command extends CommandLike
      * @param parameter
      * @return Fluent interface
      */
-    public Command addParameter(Variable parameter)
+    public Command addParameter(Parameter parameter)
     {
         this.signature += parameter.type.signatureMarker;
         if (
@@ -96,7 +96,7 @@ public class Command extends CommandLike
         
         // Length & group details
         boolean hasDetails = false;
-        if (parameter.type.hasLength() && parameter.type != Variable.Type.LABEL) {
+        if (parameter.type.hasLength() && parameter.type != Parameter.Type.LABEL) {
             hasDetails              = true;
             this.signature         += parameter.lengthAsString();
             this.readableSignature += "''" + parameter.lengthAsString();
@@ -107,7 +107,7 @@ public class Command extends CommandLike
             this.readableSignature += "(" + parameter.getGroup() + ")";
         }
         if (hasDetails) {
-            this.signature += Variable.Type.END_OF_MARKER_DETAILS;
+            this.signature += Parameter.Type.END_OF_MARKER_DETAILS;
         }
         this.readableSignature += " ";
         
@@ -122,7 +122,7 @@ public class Command extends CommandLike
      * @param index 0 is the first (leftmost) parameter
      * @return The parameter at given index
      */
-    public Variable getParameterAt(int index)
+    public Parameter getParameterAt(int index)
     {
         return this.parameters.get(index);
     }
@@ -130,7 +130,7 @@ public class Command extends CommandLike
     /**
      * @return Readonly parameter list
      */
-    public List<Variable> getParameters()
+    public List<Parameter> getParameters()
     {
         return Collections.unmodifiableList(this.parameters);
     }
