@@ -178,7 +178,7 @@ public class Command extends CommandLike
      */
     public String getReadableIdentity()
     {
-        return this.name + " " + this.readableSignature;
+        return this.name + " " + this.readableSignature.trim();
     }
     
     @Override

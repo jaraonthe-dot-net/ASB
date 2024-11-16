@@ -234,13 +234,23 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
                     continue;
                 }
                 
-                // TODO Consider improving error message, as this error could be
-                //      due to using registers/vars that don't exist - can that
-                //      be detected somehow, and a more appropriate error
-                //      message be given in that case? For now, we just point
-                //      out this potential root cause in the message.
+                // As the command class is not empty, it's possible that we
+                // found the correct command, but the arguments don't fit
+                // - point this out in the error message
+                String hint = "";
+                if (!commandClass.isEmpty()) {
+                    List<Command> sortedClass = new ArrayList<>(commandClass);
+                    // Show the best candidate
+                    sortedClass.sort(this);
+                    // TODO State *how* arguments are not compatible. I.e.
+                    //      resolve arguments with the command as given, result
+                    //      would be that argument is of wrong type, has wrong
+                    //      length, or variable does not exist.
+                    hint = " - did you mean to invoke " + sortedClass.get(0)
+                        + "? Arguments are not compatible (check for typos)";
+                }
                 throw new ConstraintException(
-                    "No command found for Invocation " + this + " - maybe used variables don't exist?"
+                    "No command found for Invocation " + this + hint
                 );
             }
             break;
@@ -542,7 +552,7 @@ public class CommandInvocation extends CommandLike implements Invocation, Compar
         if (this.invokedCommand != null) {
             return this.invokedCommand + this.arguments.toString();
         }
-        return this.name + " " + this.readableSignature;
+        return this.name + " " + this.readableSignature.trim();
     }
     
     

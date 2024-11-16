@@ -7,8 +7,8 @@ import net.jaraonthe.java.asb.parse.Constraints;
  *
  * @author Jakob Rathbauer <jakob@jaraonthe.net>
  */
-// TODO Consider splitting into numeric variables and other variables (label,
-//      string) or possibly even further
+// TODO Consider splitting into numeric and other parameters (label, string) or
+//      possibly even further
 public class Parameter extends Variable
 {
     /**
