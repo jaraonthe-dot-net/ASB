@@ -493,7 +493,7 @@ is effectively equivalent to:
 .define myCmd {
     // ...
     &jump end
-    // ... this is executed
+    // ... this is not executed
   end:
 }
 ```
